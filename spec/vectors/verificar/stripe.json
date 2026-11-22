@@ -1,0 +1,550 @@
+{
+ "spec": "0",
+ "id": "verificar/stripe",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "claves desconocidas se ignoran",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240,v0=abc,destination=we_1,payload=a25aefc6"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "espacios alrededor de los pares",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000 , v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "firma en mayúsculas",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=BC333018988E4FC6FE31B886B62515D35585D7E6600D3B9E20527A447F21B240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: dos firmas, coincide la segunda",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=0000000000000000000000000000000000000000000000000000000000000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-dos",
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo que no es JSON: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=5d047cbe910a765537478989c4ef4147929d864de0e7e385b77e5ce31a138154"
+     ]
+    ],
+    "query": [],
+    "body": "no es json"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:b3726d60bb20e356c46868fc6aa88fc03cd8738ec95194e5ddb073b9cb4feb21",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo sin id: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=c4c72fbbf5eefb4d7cc05b8e3851759ba28bcf746b1d05c0e0ce2d9448a47f96"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:699459e83477526028d71f68b7aa1c06705441e7242cdaebc20fd52692d462cd",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "id que no es texto: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=0b2fdeaf3eab26d1b2f3b40d2cca3a58a8779ed3f714cbd6500b34c5206e92f5"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":7}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:a3c90e3b7448d23d9eacebd0ebf15cae100e21f9b2c688f3f9d238edcd26d67f",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "en el borde de la tolerancia",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1699999700,v1=f045f062515460d4163b478ab3ee6e517e10f2acbe7f5c7d931ef761041204b4"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1699999700
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "stripe",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera repetida",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ],
+     [
+      "Stripe-Signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo repetida",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240,t=1699999999"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo repetida y sin firma",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,t=1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "sin marca de tiempo",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "sin firma v1",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v0=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo con letras",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=ayer,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "sin pares",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "cualquier cosa"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "un par con el valor vacío se ignora",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1="
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=00f4c45cbe05b00ab6517bf9fbdff6286d7c476db8d8855c44f5a9afebfc93e9"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}\n"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "la clave v1 distingue mayúsculas",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,V1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "un segundo después de la tolerancia",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1699999699,v1=5f702e26054a545d7b12f08490c5905fdefa94a6ad1010a47195617949b68f35"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "del futuro",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000301,v1=afe622e1ebc427c79dc054988baa7348c6a9c395cf18077776b00c2c6f1df956"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  }
+ ]
+}

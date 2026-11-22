@@ -1,0 +1,398 @@
+{
+ "spec": "0",
+ "id": "verificar/hmac-body",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "hexadecimal sin prefijo",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "hmac-body:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con prefijo",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "prefix": "sha256="
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "X-Firma",
+      "sha256=1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "hmac-body:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "base64",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "encoding": "base64"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "Hfoa1FMU6fkXgaW8nixJ0hoFLQM/vHFARmY0g9FZIXo="
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "hmac-body:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con nombre propio e identificador",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "name": "alertas",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ],
+     [
+      "x-entrega",
+      "e-001"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "alertas:e-001",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con nombre propio y sin identificador: huella con ese nombre",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "name": "alertas",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "alertas:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma"
+   },
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera repetida",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ],
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "identificador repetido",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "name": "alertas",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ],
+     [
+      "x-entrega",
+      "a"
+     ],
+     [
+      "x-entrega",
+      "b"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "falta el prefijo configurado",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "prefix": "sha256="
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "el prefijo distingue mayúsculas",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "prefix": "sha256="
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "SHA256=1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "e42b73ef4a17b4a0b6c305477d241bc4ebedc44af338e7194f4ed26350451595"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"} "
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "hexadecimal donde se espera base64",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "encoding": "base64"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "1dfa1ad45314e9f91781a5bc9e2c49d21a052d033fbc714046663483d159217a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "base64 sin relleno",
+   "scheme": "hmac-body",
+   "options": {
+    "header": "x-firma",
+    "encoding": "base64"
+   },
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-firma",
+      "Hfoa1FMU6fkXgaW8nixJ0hoFLQM/vHFARmY0g9FZIXo"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  }
+ ]
+}

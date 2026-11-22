@@ -71,14 +71,15 @@ La frescura se evalúa al final: `stale` sólo se informa de un pedido cuya firm
 - Cada esquema recibe una lista de secretos. La firma es válida si coincide con cualquiera de
   ellos; así se rota un secreto sin cortar el servicio.
 - Una lista vacía, un secreto vacío o un secreto que el esquema no puede interpretar dan
-  `unconfigured` para todos los pedidos.
+  `unconfigured` para todos los pedidos. Alcanza con que uno de la lista sea inutilizable.
 - Un secreto NO DEBE aparecer en un resultado, un error ni un log.
 
 ### 4.3. Comparación de firmas
 
-- Una firma recibida se decodifica a bytes y se compara con la esperada en tiempo constante.
-- Una firma recibida que no se puede decodificar no coincide con nada. No es un error aparte.
-- El hexadecimal se acepta en mayúsculas o minúsculas.
+- La firma esperada se codifica como texto y se compara con la recibida en tiempo constante.
+- En hexadecimal, la esperada va en minúsculas y la recibida se pasa a minúsculas antes de comparar.
+- En base64 se usa el alfabeto estándar con relleno y la comparación es exacta.
+- Una firma recibida con otra forma simplemente no coincide. No es un error aparte.
 
 ### 4.4. Frescura
 
@@ -100,6 +101,12 @@ Es `ambiguous`:
 
 Un verificador NO DEBE elegir uno de los valores repetidos.
 
+### 4.5.1. Cabeceras con pares
+
+Una cabecera con pares `clave=valor` se parte por comas. Cada parte se divide en el primer `=` y se
+recortan los espacios de la clave y del valor. Una parte sin `=`, con la clave vacía o con el valor
+vacío se ignora.
+
 ### 4.6. Clave del evento
 
 - La clave siempre empieza con el nombre del esquema y `:`.
@@ -116,7 +123,9 @@ Todos usan HMAC-SHA256. «Cuerpo» es siempre el cuerpo crudo.
 El formato [Standard Webhooks](https://www.standardwebhooks.com/), con firma simétrica `v1`.
 
 - Cabeceras exigidas: `webhook-id`, `webhook-timestamp`, `webhook-signature`.
-- Secreto: el prefijo `whsec_` es opcional; el resto es base64 y, decodificado, es la clave.
+- Secreto: el prefijo `whsec_` es opcional; el resto es base64 y, decodificado, es la clave. Es
+  utilizable si, sin el prefijo, no está vacío, su largo es múltiplo de cuatro y cumple
+  `^[A-Za-z0-9+/]*={0,2}$`.
 - `webhook-timestamp` DEBE cumplir `^[0-9]{1,15}$`. Si no, `malformed`.
 - `webhook-signature` trae una o más firmas separadas por espacios. Sólo cuentan las que empiezan
   con `v1,`; el resto se ignora. Si no hay ninguna `v1,`, `malformed`.
@@ -129,8 +138,7 @@ Este es además el esquema con el que se firma lo que se emite (sección 7).
 
 ### 5.2. `stripe`
 
-- Cabecera exigida: `stripe-signature`, con pares `clave=valor` separados por comas. Cada par se
-  parte en el primer `=` y se recortan los espacios.
+- Cabecera exigida: `stripe-signature`, con pares `clave=valor` (sección 4.5.1).
 - Cuentan las claves `t` y `v1`. Cualquier otra se ignora.
 - Sin `t` o sin ningún `v1`, `malformed`. Más de un `t`, `ambiguous`. Puede haber varios `v1`.
 - `t` DEBE cumplir `^[0-9]{1,15}$`. Si no, `malformed`.
@@ -143,8 +151,8 @@ Este es además el esquema con el que se firma lo que se emite (sección 7).
 
 ### 5.3. `mercadopago`
 
-- Cabecera exigida: `x-signature`, con pares `clave=valor` separados por comas, como en `stripe`.
-  Las claves se comparan en minúsculas.
+- Cabecera exigida: `x-signature`, con pares `clave=valor` (sección 4.5.1). Las claves se
+  comparan en minúsculas.
 - Datos opcionales: la cabecera `x-request-id` y el parámetro `data.id` de la URL.
 - Cuentan las claves `ts` y `v1`. Sin alguna de las dos, `malformed`. Cualquiera repetida,
   `ambiguous`.
@@ -210,7 +218,7 @@ Es un puerto con tres operaciones. Todas DEBEN ser atómicas.
 - `release(key, token)` devuelve si se aplicó.
 
 Una entrada está **reservada** hasta que vence su plazo, o **completada** hasta que vence su
-retención. Reglas de `claim`:
+retención. Una entrada vence cuando `now` es mayor o igual que su vencimiento. Reglas de `claim`:
 
 | Estado de la clave | Resultado | Efecto |
 |---|---|---|
@@ -218,8 +226,10 @@ retención. Reglas de `claim`:
 | Reservada y sin vencer | `in_progress` | Ninguno |
 | Completada y sin vencer | `duplicate` | Ninguno |
 
-`complete` y `release` sólo se aplican si la clave está reservada por el mismo `token`. Así, quien
-perdió su reserva por vencimiento no pisa a quien la tomó después.
+`complete` y `release` sólo se aplican si la entrada guardada es una reserva hecha con el mismo
+`token`, aunque su plazo haya vencido. Así, quien se demoró puede terminar si nadie tomó la clave,
+y quien perdió su reserva no pisa a quien la tomó después. `complete` deja la entrada completada
+hasta `now + retention_seconds`; `release` la borra.
 
 Valores por defecto: `lease_seconds = 300` y `retention_seconds = 604800` (siete días).
 
@@ -271,8 +281,9 @@ Antes de cada intento se valida la URL y las direcciones a las que resuelve.
 
 - El esquema DEBE ser `https`. `http` sólo se acepta si la configuración lo permite expresamente.
 - La URL NO DEBE traer usuario ni contraseña.
-- El nombre se resuelve a direcciones IP. Si alguna dirección está en un rango bloqueado, el
-  intento se rechaza. Si no resuelve a ninguna, también.
+- Si el nombre es una dirección IP literal, se evalúa esa dirección y no se resuelve nada.
+- Si no, el nombre se resuelve a direcciones IP. Si alguna dirección está en un rango bloqueado,
+  el intento se rechaza. Si no resuelve a ninguna, también.
 - La conexión DEBE hacerse a una de las direcciones validadas, no a una resolución nueva.
 - Las redirecciones no se siguen.
 
@@ -286,6 +297,16 @@ Rangos bloqueados:
 | `224.0.0.0/4`, `240.0.0.0/4` | `fe80::/10`, `ff00::/8` |
 
 Una dirección IPv6 que envuelve una IPv4 (`::ffff:0:0/96`) se evalúa por la IPv4 que contiene.
+
+El resultado de la política es `allowed` o el primer motivo de rechazo, en este orden:
+
+| Motivo | Cuándo |
+|---|---|
+| `invalid_url` | No se puede interpretar como una URL absoluta con nombre de host |
+| `scheme` | El esquema no es `https`, ni `http` con el permiso expreso |
+| `credentials` | Trae usuario o contraseña |
+| `unresolved` | El nombre no resolvió a ninguna dirección |
+| `blocked_address` | Alguna dirección está en un rango bloqueado o no es una dirección IP |
 
 La URL de destino NO DEBE aparecer en un error ni en un log.
 
@@ -316,8 +337,9 @@ Después del intento número `n` (el primero es el 1) con clase `retryable`:
 - Si `n` es mayor que el largo de la lista, no hay más intentos: la entrega queda `exhausted`.
 - Si no, la espera base es el elemento `n` de la lista (contando desde 1).
 - Si la respuesta trajo `retry-after`, la espera es el mayor entre la base y ese valor.
-  `retry-after` puede ser un entero de segundos o una fecha HTTP; uno que no se puede interpretar
-  o que da un valor negativo se ignora.
+  `retry-after` puede ser un entero de segundos (`^[0-9]+$`) o una fecha HTTP con la forma
+  `Sun, 06 Nov 1994 08:49:37 GMT`, que se convierte en `fecha - ahora`. Uno que no se puede
+  interpretar o que da un valor negativo se ignora.
 - La espera nunca supera `max_delay_seconds` (por defecto `86400`).
 - A la espera se le suma una variación: `piso(espera × jitter_ratio × r)`, donde `r` es un número
   en `[0, 1)` que llega inyectado y `jitter_ratio` es `0.1` por defecto. La variación se aplica

@@ -1,0 +1,389 @@
+{
+ "spec": "0",
+ "id": "verificar/github",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:72d3162e-cc78-11e3-81ab-4c9367dc0958",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "ejemplo de la documentación pública",
+   "scheme": "github",
+   "secrets": [
+    "It's a Secret to Everybody"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "X-Hub-Signature-256",
+      "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17"
+     ]
+    ],
+    "query": [],
+    "body": "Hello, World!"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:sha256:dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin identificador de entrega: la clave es la huella",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:sha256:fe0e7604531e0d90c365a756878c17f6266c65c90f1373f89b740cb192b8e373",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "firma en mayúsculas",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha256=BD70450EA63ED92986DA7E887C0A3B554296478468FF4185DE567EC6410A0ECE"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:72d3162e-cc78-11e3-81ab-4c9367dc0958",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "no hay marca de tiempo: el reloj no importa",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1710000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:72d3162e-cc78-11e3-81ab-4c9367dc0958",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-dos",
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:72d3162e-cc78-11e3-81ab-4c9367dc0958",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "github",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera repetida",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "identificador de entrega repetido",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-github-delivery",
+      "otro"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "sin el prefijo",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-hub-signature-256",
+      "bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "prefijo de otro algoritmo",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha1=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha256=a1156c000632e3b1df8bae16ee733f323ecdfa5fb208e128f60c5f26cfc69618"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ],
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1} "
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma truncada",
+   "scheme": "github",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-github-delivery",
+      "72d3162e-cc78-11e3-81ab-4c9367dc0958"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0e"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  }
+ ]
+}

@@ -1,0 +1,287 @@
+{
+ "spec": "0",
+ "id": "entregar/clasificacion",
+ "kind": "delivery-class",
+ "cases": [
+  {
+   "name": "estado 200",
+   "status": 200,
+   "failure": null,
+   "expected": {
+    "class": "delivered"
+   }
+  },
+  {
+   "name": "estado 201",
+   "status": 201,
+   "failure": null,
+   "expected": {
+    "class": "delivered"
+   }
+  },
+  {
+   "name": "estado 202",
+   "status": 202,
+   "failure": null,
+   "expected": {
+    "class": "delivered"
+   }
+  },
+  {
+   "name": "estado 204",
+   "status": 204,
+   "failure": null,
+   "expected": {
+    "class": "delivered"
+   }
+  },
+  {
+   "name": "estado 299",
+   "status": 299,
+   "failure": null,
+   "expected": {
+    "class": "delivered"
+   }
+  },
+  {
+   "name": "estado 100",
+   "status": 100,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 199",
+   "status": 199,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 300",
+   "status": 300,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 301",
+   "status": 301,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 302",
+   "status": 302,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 307",
+   "status": 307,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 308",
+   "status": 308,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 400",
+   "status": 400,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 401",
+   "status": 401,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 403",
+   "status": 403,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 404",
+   "status": 404,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 405",
+   "status": 405,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 408",
+   "status": 408,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 409",
+   "status": 409,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 410",
+   "status": 410,
+   "failure": null,
+   "expected": {
+    "class": "gone"
+   }
+  },
+  {
+   "name": "estado 413",
+   "status": 413,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 422",
+   "status": 422,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 425",
+   "status": 425,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 429",
+   "status": 429,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 451",
+   "status": 451,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 499",
+   "status": 499,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "estado 500",
+   "status": 500,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 502",
+   "status": 502,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 503",
+   "status": 503,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 504",
+   "status": 504,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 599",
+   "status": 599,
+   "failure": null,
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "estado 600",
+   "status": 600,
+   "failure": null,
+   "expected": {
+    "class": "rejected"
+   }
+  },
+  {
+   "name": "error de red",
+   "status": null,
+   "failure": "network",
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "tiempo de espera agotado",
+   "status": null,
+   "failure": "timeout",
+   "expected": {
+    "class": "retryable"
+   }
+  },
+  {
+   "name": "rechazado por la política de URLs",
+   "status": null,
+   "failure": "blocked",
+   "expected": {
+    "class": "blocked"
+   }
+  }
+ ]
+}

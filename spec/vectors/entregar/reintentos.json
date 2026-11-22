@@ -1,0 +1,375 @@
+{
+ "spec": "0",
+ "id": "entregar/reintentos",
+ "kind": "retry",
+ "cases": [
+  {
+   "name": "lista por defecto, después del intento 1",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 2",
+   "attempt": 2,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 300,
+    "next_at": 1700000300
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 3",
+   "attempt": 3,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 1800,
+    "next_at": 1700001800
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 4",
+   "attempt": 4,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 7200,
+    "next_at": 1700007200
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 5",
+   "attempt": 5,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 18000,
+    "next_at": 1700018000
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 6",
+   "attempt": 6,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 36000,
+    "next_at": 1700036000
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 7",
+   "attempt": 7,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 50400,
+    "next_at": 1700050400
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 8",
+   "attempt": 8,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 72000,
+    "next_at": 1700072000
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 9",
+   "attempt": 9,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 86400,
+    "next_at": 1700086400
+   }
+  },
+  {
+   "name": "lista por defecto, después del intento 10",
+   "attempt": 10,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "expected": {
+    "exhausted": true
+   }
+  },
+  {
+   "name": "lista propia",
+   "attempt": 2,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "schedule": [
+    10,
+    20,
+    30
+   ],
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 20,
+    "next_at": 1700000020
+   }
+  },
+  {
+   "name": "lista propia agotada",
+   "attempt": 4,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "schedule": [
+    10,
+    20,
+    30
+   ],
+   "expected": {
+    "exhausted": true
+   }
+  },
+  {
+   "name": "lista vacía: un solo intento",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "schedule": [],
+   "expected": {
+    "exhausted": true
+   }
+  },
+  {
+   "name": "retry-after mayor que la base",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "120",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 120,
+    "next_at": 1700000120
+   }
+  },
+  {
+   "name": "retry-after menor que la base",
+   "attempt": 2,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "120",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 300,
+    "next_at": 1700000300
+   }
+  },
+  {
+   "name": "retry-after en cero",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "0",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after como fecha",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Tue, 14 Nov 2023 22:23:20 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 600,
+    "next_at": 1700000600
+   }
+  },
+  {
+   "name": "retry-after como fecha ya pasada",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Tue, 14 Nov 2023 22:00:00 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after que no se entiende",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "pronto",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con decimales se ignora",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "1.5",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after negativo se ignora",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "-5",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after por encima del tope",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "999999",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 86400,
+    "next_at": 1700086400
+   }
+  },
+  {
+   "name": "tope propio por debajo de la base",
+   "attempt": 5,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": null,
+   "max_delay_seconds": 3600,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 3600,
+    "next_at": 1700003600
+   }
+  },
+  {
+   "name": "variación máxima",
+   "attempt": 2,
+   "now": 1700000000,
+   "random": 0.999,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 329,
+    "next_at": 1700000329
+   }
+  },
+  {
+   "name": "variación a la mitad",
+   "attempt": 3,
+   "now": 1700000000,
+   "random": 0.5,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 1890,
+    "next_at": 1700001890
+   }
+  },
+  {
+   "name": "la variación se aplica después del tope",
+   "attempt": 9,
+   "now": 1700000000,
+   "random": 0.5,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 90720,
+    "next_at": 1700090720
+   }
+  },
+  {
+   "name": "proporción de variación propia",
+   "attempt": 2,
+   "now": 1700000000,
+   "random": 0.5,
+   "retry_after": null,
+   "jitter_ratio": 0.5,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 375,
+    "next_at": 1700000375
+   }
+  },
+  {
+   "name": "sin variación",
+   "attempt": 2,
+   "now": 1700000000,
+   "random": 0.999,
+   "retry_after": null,
+   "jitter_ratio": 0,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 300,
+    "next_at": 1700000300
+   }
+  },
+  {
+   "name": "la variación redondea hacia abajo",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.999,
+   "retry_after": null,
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con variación",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.25,
+   "retry_after": "100",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 102,
+    "next_at": 1700000102
+   }
+  }
+ ]
+}

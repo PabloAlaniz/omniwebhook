@@ -71,6 +71,8 @@ ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
+# El generador se comprueba a sí mismo con assert y sólo usa secretos sintéticos.
+"../tools/**" = ["S101", "S105", "SIM905"]
 
 # Reglas de arquitectura. Las dependencias apuntan hacia adentro:
 #   entrypoints → adapters → application → domain

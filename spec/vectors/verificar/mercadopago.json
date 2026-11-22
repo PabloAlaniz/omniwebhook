@@ -1,0 +1,890 @@
+{
+ "spec": "0",
+ "id": "verificar/mercadopago",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "identificador alfanumérico: se firma en minúsculas",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=2dc7f1de3a584f8f5d0e690a1996d23199179aaa73a12e0a115db7fdbf5ffe13"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "ABC123DEF"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:abc123def:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "sin x-request-id",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=7a6a16e1674c15f080ccd8a36c31c56416788717404868f56dbed0475898d1fc"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "sin data.id",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=acc8b5dea762270e6342901cf0d1bbb0112b5165e1b37bf40f840cd15364555f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago::a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "sin ninguno de los dos: la clave usa la marca de tiempo",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=1d37a8afc87605ee78fbc71595d372d53b51c4a4e0a02bede64c68aeb993f9ff"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:ts:1700000000",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "marca de tiempo en milisegundos",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000250,v1=aebafbd75f8b1fa7cd5c84a8354a64c9aa639140d734fa4e03c5ee666857ee10"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "claves en mayúsculas",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "TS=1700000000,V1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "claves desconocidas se ignoran",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f,v2=abc"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "el cuerpo no está firmado: cambiarlo no invalida",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "otro cuerpo"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "otros parámetros de la URL se ignoran",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "type",
+      "payment"
+     ],
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-dos",
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "en el borde de la tolerancia",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1699999700,v1=b7d1ad807077c7b9fecac87795864bd55f0987b4ccb9d27d83185e6a1ff725e3"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "mercadopago:123456789:a1b2c3d4-0000-4000-8000-000000000001",
+    "timestamp": 1699999700
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "mercadopago",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera de firma",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera de firma repetida",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "X-Signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "x-request-id repetido",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-request-id",
+      "otro"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "data.id repetido",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ],
+     [
+      "data.id",
+      "999"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo repetida",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "ts=1700000000,ts=1699996000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "firma repetida",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f,v1=0000000000000000000000000000000000000000000000000000000000000000"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "sin marca de tiempo",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "sin firma",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "ts=1700000000"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo con letras",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "ts=hoy,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=6be2372bf102f96fadb6320a559b2e73d105bbcf7651e5286a2cfe8860894beb"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "data.id alterado",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "987654321"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "x-request-id alterado",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ],
+     [
+      "x-request-id",
+      "otro"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "quitar x-request-id invalida",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000000,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un segundo después de la tolerancia",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1699999699,v1=0c6c89ba91cc2e0d5152b4aabe1e09719165cfaba712ec866c83356a01f6d6cf"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "vieja, en milisegundos",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1699999699000,v1=3e9f113d09387057cb665b25671e93a0a4fd42a3996a03d39d878071101a722d"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "del futuro",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature",
+      "ts=1700000301,v1=6da590029743bd20c7f37d1256cca6bb2a9138b0033f31ec6fb2bf7d68788b15"
+     ],
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  }
+ ]
+}

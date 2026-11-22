@@ -1,0 +1,146 @@
+{
+ "spec": "0",
+ "id": "firmar/standard",
+ "kind": "sign",
+ "cases": [
+  {
+   "name": "un secreto",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_2aXk",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+    }
+   }
+  },
+  {
+   "name": "dos secretos: una firma por secreto, en orden",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE=",
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDI="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_2aXk",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI= v1,Z3VLjh0PeeMKF1SIjo6f1UQRh5/Km424aKDDlnNnLdQ="
+    }
+   }
+  },
+  {
+   "name": "cuerpo vacío",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg_vacio",
+   "timestamp": 1700000000,
+   "payload": "",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_vacio",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v1,GP3q/Nmai6JrVLDkaq2ssOdxG6kFKSYkMfgdjhAtFzs="
+    }
+   }
+  },
+  {
+   "name": "cuerpo con caracteres fuera de ASCII",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg_ñ",
+   "timestamp": 1700000000,
+   "payload": "{\"saludo\":\"¡Hola, señor! 👋\"}",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_ñ",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v1,2CvMUvwGYpsukpTT9GNxCGn+EaaKGaat4rImwHCsh1c="
+    }
+   }
+  },
+  {
+   "name": "época cero",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg_0",
+   "timestamp": 0,
+   "payload": "{}",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_0",
+     "webhook-timestamp": "0",
+     "webhook-signature": "v1,+9uV/TIzMgA9nnBWuC5JKhNHq9r0qEBumpxpXFiwr28="
+    }
+   }
+  },
+  {
+   "name": "identificador vacío",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "",
+   "timestamp": 1700000000,
+   "payload": "{}",
+   "expected": {
+    "error": "invalid_id"
+   }
+  },
+  {
+   "name": "identificador con punto",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg.1",
+   "timestamp": 1700000000,
+   "payload": "{}",
+   "expected": {
+    "error": "invalid_id"
+   }
+  },
+  {
+   "name": "marca de tiempo negativa",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg_1",
+   "timestamp": -1,
+   "payload": "{}",
+   "expected": {
+    "error": "invalid_timestamp"
+   }
+  },
+  {
+   "name": "sin secretos",
+   "secrets": [],
+   "id": "msg_1",
+   "timestamp": 1700000000,
+   "payload": "{}",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "secreto inutilizable",
+   "secrets": [
+    "whsec_***"
+   ],
+   "id": "msg_1",
+   "timestamp": 1700000000,
+   "payload": "{}",
+   "expected": {
+    "error": "unconfigured"
+   }
+  }
+ ]
+}

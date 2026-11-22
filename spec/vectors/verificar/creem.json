@@ -1,0 +1,199 @@
+{
+ "spec": "0",
+ "id": "verificar/creem",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "2504871776e1df2724d77092b5f9dc2885261332eccad7c73128da1c129ce2d8"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "creem:evt_sintetico_creem_1",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "cuerpo sin id: la clave es la huella",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "f04fe840e98e575c421789f3ca80301a294f8acdb3ba72946a42f7a722ba030a"
+     ]
+    ],
+    "query": [],
+    "body": "{\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "creem:sha256:7a5f40f9f30ecf9bf9143525dc5c5694ebf9d07bf01c1a8ed9501afe684694d8",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "firma en mayúsculas",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "Creem-Signature",
+      "2504871776E1DF2724D77092B5F9DC2885261332ECCAD7C73128DA1C129CE2D8"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "creem:evt_sintetico_creem_1",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "creem",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "2504871776e1df2724d77092b5f9dc2885261332eccad7c73128da1c129ce2d8"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera repetida",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "2504871776e1df2724d77092b5f9dc2885261332eccad7c73128da1c129ce2d8"
+     ],
+     [
+      "creem-signature",
+      "2504871776e1df2724d77092b5f9dc2885261332eccad7c73128da1c129ce2d8"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "0ec3a4b8348a6cfa79d2e757d3ba28c5ac57a11d33a0b8ae8baf78c76a26fef5"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "2504871776e1df2724d77092b5f9dc2885261332eccad7c73128da1c129ce2d8"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"} "
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma en base64",
+   "scheme": "creem",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "creem-signature",
+      "JQSHF3bh3yck13CStfncKIUmEzLsytfHMSjaHBKc4tg="
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_creem_1\",\"eventType\":\"checkout.completed\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  }
+ ]
+}

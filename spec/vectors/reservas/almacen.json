@@ -1,0 +1,409 @@
+{
+ "spec": "0",
+ "id": "reservas/almacen",
+ "kind": "store",
+ "cases": [
+  {
+   "name": "reservar, completar y volver a pedir",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000001,
+     "retention_seconds": 604800,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000002,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    }
+   ]
+  },
+  {
+   "name": "mientras está reservada, otro la ve en curso",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "in_progress"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000002,
+     "lease_seconds": 300,
+     "expected": "in_progress"
+    }
+   ]
+  },
+  {
+   "name": "liberar deja la clave disponible",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "release",
+     "key": "standard:msg_1",
+     "token": "a",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "una reserva vencida se puede tomar",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000299,
+     "lease_seconds": 300,
+     "expected": "in_progress"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000300,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "quien perdió la reserva no completa ni libera",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000300,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000301,
+     "retention_seconds": 604800,
+     "expected": false
+    },
+    {
+     "op": "release",
+     "key": "standard:msg_1",
+     "token": "a",
+     "expected": false
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "c",
+     "now": 1700000302,
+     "lease_seconds": 300,
+     "expected": "in_progress"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000303,
+     "retention_seconds": 604800,
+     "expected": true
+    }
+   ]
+  },
+  {
+   "name": "completar tarde vale si nadie tomó la clave",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000900,
+     "retention_seconds": 604800,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000901,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    }
+   ]
+  },
+  {
+   "name": "un evento completado se olvida al vencer la retención",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "retention_seconds": 60,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000059,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000060,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "completar o liberar sin reserva no hace nada",
+   "steps": [
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "retention_seconds": 604800,
+     "expected": false
+    },
+    {
+     "op": "release",
+     "key": "standard:msg_1",
+     "token": "a",
+     "expected": false
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "completar con otro token no hace nada",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000001,
+     "retention_seconds": 604800,
+     "expected": false
+    },
+    {
+     "op": "release",
+     "key": "standard:msg_1",
+     "token": "b",
+     "expected": false
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "c",
+     "now": 1700000002,
+     "lease_seconds": 300,
+     "expected": "in_progress"
+    }
+   ]
+  },
+  {
+   "name": "no se completa ni se libera dos veces",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000001,
+     "retention_seconds": 604800,
+     "expected": true
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000002,
+     "retention_seconds": 604800,
+     "expected": false
+    },
+    {
+     "op": "release",
+     "key": "standard:msg_1",
+     "token": "a",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "las claves son independientes",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_2",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "retention_seconds": 604800,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_2",
+     "token": "b",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "in_progress"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    }
+   ]
+  },
+  {
+   "name": "plazo propio",
+   "steps": [
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "a",
+     "now": 1700000000,
+     "lease_seconds": 10,
+     "expected": "claimed"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000009,
+     "lease_seconds": 10,
+     "expected": "in_progress"
+    },
+    {
+     "op": "claim",
+     "key": "standard:msg_1",
+     "token": "b",
+     "now": 1700000010,
+     "lease_seconds": 10,
+     "expected": "claimed"
+    }
+   ]
+  }
+ ]
+}

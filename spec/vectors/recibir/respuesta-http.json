@@ -1,0 +1,77 @@
+{
+ "spec": "0",
+ "id": "recibir/respuesta-http",
+ "kind": "response",
+ "cases": [
+  {
+   "name": "ok",
+   "outcome": "ok",
+   "expected": {
+    "status": 200
+   }
+  },
+  {
+   "name": "duplicate",
+   "outcome": "duplicate",
+   "expected": {
+    "status": 200
+   }
+  },
+  {
+   "name": "in_progress",
+   "outcome": "in_progress",
+   "expected": {
+    "status": 409
+   }
+  },
+  {
+   "name": "missing",
+   "outcome": "missing",
+   "expected": {
+    "status": 401
+   }
+  },
+  {
+   "name": "ambiguous",
+   "outcome": "ambiguous",
+   "expected": {
+    "status": 401
+   }
+  },
+  {
+   "name": "malformed",
+   "outcome": "malformed",
+   "expected": {
+    "status": 401
+   }
+  },
+  {
+   "name": "invalid",
+   "outcome": "invalid",
+   "expected": {
+    "status": 401
+   }
+  },
+  {
+   "name": "stale",
+   "outcome": "stale",
+   "expected": {
+    "status": 401
+   }
+  },
+  {
+   "name": "unconfigured",
+   "outcome": "unconfigured",
+   "expected": {
+    "status": 500
+   }
+  },
+  {
+   "name": "failed",
+   "outcome": "failed",
+   "expected": {
+    "status": 500
+   }
+  }
+ ]
+}

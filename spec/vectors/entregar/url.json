@@ -1,0 +1,255 @@
+{
+ "spec": "0",
+ "id": "entregar/url",
+ "kind": "url",
+ "cases": [
+  {
+   "name": "https con dirección pública",
+   "url": "https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "https con puerto y consulta",
+   "url": "https://hooks.ejemplo.test:8443/entrada?canal=1",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "varias direcciones públicas",
+   "url": "https://hooks.ejemplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34",
+    "2606:4700:4700::1111"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "http con permiso expreso",
+   "url": "http://hooks.ejemplo.test/entrada",
+   "allow_http": true,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "dirección IPv4 literal pública",
+   "url": "https://93.184.216.34/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "dirección IPv6 literal pública",
+   "url": "https://[2606:4700:4700::1111]/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "texto que no es una URL",
+   "url": "esto no es una url",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "texto vacío",
+   "url": "",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "URL relativa",
+   "url": "/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "http sin permiso",
+   "url": "http://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "scheme"
+   }
+  },
+  {
+   "name": "otro esquema",
+   "url": "ftp://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "scheme"
+   }
+  },
+  {
+   "name": "otro esquema aunque se permita http",
+   "url": "ftp://hooks.ejemplo.test/entrada",
+   "allow_http": true,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "scheme"
+   }
+  },
+  {
+   "name": "con usuario y contraseña",
+   "url": "https://ana:clave@hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "credentials"
+   }
+  },
+  {
+   "name": "sólo con usuario",
+   "url": "https://ana@hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "credentials"
+   }
+  },
+  {
+   "name": "el esquema se revisa antes que las credenciales",
+   "url": "http://ana:clave@hooks.ejemplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "scheme"
+   }
+  },
+  {
+   "name": "el nombre no resuelve",
+   "url": "https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "unresolved"
+   }
+  },
+  {
+   "name": "resuelve a una dirección privada",
+   "url": "https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "10.0.0.5"
+   ],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "resuelve al servicio de metadatos",
+   "url": "https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "169.254.169.254"
+   ],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "una privada entre varias públicas alcanza",
+   "url": "https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34",
+    "127.0.0.1"
+   ],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "resuelve a algo que no es una dirección",
+   "url": "https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "no-es-ip"
+   ],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "dirección IPv4 literal de bucle local",
+   "url": "https://127.0.0.1/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "dirección IPv6 literal de bucle local",
+   "url": "https://[::1]:8443/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "IPv6 literal que envuelve una IPv4 privada",
+   "url": "https://[::ffff:10.0.0.1]/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "una dirección literal no usa la resolución",
+   "url": "https://10.0.0.5/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "blocked_address"
+   }
+  }
+ ]
+}
