@@ -64,6 +64,15 @@ python3 tools/interop.py --seed 7 --rounds 400      # otra semilla, más variaci
 Si aparece una diferencia, primero se decide en la especificación cuál es la respuesta correcta, se
 agrega el vector y recién después se corrigen los paquetes.
 
+## Ejemplos de la documentación
+
+Los bloques de código de los README y de las guías se revisan con el comprobador de tipos de cada
+lenguaje, para que un ejemplo no quede usando una API que ya cambió:
+
+```bash
+pnpm check:docs
+```
+
 ## Vectores de conformidad
 
 Los archivos de `spec/vectors/` los genera `tools/gen_vectors.py`; no se editan a mano.

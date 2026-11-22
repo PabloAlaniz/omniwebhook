@@ -160,3 +160,4 @@ jobs:
       - run: uv sync --locked
         working-directory: python
       - run: pnpm test:interop
+      - run: pnpm check:docs

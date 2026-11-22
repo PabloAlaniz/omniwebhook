@@ -15,3 +15,6 @@ htmlcov/
 .env
 .env.*
 ts/LICENSE
+
+# Archivos temporales del comprobador de ejemplos
+.docscheck/

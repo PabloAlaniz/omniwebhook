@@ -18,8 +18,8 @@ pública del paquete a un tercero.
 
 1. Lo que el paquete emite se firma con el formato Standard Webhooks. Los formatos propios de cada
    proveedor existen sólo como verificadores de entrada.
-2. Firmar y verificar es un puerto (`SignatureScheme`). El formato estándar es un adaptador más de
-   ese puerto.
+2. Verificar y firmar son puertos (`Verifier` y `MessageSigner`). El formato estándar es un
+   adaptador más de esos puertos.
 3. La librería de referencia sólo se importa dentro de ese adaptador. Una regla de arquitectura lo
    hace cumplir.
 4. La API pública no expone tipos ni excepciones de la librería: el adaptador traduce todo a los
