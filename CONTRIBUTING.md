@@ -34,6 +34,21 @@ uv run pytest
 
 La integración continua corre exactamente esto.
 
+Los almacenes que hablan con un servicio se prueban aparte, contra el servicio de verdad:
+
+```bash
+docker run -d --rm --name omniwebhook-pg -e POSTGRES_PASSWORD=prueba -p 127.0.0.1:55432:5432 postgres:17-alpine
+docker run -d --rm --name omniwebhook-firestore -p 127.0.0.1:58080:8080 \
+  gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators \
+  gcloud emulators firestore start --host-port=0.0.0.0:8080
+
+export OMNIWEBHOOK_PG_URL=postgres://postgres:prueba@127.0.0.1:55432/postgres
+export OMNIWEBHOOK_FIRESTORE_EMULATOR=127.0.0.1:58080
+
+pnpm test:integration                                # en la raíz: TypeScript
+cd python && uv run pytest -m integration --no-cov   # Python
+```
+
 ## Vectores de conformidad
 
 Los archivos de `spec/vectors/` los genera `tools/gen_vectors.py`; no se editan a mano.

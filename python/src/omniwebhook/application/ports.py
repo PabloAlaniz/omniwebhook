@@ -1,0 +1,180 @@
+"""Los puertos: lo que los casos de uso necesitan del mundo exterior.
+
+Lo que hace entrada/salida tiene dos variantes, una sincrónica y otra asincrónica con el
+prefijo `Async`. Verificar y firmar son sólo cálculo, así que tienen una sola.
+"""
+
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from typing import Literal, Protocol
+
+from omniwebhook.domain.delivery import DeliveryClass, DeliveryState
+from omniwebhook.domain.destination import DestinationProblem
+from omniwebhook.domain.incoming_request import IncomingRequest
+from omniwebhook.domain.message import OutgoingMessage, Signing
+from omniwebhook.domain.reservation import ClaimOutcome
+from omniwebhook.domain.verification import Verification
+
+
+class Verifier(Protocol):
+    """Comprueba el origen de un pedido entrante. Cada esquema de firma es un adaptador de este puerto."""
+
+    def verify(self, request: IncomingRequest) -> Verification: ...
+
+
+class MessageSigner(Protocol):
+    """Firma un mensaje a emitir. El formato estándar es un adaptador de este puerto."""
+
+    def sign(self, message: OutgoingMessage) -> Signing: ...
+
+
+class Clock(Protocol):
+    """El tiempo actual, en segundos desde la época Unix."""
+
+    def now(self) -> int: ...
+
+
+class TokenGenerator(Protocol):
+    """Genera el identificador con el que un proceso marca sus reservas."""
+
+    def next(self) -> str: ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ClaimRequest:
+    key: str
+    token: str
+    now: int
+    lease_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompleteRequest:
+    key: str
+    token: str
+    now: int
+    retention_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ReleaseRequest:
+    key: str
+    token: str
+
+
+class IdempotencyStore(Protocol):
+    """El almacén de reservas (sección 6.1). Las tres operaciones tienen que ser atómicas.
+
+    `complete` y `release` devuelven si se aplicaron: sólo si la clave sigue reservada con
+    el mismo token.
+    """
+
+    def claim(self, request: ClaimRequest) -> ClaimOutcome: ...
+
+    def complete(self, request: CompleteRequest) -> bool: ...
+
+    def release(self, request: ReleaseRequest) -> bool: ...
+
+
+class AsyncIdempotencyStore(Protocol):
+    """La variante asincrónica de `IdempotencyStore`."""
+
+    async def claim(self, request: ClaimRequest) -> ClaimOutcome: ...
+
+    async def complete(self, request: CompleteRequest) -> bool: ...
+
+    async def release(self, request: ReleaseRequest) -> bool: ...
+
+
+class Timer(Protocol):
+    """El tiempo transcurrido, en milisegundos, para medir cuánto tardó un intento."""
+
+    def now_ms(self) -> int: ...
+
+
+class RandomSource(Protocol):
+    """Números en [0, 1) para la variación de los reintentos."""
+
+    def next(self) -> float: ...
+
+
+class DnsResolver(Protocol):
+    """Resuelve un nombre a direcciones IP.
+
+    Devuelve las direcciones del nombre; una lista vacía si el nombre no existe. Si la
+    resolución falla por otro motivo, lanza: el intento cuenta como un error de red.
+    """
+
+    def resolve(self, host: str) -> Sequence[str]: ...
+
+
+class AsyncDnsResolver(Protocol):
+    """La variante asincrónica de `DnsResolver`."""
+
+    async def resolve(self, host: str) -> Sequence[str]: ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TransportRequest:
+    url: str
+    address: str
+    """La dirección ya validada a la que hay que conectarse."""
+    headers: Mapping[str, str]
+    body: bytes
+    timeout_seconds: int
+
+
+@dataclass(frozen=True, slots=True)
+class TransportResponse:
+    status: int
+    retry_after: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TransportFailure:
+    failure: Literal["network", "timeout"]
+
+
+class HttpTransport(Protocol):
+    """Hace el POST de un intento. No sigue redirecciones."""
+
+    def post(self, request: TransportRequest) -> TransportResponse | TransportFailure: ...
+
+
+class AsyncHttpTransport(Protocol):
+    """La variante asincrónica de `HttpTransport`."""
+
+    async def post(self, request: TransportRequest) -> TransportResponse | TransportFailure: ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AttemptRecord:
+    """Lo que queda registrado de cada intento (sección 8.4). Nunca incluye la URL de destino."""
+
+    message_id: str
+    endpoint_id: str
+    attempt: int
+    """El número de intento. El primero es el 1."""
+    at: int
+    """Cuándo empezó el intento, en segundos."""
+    delivery_class: DeliveryClass
+    state: DeliveryState
+    status: int | None
+    """El estado HTTP, si hubo respuesta."""
+    problem: DestinationProblem | None
+    """Por qué la política de URLs rechazó el intento, si lo rechazó."""
+    duration_ms: int
+    next_at: int | None
+    """Cuándo corresponde el próximo intento; `None` si no hay más."""
+
+
+class DeliveryLedger(Protocol):
+    """El registro de entregas."""
+
+    def record(self, attempt: AttemptRecord) -> None: ...
+
+
+class AsyncDeliveryLedger(Protocol):
+    """La variante asincrónica de `DeliveryLedger`."""
+
+    async def record(self, attempt: AttemptRecord) -> None: ...
