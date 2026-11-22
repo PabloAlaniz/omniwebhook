@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Los vectores se comparan byte a byte con lo que genera tools/gen_vectors.py.
+spec/vectors/** text eol=lf

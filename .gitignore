@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+.coverage
+htmlcov/
+.env
+.env.*
+ts/LICENSE

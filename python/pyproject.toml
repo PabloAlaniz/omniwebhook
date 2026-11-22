@@ -1,0 +1,100 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omniwebhook"
+version = "0.0.0"
+description = "Webhooks firmados que se emiten y se reciben igual en cualquier stack: verificación, frescura, idempotencia y reintentos con las mismas reglas."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Pablo Alaniz" }]
+keywords = ["webhooks", "webhook", "signature", "hmac", "idempotency", "retries", "standard-webhooks", "mercadopago"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Natural Language :: Spanish",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/PabloAlaniz/omniwebhook"
+Repository = "https://github.com/PabloAlaniz/omniwebhook"
+Specification = "https://github.com/PabloAlaniz/omniwebhook/blob/main/spec/SPEC.md"
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.17",
+    "jsonschema>=4.23",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-cov>=7.0",
+    "ruff>=0.8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/omniwebhook"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov --cov-report=term-missing:skip-covered"
+
+[tool.coverage.run]
+source_pkgs = ["omniwebhook"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+exclude_also = ["if TYPE_CHECKING:", "@overload", "raise NotImplementedError"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "S", "PT", "C4", "TID"]
+# El texto es español: las tildes y la ñ en docstrings y mensajes son a propósito.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+# Reglas de arquitectura. Las dependencias apuntan hacia adentro:
+#   entrypoints → adapters → application → domain
+# Ver docs/adr/0001-arquitectura-en-capas.md y docs/adr/0002-formato-de-salida-estandar.md.
+[tool.importlinter]
+root_package = "omniwebhook"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Las capas dependen hacia adentro"
+type = "layers"
+layers = [
+    "omniwebhook.entrypoints",
+    "omniwebhook.adapters",
+    "omniwebhook.application",
+    "omniwebhook.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "La librería del formato estándar no sale de su adaptador"
+type = "forbidden"
+source_modules = [
+    "omniwebhook.domain",
+    "omniwebhook.application",
+    "omniwebhook.entrypoints",
+]
+forbidden_modules = ["standardwebhooks"]

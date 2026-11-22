@@ -1,0 +1,63 @@
+# Cómo contribuir
+
+## Antes de escribir código
+
+1. **La especificación manda.** Un cambio de comportamiento empieza en [`spec/SPEC.md`](spec/SPEC.md)
+   y en los vectores, y recién después llega a los paquetes.
+2. **Primero el test.** Cada regla entra con el vector o el test que la demuestra.
+3. **Las dependencias apuntan hacia adentro.** Leé
+   [la decisión 0001](docs/adr/0001-arquitectura-en-capas.md) antes de agregar un módulo.
+4. **Una decisión de diseño nueva es un archivo nuevo** en [`docs/adr/`](docs/adr/).
+
+## Preparar el entorno
+
+Hace falta Node 20 o superior con pnpm, y Python 3.11 o superior con [uv](https://docs.astral.sh/uv/).
+
+```bash
+pnpm install
+cd python && uv sync
+```
+
+## Qué correr antes de abrir un pull request
+
+```bash
+# En la raíz: vectores, estilo, tipos, arquitectura, tests y empaquetado de TypeScript.
+pnpm check
+
+# En python/: lo mismo para Python.
+uv run ruff format --check . ../tools
+uv run ruff check . ../tools
+uv run mypy
+uv run lint-imports
+uv run pytest
+```
+
+La integración continua corre exactamente esto.
+
+## Vectores de conformidad
+
+Los archivos de `spec/vectors/` los genera `tools/gen_vectors.py`; no se editan a mano.
+
+```bash
+python3 tools/gen_vectors.py           # regenera
+python3 tools/gen_vectors.py --check   # verifica que el repo esté en sincronía
+```
+
+El generador es una implementación aparte de la especificación y no importa ninguno de los
+paquetes. Los secretos que usa son sintéticos.
+
+## Agregar un esquema de firma
+
+1. Describí el formato en la especificación, citando la documentación pública del emisor.
+2. Agregá sus vectores al generador, incluidos los casos de borde.
+3. Escribí el adaptador en `adapters/schemes/` de cada paquete. No hace falta tocar el núcleo.
+
+## Mensajes de commit
+
+Se usan [Conventional Commits](https://www.conventionalcommits.org/es/). El CHANGELOG y las
+versiones salen de ahí.
+
+## Qué no va en el repositorio
+
+- Secretos reales, ni siquiera vencidos.
+- URLs o datos de sistemas reales en tests, vectores o ejemplos.

@@ -1,0 +1,72 @@
+{
+  "name": "omniwebhook",
+  "version": "0.0.0",
+  "description": "Webhooks firmados que se emiten y se reciben igual en cualquier stack: verificación, frescura, idempotencia y reintentos con las mismas reglas.",
+  "license": "MIT",
+  "author": "Pablo Alaniz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PabloAlaniz/omniwebhook.git",
+    "directory": "ts"
+  },
+  "homepage": "https://github.com/PabloAlaniz/omniwebhook#readme",
+  "bugs": "https://github.com/PabloAlaniz/omniwebhook/issues",
+  "keywords": [
+    "webhooks",
+    "webhook",
+    "signature",
+    "hmac",
+    "idempotency",
+    "retries",
+    "standard-webhooks",
+    "mercadopago"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "test:architecture": "depcruise src --config .dependency-cruiser.cjs",
+    "check:package": "pnpm build && publint --strict && attw --pack . --profile node16",
+    "prepack": "cp ../LICENSE ./LICENSE && pnpm build",
+    "postpack": "rm -f LICENSE"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "^2.6.8",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.1.1",
+    "dependency-cruiser": "^18.8.0",
+    "publint": "^0.3.25",
+    "tsup": "^9.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.1.1"
+  }
+}
