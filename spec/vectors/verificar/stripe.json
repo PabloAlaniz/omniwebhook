@@ -281,6 +281,140 @@
    }
   },
   {
+   "name": "cuerpo con marca de orden de bytes: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=685a3703225fdd2cca1471cd31a6830be5dfed36b6bc1e136ed638b130c7c39c"
+     ]
+    ],
+    "query": [],
+    "body": "﻿{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:c225ae0ed97ebac3e36d99b86833bf41c2b058a1cf0fe206d4ca64fea74049ee",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo con NaN: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=1afb3036be5ea37807540d536c0da1623c30da468462e8d50cb3e806aa82ca08"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"monto\":NaN}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:b6e5e4c3342030a5bb461af4368cb05e69aa43485b5b80db017c4711feb99e86",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "tabulaciones alrededor de los pares",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000\t,\tv1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "tabulaciones alrededor de la cabecera",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "\tt=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240\t"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "un espacio de no separación es parte de la firma",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240 "
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un espacio de no separación es parte de la clave del par",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      " t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
    "name": "en el borde de la tolerancia",
    "scheme": "stripe",
    "secrets": [

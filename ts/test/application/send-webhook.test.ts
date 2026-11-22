@@ -96,17 +96,19 @@ describe('SendWebhook', () => {
 
   it('las cabeceras extra no pisan la firma ni el tipo de contenido', async () => {
     const { execute, post } = build({
-      headers: { 'x-origen': 'tienda', 'webhook-id': 'falso', 'content-type': 'text/plain' },
+      headers: { 'X-Origen': 'tienda', 'Webhook-Id': 'falso', 'Content-Type': 'text/plain' },
       contentType: 'application/cloudevents+json',
     });
 
     await execute();
 
-    expect(sent(post).headers).toMatchObject({
+    const { headers } = sent(post);
+    expect(headers).toMatchObject({
       'x-origen': 'tienda',
       'webhook-id': 'msg_1',
       'content-type': 'application/cloudevents+json',
     });
+    expect(Object.keys(headers)).toHaveLength(5);
   });
 
   it('un fallo que se puede reintentar deja la entrega pendiente con su próximo intento', async () => {

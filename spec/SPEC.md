@@ -33,8 +33,11 @@ Un pedido entrante tiene:
 - `query`: los parámetros de la URL. Un nombre puede traer más de un valor.
 - `body`: el cuerpo crudo, en bytes.
 
-Un valor de cabecera se usa sin espacios al principio ni al final. Un valor vacío después de
-recortarlo equivale a que la cabecera no esté.
+Un valor de cabecera o de parámetro se usa sin espacios al principio ni al final. Un valor vacío
+después de recortarlo equivale a que el dato no esté.
+
+En todo este documento, «espacio» es el carácter de espacio (U+0020) o la tabulación (U+0009), y
+nada más. Cualquier otro carácter, aunque se vea en blanco, es parte del valor.
 
 ## 4. Resultado de la verificación
 
@@ -148,6 +151,9 @@ Este es además el esquema con el que se firma lo que se emite (sección 7).
 - Marca de tiempo: `t`, en segundos.
 - Clave del evento: `stripe:<id>`, donde `id` es el campo `id` del cuerpo si el cuerpo es un objeto
   JSON con un `id` de texto no vacío. Si no, la huella del cuerpo.
+  El cuerpo se interpreta como JSON estricto en UTF-8: con una marca de orden de bytes al
+  principio, o con valores que no son JSON como `NaN` o `Infinity`, se usa la huella. Con un
+  anidamiento tan profundo que la plataforma no lo puede interpretar, también.
 
 ### 5.3. `mercadopago`
 
@@ -272,6 +278,8 @@ Un mensaje tiene `id`, `timestamp` (segundos) y `payload` (bytes).
 - Con más de un secreto se envía una firma por secreto, separadas por un espacio y en el orden
   de la lista.
 - El cuerpo enviado DEBE ser, byte a byte, el `payload` que se firmó.
+- Las cabeceras que agrega quien integra NO DEBEN reemplazar ni duplicar las de la firma ni la del
+  tipo de contenido. Los nombres se comparan sin distinguir mayúsculas.
 
 ## 8. Emitir: entregar
 
@@ -299,6 +307,9 @@ Rangos bloqueados:
 | `224.0.0.0/4`, `240.0.0.0/4` | `fe80::/10`, `ff00::/8` |
 
 Una dirección IPv6 que envuelve una IPv4 (`::ffff:0:0/96`) se evalúa por la IPv4 que contiene.
+
+La URL se interpreta con el analizador de URLs de cada plataforma, que es el mismo que usa después
+para conectarse. Los vectores fijan los casos que todos los paquetes resuelven igual.
 
 El resultado de la política es `allowed` o el primer motivo de rechazo, en este orden:
 

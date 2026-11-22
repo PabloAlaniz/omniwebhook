@@ -1,3 +1,4 @@
+import { trim } from './blanks';
 import type { Field } from './incoming-request';
 
 /**
@@ -12,8 +13,8 @@ export function parsePairs(
   for (const piece of text.split(',')) {
     const cut = piece.indexOf('=');
     if (cut === -1) continue;
-    const key = piece.slice(0, cut).trim();
-    const value = piece.slice(cut + 1).trim();
+    const key = trim(piece.slice(0, cut));
+    const value = trim(piece.slice(cut + 1));
     if (key === '' || value === '') continue;
     pairs.push([options.lowercaseKeys ? key.toLowerCase() : key, value]);
   }

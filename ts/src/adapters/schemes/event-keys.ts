@@ -18,7 +18,8 @@ export async function jsonIdKey(scheme: string, body: Uint8Array): Promise<strin
 function jsonId(body: Uint8Array): string | null {
   let data: unknown;
   try {
-    data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
+    // Con `ignoreBOM` la marca de orden de bytes queda en el texto y deja de ser JSON.
+    data = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(body));
   } catch {
     return null;
   }

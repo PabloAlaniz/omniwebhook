@@ -78,8 +78,11 @@ def std_key(secret: str) -> bytes | None:
     return base64.b64decode(rest)
 
 
+BLANKS = " \t"
+
+
 def values(pairs: Pairs, name: str) -> list[str]:
-    found = [value.strip() for key, value in pairs if key.lower() == name.lower()]
+    found = [value.strip(BLANKS) for key, value in pairs if key.lower() == name.lower()]
     return [value for value in found if value]
 
 
@@ -87,7 +90,7 @@ def split_pairs(text: str, lower: bool = False) -> list[tuple[str, str]]:
     out = []
     for piece in text.split(","):
         key, sep, value = piece.partition("=")
-        key, value = key.strip(), value.strip()
+        key, value = key.strip(BLANKS), value.strip(BLANKS)
         if sep and key and value:
             out.append((key.lower() if lower else key, value))
     return out
@@ -97,9 +100,13 @@ def fingerprint(scheme: str, body: bytes) -> str:
     return f"{scheme}:sha256:{hashlib.sha256(body).hexdigest()}"
 
 
+def not_json(constant: str) -> None:
+    raise ValueError(constant)
+
+
 def json_id(scheme: str, body: bytes) -> str:
     try:
-        data = json.loads(body.decode("utf-8"))
+        data = json.loads(body.decode("utf-8"), parse_constant=not_json)
     except (UnicodeDecodeError, ValueError):
         return fingerprint(scheme, body)
     if type(data) is dict and type(data.get("id")) is str and data["id"]:
@@ -314,6 +321,16 @@ def verificar_standard() -> Vector:
             ),
             case("cuerpo con caracteres fuera de ASCII", "ok", std_headers(body=unicode_body), unicode_body),
             case("cuerpo vacío", "ok", std_headers(body=""), ""),
+            case(
+                "un espacio de no separación es parte del identificador",
+                "ok",
+                std_headers(ident="\u00a0msg_2aXk"),
+            ),
+            case(
+                "espacios y tabulaciones alrededor de un valor se recortan",
+                "ok",
+                swap(good, "webhook-id", " \tmsg_2aXk\t "),
+            ),
             case("secreto sin el prefijo", "ok", secrets=[STD_SECRET.removeprefix("whsec_")]),
             case("rotación: coincide el segundo secreto", "ok", secrets=[STD_OTHER, STD_SECRET]),
             case(
@@ -418,6 +435,8 @@ def verificar_stripe() -> Vector:
     plain = "no es json"
     no_id = '{"type":"invoice.paid"}'
     num_id = '{"id":7}'
+    with_bom = "\ufeff" + STRIPE_BODY
+    with_nan = '{"id":"evt_sintetico_001","monto":NaN}'
     return verify_file(
         "stripe",
         [
@@ -438,6 +457,17 @@ def verificar_stripe() -> Vector:
                 '[{"id":"x"}]',
             ),
             case("cuerpo JSON nulo: la clave es la huella", "ok", stripe_header(body="null"), "null"),
+            case(
+                "cuerpo con marca de orden de bytes: la clave es la huella",
+                "ok",
+                stripe_header(body=with_bom),
+                with_bom,
+            ),
+            case("cuerpo con NaN: la clave es la huella", "ok", stripe_header(body=with_nan), with_nan),
+            case("tabulaciones alrededor de los pares", "ok", good.replace(",", "\t,\t")),
+            case("tabulaciones alrededor de la cabecera", "ok", f"\t{good}\t"),
+            case("un espacio de no separación es parte de la firma", "invalid", f"{good}\u00a0"),
+            case("un espacio de no separación es parte de la clave del par", "malformed", f"\u00a0{good}"),
             case("en el borde de la tolerancia", "ok", stripe_header(ts=NOW - 300)),
             case("sin secretos", "unconfigured", secrets=[]),
             case("falta la cabecera", "missing", None),

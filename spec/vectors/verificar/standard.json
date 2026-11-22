@@ -128,6 +128,68 @@
    }
   },
   {
+   "name": "un espacio de no separación es parte del identificador",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      " msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,ODwAwGaGmasU9Qy4z/o7666ULaeSbopip//EadNgWvA="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard: msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "espacios y tabulaciones alrededor de un valor se recortan",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ],
+     [
+      "webhook-id",
+      " \tmsg_2aXk\t "
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
    "name": "secreto sin el prefijo",
    "scheme": "standard",
    "secrets": [

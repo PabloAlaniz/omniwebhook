@@ -63,8 +63,16 @@ interface Attempted {
  */
 export class SendWebhook {
   private readonly timeoutSeconds: number;
+  private readonly baseHeaders: Readonly<Record<string, string>>;
 
   constructor(private readonly deps: SendWebhookDependencies) {
+    // Los nombres van en minúsculas para que una cabecera extra no conviva con la firma.
+    this.baseHeaders = {
+      ...Object.fromEntries(
+        Object.entries(deps.headers ?? {}).map(([name, value]) => [name.toLowerCase(), value]),
+      ),
+      'content-type': deps.contentType ?? DEFAULT_CONTENT_TYPE,
+    };
     this.timeoutSeconds = positiveInteger(
       'timeoutSeconds',
       deps.timeoutSeconds ?? DEFAULT_TIMEOUT_SECONDS,
@@ -149,11 +157,7 @@ export class SendWebhook {
       const response = await transport.post({
         url: endpoint.url,
         address: selected.address,
-        headers: {
-          ...this.deps.headers,
-          'content-type': this.deps.contentType ?? DEFAULT_CONTENT_TYPE,
-          ...signing.headers,
-        },
+        headers: { ...this.baseHeaders, ...signing.headers },
         body: message.payload,
         timeoutSeconds: this.timeoutSeconds,
       });

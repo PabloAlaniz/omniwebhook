@@ -3,6 +3,8 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from omniwebhook.domain.blanks import trim
+
 Field = tuple[str, str]
 """Un par nombre-valor. Un mismo nombre puede aparecer en más de un par."""
 
@@ -23,5 +25,5 @@ def field_values(fields: Sequence[Field], name: str) -> list[str]:
     Un valor vacío equivale a que el campo no esté.
     """
     wanted = name.lower()
-    found = (value.strip() for candidate, value in fields if candidate.lower() == wanted)
+    found = (trim(value) for candidate, value in fields if candidate.lower() == wanted)
     return [value for value in found if value]

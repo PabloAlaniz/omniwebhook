@@ -1,3 +1,5 @@
+import { trim } from './blanks';
+
 /** Un par nombre-valor. Un mismo nombre puede aparecer en más de un par. */
 export type Field = readonly [name: string, value: string];
 
@@ -19,6 +21,6 @@ export function fieldValues(fields: readonly Field[], name: string): readonly st
   const wanted = name.toLowerCase();
   return fields
     .filter(([candidate]) => candidate.toLowerCase() === wanted)
-    .map(([, value]) => value.trim())
+    .map(([, value]) => trim(value))
     .filter((value) => value !== '');
 }
