@@ -237,6 +237,78 @@
    }
   },
   {
+   "name": "retry-after con un mes que no existe",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Tue, 14 Foo 2023 22:23:20 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con una fecha imposible",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Fri, 31 Feb 2024 10:00:00 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con una hora imposible",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Tue, 14 Nov 2023 25:00:00 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con el día en un dígito",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Tue, 4 Nov 2025 22:23:20 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con otra zona",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Tue, 14 Nov 2023 22:23:20 UTC",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 5,
+    "next_at": 1700000005
+   }
+  },
+  {
+   "name": "retry-after con fecha lejana: manda el tope",
+   "attempt": 1,
+   "now": 1700000000,
+   "random": 0.0,
+   "retry_after": "Thu, 14 Nov 2024 22:13:20 GMT",
+   "expected": {
+    "exhausted": false,
+    "delay_seconds": 86400,
+    "next_at": 1700086400
+   }
+  },
+  {
    "name": "retry-after con decimales se ignora",
    "attempt": 1,
    "now": 1700000000,

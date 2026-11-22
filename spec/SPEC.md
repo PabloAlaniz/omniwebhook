@@ -284,6 +284,8 @@ Antes de cada intento se valida la URL y las direcciones a las que resuelve.
 - Si el nombre es una dirección IP literal, se evalúa esa dirección y no se resuelve nada.
 - Si no, el nombre se resuelve a direcciones IP. Si alguna dirección está en un rango bloqueado,
   el intento se rechaza. Si no resuelve a ninguna, también.
+- Si la resolución falla, en vez de responder sin direcciones, el intento cuenta como un error de
+  red (sección 8.2): puede ser pasajero.
 - La conexión DEBE hacerse a una de las direcciones validadas, no a una resolución nueva.
 - Las redirecciones no se siguen.
 
@@ -353,7 +355,12 @@ clase del resultado, el estado HTTP si lo hubo, la duración y cuándo correspon
 
 El estado de una entrega es `pending`, `delivered`, `rejected`, `blocked`, `gone` o `exhausted`.
 
-Reenviar a mano una entrega usa el mismo `id` del mensaje, para que el receptor pueda reconocerla.
+Después de cada intento, el estado sale de la clase del resultado: `delivered`, `rejected`,
+`blocked` y `gone` pasan tal cual; `retryable` queda `pending` si hay un próximo intento y
+`exhausted` si no.
+
+Reenviar a mano una entrega es enviarla de nuevo desde el intento 1 con el mismo `id` del mensaje,
+para que el receptor pueda reconocerla.
 
 El paquete calcula cuándo corresponde el próximo intento pero no lo ejecuta: programarlo es
 responsabilidad de quien integra.

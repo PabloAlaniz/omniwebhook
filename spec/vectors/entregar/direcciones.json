@@ -270,6 +270,41 @@
    }
   },
   {
+   "name": "«1:2:3:4:5:6:7::»",
+   "address": "1:2:3:4:5:6:7::",
+   "expected": {
+    "blocked": false
+   }
+  },
+  {
+   "name": "«::2:3:4:5:6:7:8»",
+   "address": "::2:3:4:5:6:7:8",
+   "expected": {
+    "blocked": false
+   }
+  },
+  {
+   "name": "«1:2:3:4:5:6:1.2.3.4»",
+   "address": "1:2:3:4:5:6:1.2.3.4",
+   "expected": {
+    "blocked": false
+   }
+  },
+  {
+   "name": "«1::8»",
+   "address": "1::8",
+   "expected": {
+    "blocked": false
+   }
+  },
+  {
+   "name": "«2001:DB7::1»",
+   "address": "2001:DB7::1",
+   "expected": {
+    "blocked": false
+   }
+  },
+  {
    "name": "«0.0.0.0»",
    "address": "0.0.0.0",
    "expected": {
@@ -636,6 +671,97 @@
   {
    "name": "« 8.8.8.8»",
    "address": " 8.8.8.8",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«01.2.3.4»",
+   "address": "01.2.3.4",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«1.2.3.4::»",
+   "address": "1.2.3.4::",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«::1.2.3.4:5»",
+   "address": "::1.2.3.4:5",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«:::»",
+   "address": ":::",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«1::2::3»",
+   "address": "1::2::3",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«1:2:3:4:5:6:7:8:9»",
+   "address": "1:2:3:4:5:6:7:8:9",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«1:2:3:4:5:6:7:8::»",
+   "address": "1:2:3:4:5:6:7:8::",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«12345::»",
+   "address": "12345::",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«::1.2.3»",
+   "address": "::1.2.3",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«1:2:3:4:5:6:7»",
+   "address": "1:2:3:4:5:6:7",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«fe80::1%eth0»",
+   "address": "fe80::1%eth0",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«1.2.3.-4»",
+   "address": "1.2.3.-4",
+   "expected": {
+    "blocked": true
+   }
+  },
+  {
+   "name": "«::g»",
+   "address": "::g",
    "expected": {
     "blocked": true
    }

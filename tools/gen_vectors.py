@@ -1036,6 +1036,17 @@ def entregar_direcciones() -> Vector:
         "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff ff00:: ff02::1"
     )
     junk = ["", "ejemplo.test", "1.2.3", "1.2.3.4.5", "256.1.1.1", "1.2.3.4/24", "gggg::1", " 8.8.8.8"]
+    junk += [
+        "01.2.3.4",
+        "1.2.3.4::",
+        "::1.2.3.4:5",
+        ":::",
+        "1::2::3",
+        "1:2:3:4:5:6:7:8:9",
+        "1:2:3:4:5:6:7:8::",
+    ]
+    junk += ["12345::", "::1.2.3", "1:2:3:4:5:6:7", "fe80::1%eth0", "1.2.3.-4", "::g"]
+    public += " 1:2:3:4:5:6:7:: ::2:3:4:5:6:7:8 1:2:3:4:5:6:1.2.3.4 1::8 2001:DB7::1"
     cases = []
     for text, want in [
         *((a, False) for a in public.split()),
@@ -1075,6 +1086,8 @@ def entregar_url() -> Vector:
         case("texto que no es una URL", "esto no es una url", "invalid_url"),
         case("texto vacío", "", "invalid_url"),
         case("URL relativa", "/entrada", "invalid_url"),
+        case("esquema sin host", "mailto:alguien@ejemplo.test", "invalid_url"),
+        case("archivo local", "file:///etc/hosts", "invalid_url"),
         case("http sin permiso", "http://hooks.ejemplo.test/entrada", "scheme", ok),
         case("otro esquema", "ftp://hooks.ejemplo.test/entrada", "scheme", ok),
         case(
@@ -1198,6 +1211,7 @@ def entregar_clasificacion() -> Vector:
     return {"spec": SPEC, "id": "entregar/clasificacion", "kind": "delivery-class", "cases": cases}
 
 
+HTTP_DATE = re.compile(r"[A-Z][a-z]{2}, [0-9]{2} [A-Z][a-z]{2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT")
 DEFAULT_SCHEDULE = [5, 300, 1800, 7200, 18000, 36000, 50400, 72000, 86400]
 
 
@@ -1206,6 +1220,8 @@ def retry_after_seconds(text: str | None, now: int) -> int | None:
         return None
     if re.fullmatch(r"[0-9]+", text):
         return int(text)
+    if not HTTP_DATE.fullmatch(text):
+        return None
     try:
         delta = timegm(strptime(text, "%a, %d %b %Y %H:%M:%S GMT")) - now
     except ValueError:
@@ -1251,6 +1267,12 @@ def entregar_reintentos() -> Vector:
         case("retry-after como fecha", 1, retry_after="Tue, 14 Nov 2023 22:23:20 GMT"),
         case("retry-after como fecha ya pasada", 1, retry_after="Tue, 14 Nov 2023 22:00:00 GMT"),
         case("retry-after que no se entiende", 1, retry_after="pronto"),
+        case("retry-after con un mes que no existe", 1, retry_after="Tue, 14 Foo 2023 22:23:20 GMT"),
+        case("retry-after con una fecha imposible", 1, retry_after="Fri, 31 Feb 2024 10:00:00 GMT"),
+        case("retry-after con una hora imposible", 1, retry_after="Tue, 14 Nov 2023 25:00:00 GMT"),
+        case("retry-after con el día en un dígito", 1, retry_after="Tue, 4 Nov 2025 22:23:20 GMT"),
+        case("retry-after con otra zona", 1, retry_after="Tue, 14 Nov 2023 22:23:20 UTC"),
+        case("retry-after con fecha lejana: manda el tope", 1, retry_after="Thu, 14 Nov 2024 22:13:20 GMT"),
         case("retry-after con decimales se ignora", 1, retry_after="1.5"),
         case("retry-after negativo se ignora", 1, retry_after="-5"),
         case("retry-after por encima del tope", 1, retry_after="999999"),

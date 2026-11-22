@@ -1,10 +1,18 @@
+import type { DeliveryClass, DeliveryState } from '../domain/delivery';
+import type { DestinationProblem } from '../domain/destination';
 import type { IncomingRequest } from '../domain/incoming-request';
+import type { OutgoingMessage, Signing } from '../domain/message';
 import type { ClaimOutcome } from '../domain/reservation';
 import type { Verification } from '../domain/verification';
 
 /** Comprueba el origen de un pedido entrante. Cada esquema de firma es un adaptador de este puerto. */
 export interface Verifier {
   verify(request: IncomingRequest): Promise<Verification>;
+}
+
+/** Firma un mensaje a emitir. El formato estándar es un adaptador de este puerto. */
+export interface MessageSigner {
+  sign(message: OutgoingMessage): Promise<Signing>;
 }
 
 /** El tiempo actual, en segundos desde la época Unix. */
@@ -43,4 +51,65 @@ export interface IdempotencyStore {
   complete(request: CompleteRequest): Promise<boolean>;
   /** Devuelve si se aplicó: sólo si la clave sigue reservada con el mismo token. */
   release(request: ReleaseRequest): Promise<boolean>;
+}
+
+/** El tiempo transcurrido, en milisegundos, para medir cuánto tardó un intento. */
+export interface Timer {
+  nowMs(): number;
+}
+
+/** Números en [0, 1) para la variación de los reintentos. */
+export interface RandomSource {
+  next(): number;
+}
+
+/** Resuelve un nombre a direcciones IP. */
+export interface DnsResolver {
+  /**
+   * Devuelve las direcciones del nombre; una lista vacía si el nombre no existe. Si la
+   * resolución falla por otro motivo, lanza: el intento cuenta como un error de red.
+   */
+  resolve(host: string): Promise<readonly string[]>;
+}
+
+export interface TransportRequest {
+  readonly url: string;
+  /** La dirección ya validada a la que hay que conectarse. */
+  readonly address: string;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly body: Uint8Array;
+  readonly timeoutSeconds: number;
+}
+
+export type TransportResponse =
+  | { readonly status: number; readonly retryAfter: string | null }
+  | { readonly failure: 'network' | 'timeout' };
+
+/** Hace el POST de un intento. No sigue redirecciones. */
+export interface HttpTransport {
+  post(request: TransportRequest): Promise<TransportResponse>;
+}
+
+/** Lo que queda registrado de cada intento (sección 8.4). Nunca incluye la URL de destino. */
+export interface AttemptRecord {
+  readonly messageId: string;
+  readonly endpointId: string;
+  /** El número de intento. El primero es el 1. */
+  readonly attempt: number;
+  /** Cuándo empezó el intento, en segundos. */
+  readonly at: number;
+  readonly deliveryClass: DeliveryClass;
+  readonly state: DeliveryState;
+  /** El estado HTTP, si hubo respuesta. */
+  readonly status: number | null;
+  /** Por qué la política de URLs rechazó el intento, si lo rechazó. */
+  readonly problem: DestinationProblem | null;
+  readonly durationMs: number;
+  /** Cuándo corresponde el próximo intento; `null` si no hay más. */
+  readonly nextAt: number | null;
+}
+
+/** El registro de entregas. */
+export interface DeliveryLedger {
+  record(attempt: AttemptRecord): Promise<void>;
 }

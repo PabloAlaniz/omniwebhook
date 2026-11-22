@@ -7,3 +7,7 @@ export {
   type StandardSigner,
   standardScheme,
 } from './adapters/schemes/standard/index';
+export {
+  type StandardSignerConfig,
+  standardSigner,
+} from './adapters/schemes/standard/standard-signer';

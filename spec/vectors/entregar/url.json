@@ -94,6 +94,24 @@
    }
   },
   {
+   "name": "esquema sin host",
+   "url": "mailto:alguien@ejemplo.test",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "archivo local",
+   "url": "file:///etc/hosts",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
    "name": "http sin permiso",
    "url": "http://hooks.ejemplo.test/entrada",
    "allow_http": false,
