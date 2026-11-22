@@ -1,0 +1,169 @@
+// Agente de interoperabilidad del paquete de TypeScript.
+//
+// Lee un pedido JSON por línea de la entrada estándar y responde un JSON por línea. Usa el
+// paquete ya compilado (`pnpm build`), igual que lo usaría quien lo instala.
+import { createInterface } from 'node:readline';
+import pg from 'pg';
+import { Webhook } from 'standardwebhooks';
+import {
+  classifyDelivery,
+  creemScheme,
+  evaluateDestination,
+  githubScheme,
+  hmacBodyScheme,
+  httpStatusFor,
+  inspectDestination,
+  isBlockedAddress,
+  mercadoPagoScheme,
+  nextAttempt,
+  PostgresIdempotencyStore,
+  postgresStoreSchema,
+  stripeScheme,
+} from '../dist/index.js';
+import { standardScheme, standardSigner } from '../dist/standard.js';
+
+const bytes = (base64) => new Uint8Array(Buffer.from(base64, 'base64'));
+const defined = (entries) => Object.fromEntries(entries.filter(([, value]) => value !== undefined));
+
+function verifier({ scheme, secrets, now, options = {} }) {
+  const clock = { now: () => now };
+  const timed = defined([
+    ['secrets', secrets],
+    ['clock', clock],
+    ['toleranceSeconds', options.tolerance_seconds],
+  ]);
+  if (scheme === 'standard') return standardScheme(timed);
+  if (scheme === 'stripe') return stripeScheme(timed);
+  if (scheme === 'mercadopago') return mercadoPagoScheme(timed);
+  if (scheme === 'github') return githubScheme({ secrets });
+  if (scheme === 'creem') return creemScheme({ secrets });
+  if (scheme === 'hmac-body') {
+    return hmacBodyScheme(
+      defined([
+        ['secrets', secrets],
+        ['header', options.header],
+        ['prefix', options.prefix],
+        ['encoding', options.encoding],
+        ['name', options.name],
+        ['idHeader', options.id_header],
+      ]),
+    );
+  }
+  throw new Error(`esquema desconocido: ${scheme}`);
+}
+
+let pool = null;
+let store = null;
+
+const commands = {
+  async verify(input) {
+    const { headers, query, body } = input.request;
+    const result = await verifier(input).verify({ headers, query, body: bytes(body) });
+    return result.outcome === 'ok'
+      ? { outcome: 'ok', event_key: result.eventKey, timestamp: result.timestamp }
+      : { outcome: result.outcome };
+  },
+  async sign({ secrets, id, timestamp, payload }) {
+    return standardSigner({ secrets }).sign({ id, timestamp, payload: bytes(payload) });
+  },
+  // Lo que firmó el otro paquete, verificado con la librería de referencia del formato.
+  async reference_verify({ secret, headers, body }) {
+    try {
+      new Webhook(secret).verify(Buffer.from(body, 'base64'), headers, { jsonParse: false });
+      return { valid: true };
+    } catch {
+      return { valid: false };
+    }
+  },
+  async address({ address }) {
+    return { blocked: isBlockedAddress(address) };
+  },
+  async url({ url, allow_http, resolved }) {
+    const result = evaluateDestination(url, { allowHttp: allow_http, resolved });
+    const inspected = inspectDestination(url, { allowHttp: allow_http });
+    if (typeof inspected === 'string') return { result };
+    // Lo que entiende el analizador de la plataforma, que es el que usa el transporte.
+    let platform = null;
+    try {
+      const parsed = new URL(url);
+      platform = {
+        host: parsed.hostname.replace(/^\[|\]$/g, ''),
+        port: parsed.port === '' ? null : Number(parsed.port),
+        scheme: parsed.protocol,
+      };
+    } catch {}
+    return { result, host: inspected.host, literal: inspected.literalAddress, platform };
+  },
+  async classify({ status, failure }) {
+    return { class: classifyDelivery(status === null ? { failure } : { status }) };
+  },
+  async status({ outcome }) {
+    return { status: httpStatusFor(outcome) };
+  },
+  async retry(input) {
+    const policy = defined([
+      ['schedule', input.schedule],
+      ['maxDelaySeconds', input.max_delay_seconds],
+      ['jitterRatio', input.jitter_ratio],
+    ]);
+    const next = nextAttempt({
+      attempt: input.attempt,
+      now: input.now,
+      random: input.random,
+      retryAfter: input.retry_after,
+      policy,
+    });
+    return next.exhausted
+      ? { exhausted: true }
+      : { exhausted: false, delay_seconds: next.delaySeconds, next_at: next.nextAt };
+  },
+  async store_open({ url, table, create }) {
+    pool = new pg.Pool({ connectionString: url });
+    if (create) {
+      await pool.query(`DROP TABLE IF EXISTS ${table}`);
+      await pool.query(postgresStoreSchema(table));
+    }
+    store = new PostgresIdempotencyStore(pool, { table });
+    return { ready: true };
+  },
+  async store_step(step) {
+    if (step.op === 'claim') {
+      return {
+        result: await store.claim({
+          key: step.key,
+          token: step.token,
+          now: step.now,
+          leaseSeconds: step.lease_seconds,
+        }),
+      };
+    }
+    if (step.op === 'complete') {
+      return {
+        result: await store.complete({
+          key: step.key,
+          token: step.token,
+          now: step.now,
+          retentionSeconds: step.retention_seconds,
+        }),
+      };
+    }
+    return { result: await store.release({ key: step.key, token: step.token }) };
+  },
+  async store_close({ table, drop }) {
+    if (drop) await pool.query(`DROP TABLE IF EXISTS ${table}`);
+    await pool.end();
+    return { closed: true };
+  },
+};
+
+for await (const line of createInterface({ input: process.stdin })) {
+  if (line.trim() === '') continue;
+  let reply;
+  try {
+    const { command, ...input } = JSON.parse(line);
+    reply = await commands[command](input);
+  } catch (error) {
+    reply = { crashed: String(error) };
+  }
+  process.stdout.write(`${JSON.stringify(reply)}\n`);
+}

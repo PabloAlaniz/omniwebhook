@@ -67,6 +67,167 @@
    }
   },
   {
+   "name": "IPv6 literal con puerto",
+   "url": "https://[2606:4700:4700::1111]:8443/entrada",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "IPv6 literal en mayúsculas",
+   "url": "https://[2606:4700:4700::ABCD]/",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "sin ruta",
+   "url": "https://hooks.ejemplo.test",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "sólo consulta",
+   "url": "https://hooks.ejemplo.test?canal=1",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "sólo fragmento",
+   "url": "https://hooks.ejemplo.test#parte",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "esquema y nombre en mayúsculas",
+   "url": "HTTPS://Hooks.Ejemplo.TEST/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "nombre con punto final",
+   "url": "https://hooks.ejemplo.test./entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "nombre con guion bajo y guiones",
+   "url": "https://mi_servicio.sub-dominio.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "nombre internacionalizado en su forma ASCII",
+   "url": "https://xn--maana-pta.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "etiqueta que empieza con dígitos",
+   "url": "https://1a.2b.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "puerto cero",
+   "url": "https://hooks.ejemplo.test:0/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "puerto máximo",
+   "url": "https://hooks.ejemplo.test:65535/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "ruta con caracteres fuera de ASCII",
+   "url": "https://hooks.ejemplo.test/señal?año=1",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "arroba en la ruta",
+   "url": "https://hooks.ejemplo.test/a@b",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "dos puntos en la ruta",
+   "url": "https://hooks.ejemplo.test/a:b",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
    "name": "texto que no es una URL",
    "url": "esto no es una url",
    "allow_http": false,
@@ -94,12 +255,34 @@
    }
   },
   {
+   "name": "sin esquema",
+   "url": "//hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre solo",
+   "url": "hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
    "name": "esquema sin host",
    "url": "mailto:alguien@ejemplo.test",
    "allow_http": false,
    "resolved": [],
    "expected": {
-    "result": "invalid_url"
+    "result": "scheme"
    }
   },
   {
@@ -108,7 +291,7 @@
    "allow_http": false,
    "resolved": [],
    "expected": {
-    "result": "invalid_url"
+    "result": "scheme"
    }
   },
   {
@@ -145,6 +328,479 @@
    }
   },
   {
+   "name": "el esquema se revisa antes que la forma",
+   "url": "http:///entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "scheme"
+   }
+  },
+  {
+   "name": "https sin barras",
+   "url": "https:hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "https con una sola barra",
+   "url": "https:/hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "https con tres barras",
+   "url": "https:///hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "https sin host",
+   "url": "https://",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "https sin host y con puerto",
+   "url": "https://:443/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "barra invertida en lugar de barra",
+   "url": "https:\\\\hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "barra invertida antes de una arroba",
+   "url": "https://hooks.ejemplo.test\\@10.0.0.5/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "barra invertida en la ruta",
+   "url": "https://hooks.ejemplo.test/a\\b",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "espacio al principio",
+   "url": " https://hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "espacio al final",
+   "url": "https://hooks.ejemplo.test/entrada ",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "espacio en la ruta",
+   "url": "https://hooks.ejemplo.test/con espacio",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "tabulación en el nombre",
+   "url": "https://hooks.ejem\tplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "salto de línea en el nombre",
+   "url": "https://hooks.ejem\nplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "carácter nulo",
+   "url": "https://hooks.ejemplo.test/\u0000",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "carácter de borrado",
+   "url": "https://hooks.ejemplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 abreviada",
+   "url": "https://127.1/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 como un solo número",
+   "url": "https://2130706433/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 en hexadecimal",
+   "url": "https://0x7f000001/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 con una parte en hexadecimal",
+   "url": "https://0x7f.0.0.1/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 con ceros a la izquierda",
+   "url": "https://010.0.0.1/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 con una parte fuera de rango",
+   "url": "https://256.1.1.1/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 con cinco partes",
+   "url": "https://1.2.3.4.5/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre que termina en un número",
+   "url": "https://ejemplo.123/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre que termina en un número y un punto",
+   "url": "https://ejemplo.123./",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre que termina en 0x",
+   "url": "https://ejemplo.0x/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre con caracteres codificados",
+   "url": "https://%31%32%37.0.0.1/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre con caracteres fuera de ASCII",
+   "url": "https://mañana.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre con una etiqueta vacía",
+   "url": "https://hooks..test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "nombre que empieza con punto",
+   "url": "https://.hooks.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "etiqueta de más de 63 caracteres",
+   "url": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "etiqueta de 63 caracteres",
+   "url": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
+   "name": "nombre de más de 253 caracteres",
+   "url": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "puerto vacío",
+   "url": "https://hooks.ejemplo.test:/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "puerto fuera de rango",
+   "url": "https://hooks.ejemplo.test:65536/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "puerto con letras",
+   "url": "https://hooks.ejemplo.test:80a/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "puerto de seis dígitos",
+   "url": "https://hooks.ejemplo.test:000080/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv6 sin corchetes",
+   "url": "https://2606:4700:4700::1111/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv6 sin cerrar el corchete",
+   "url": "https://[2606:4700:4700::1111/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv6 con identificador de zona",
+   "url": "https://[fe80::1%25eth0]/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv6 inválida",
+   "url": "https://[2606:4700::gggg]/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "IPv4 entre corchetes",
+   "url": "https://[93.184.216.34]/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
+   "name": "texto después del corchete",
+   "url": "https://[2606:4700:4700::1111]x/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
+   }
+  },
+  {
    "name": "con usuario y contraseña",
    "url": "https://ana:clave@hooks.ejemplo.test/entrada",
    "allow_http": false,
@@ -164,6 +820,61 @@
    ],
    "expected": {
     "result": "credentials"
+   }
+  },
+  {
+   "name": "usuario vacío",
+   "url": "https://@hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "credentials"
+   }
+  },
+  {
+   "name": "usuario y contraseña vacíos",
+   "url": "https://:@hooks.ejemplo.test/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "credentials"
+   }
+  },
+  {
+   "name": "dos arrobas: el host es lo que sigue a la última",
+   "url": "https://a@10.0.0.5@hooks.ejemplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "credentials"
+   }
+  },
+  {
+   "name": "usuario que parece un host",
+   "url": "https://93.184.216.34@hooks.ejemplo.test/",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "credentials"
+   }
+  },
+  {
+   "name": "usuario y host sin forma",
+   "url": "https://ana@/entrada",
+   "allow_http": false,
+   "resolved": [
+    "93.184.216.34"
+   ],
+   "expected": {
+    "result": "invalid_url"
    }
   },
   {
@@ -259,11 +970,32 @@
    }
   },
   {
+   "name": "IPv6 literal que envuelve una IPv4 pública",
+   "url": "https://[::ffff:93.184.216.34]/",
+   "allow_http": false,
+   "resolved": [],
+   "expected": {
+    "result": "allowed"
+   }
+  },
+  {
    "name": "una dirección literal no usa la resolución",
    "url": "https://10.0.0.5/entrada",
    "allow_http": false,
    "resolved": [
     "93.184.216.34"
+   ],
+   "expected": {
+    "result": "blocked_address"
+   }
+  },
+  {
+   "name": "localhost resuelve a la máquina local",
+   "url": "https://localhost/",
+   "allow_http": false,
+   "resolved": [
+    "127.0.0.1",
+    "::1"
    ],
    "expected": {
     "result": "blocked_address"

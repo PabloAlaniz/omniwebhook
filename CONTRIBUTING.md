@@ -49,6 +49,21 @@ pnpm test:integration                                # en la raíz: TypeScript
 cd python && uv run pytest -m integration --no-cov   # Python
 ```
 
+## Interoperabilidad
+
+`tools/interop.py` levanta un agente por paquete y les manda los mismos pedidos: los vectores y
+miles de variaciones al azar. Comprueba que lo que firma uno lo verifica el otro, que los dos
+responden lo mismo ante cualquier pedido y, con `OMNIWEBHOOK_PG_URL`, que comparten una misma tabla
+de reservas.
+
+```bash
+pnpm test:interop                                   # compila TypeScript y corre la prueba
+python3 tools/interop.py --seed 7 --rounds 400      # otra semilla, más variaciones
+```
+
+Si aparece una diferencia, primero se decide en la especificación cuál es la respuesta correcta, se
+agrega el vector y recién después se corrigen los paquetes.
+
 ## Vectores de conformidad
 
 Los archivos de `spec/vectors/` los genera `tools/gen_vectors.py`; no se editan a mano.

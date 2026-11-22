@@ -106,7 +106,7 @@ def not_json(constant: str) -> None:
 
 def json_id(scheme: str, body: bytes) -> str:
     try:
-        data = json.loads(body.decode("utf-8"), parse_constant=not_json)
+        data = json.loads(body.decode("utf-8"), parse_constant=not_json, parse_int=float)
     except (UnicodeDecodeError, ValueError):
         return fingerprint(scheme, body)
     if type(data) is dict and type(data.get("id")) is str and data["id"]:
@@ -437,6 +437,7 @@ def verificar_stripe() -> Vector:
     num_id = '{"id":7}'
     with_bom = "\ufeff" + STRIPE_BODY
     with_nan = '{"id":"evt_sintetico_001","monto":NaN}'
+    with_big = '{"id":"evt_sintetico_001","monto":' + "9" * 5000 + "}"
     return verify_file(
         "stripe",
         [
@@ -464,6 +465,7 @@ def verificar_stripe() -> Vector:
                 with_bom,
             ),
             case("cuerpo con NaN: la clave es la huella", "ok", stripe_header(body=with_nan), with_nan),
+            case("cuerpo con un número enorme: se lee el id", "ok", stripe_header(body=with_big), with_big),
             case("tabulaciones alrededor de los pares", "ok", good.replace(",", "\t,\t")),
             case("tabulaciones alrededor de la cabecera", "ok", f"\t{good}\t"),
             case("un espacio de no separación es parte de la firma", "invalid", f"{good}\u00a0"),
@@ -1088,10 +1090,80 @@ def entregar_direcciones() -> Vector:
     return {"spec": SPEC, "id": "entregar/direcciones", "kind": "address", "cases": cases}
 
 
+FORBIDDEN_IN_URL = re.compile(r"[\x00-\x20\x7f\\]")
+URL_SCHEME = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*):")
+URL_REST = re.compile(r"//([^/?#]*)(?:[/?#].*)?", re.DOTALL)
+URL_LABEL = re.compile(r"[A-Za-z0-9_-]{1,63}")
+NUMERIC_LABEL = re.compile(r"[0-9]+|0[xX][0-9A-Fa-f]*")
+STRICT_IPV4 = re.compile(r"(?:0|[1-9][0-9]{0,2})(?:\.(?:0|[1-9][0-9]{0,2})){3}")
+
+
+def is_literal(host: str) -> bool:
+    """Si el host es una dirección literal con la forma que acepta la especificación."""
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return address.version == 6 or STRICT_IPV4.fullmatch(host) is not None
+
+
+def url_host(authority: str) -> str | None:
+    """El host de la parte que va entre `://` y el resto, o `None` si no tiene la forma."""
+    hostport = authority.rpartition("@")[2]
+    if hostport.startswith("["):
+        inner, closing, after = hostport[1:].partition("]")
+        port = after[1:] if after.startswith(":") else None
+        if (
+            not closing
+            or (after and port is None)
+            or "%" in inner
+            or ":" not in inner
+            or not is_literal(inner)
+        ):
+            return None
+        host = inner.lower()
+    else:
+        name, colon, after = hostport.partition(":")
+        port = after if colon else None
+        labels = name.removesuffix(".").split(".")
+        if len(name) > 253 or any(URL_LABEL.fullmatch(label) is None for label in labels):
+            return None
+        if not is_literal(name) and NUMERIC_LABEL.fullmatch(labels[-1]) is not None:
+            return None
+        host = name.lower()
+    if port is not None and (re.fullmatch(r"[0-9]{1,5}", port) is None or int(port) > 65535):
+        return None
+    return host
+
+
+def url_policy(url: str, allow_http: bool, resolved: list[str]) -> str:
+    scheme = URL_SCHEME.match(url)
+    if scheme is None or FORBIDDEN_IN_URL.search(url) is not None:
+        return "invalid_url"
+    name = scheme.group(1).lower()
+    if name != "https" and not (name == "http" and allow_http):
+        return "scheme"
+    rest = URL_REST.fullmatch(url[scheme.end() :])
+    host = None if rest is None else url_host(rest.group(1))
+    if rest is None or host is None:
+        return "invalid_url"
+    if "@" in rest.group(1):
+        return "credentials"
+    addresses = [host] if is_literal(host) else resolved
+    if not addresses:
+        return "unresolved"
+    return "blocked_address" if any(is_blocked(address) for address in addresses) else "allowed"
+
+
 def entregar_url() -> Vector:
+    names: set[str] = set()
+
     def case(
         name: str, url: str, expected: str, resolved: list[str] | None = None, allow_http: bool = False
     ) -> dict[str, Any]:
+        assert name not in names, name
+        names.add(name)
+        assert url_policy(url, allow_http, resolved or []) == expected, (name, url)
         return {
             "name": name,
             "url": url,
@@ -1101,6 +1173,7 @@ def entregar_url() -> Vector:
         }
 
     ok = ["93.184.216.34"]
+    host = "hooks.ejemplo.test"
     cases = [
         case("https con dirección pública", "https://hooks.ejemplo.test/entrada", "allowed", ok),
         case("https con puerto y consulta", "https://hooks.ejemplo.test:8443/entrada?canal=1", "allowed", ok),
@@ -1113,11 +1186,28 @@ def entregar_url() -> Vector:
         case("http con permiso expreso", "http://hooks.ejemplo.test/entrada", "allowed", ok, allow_http=True),
         case("dirección IPv4 literal pública", "https://93.184.216.34/entrada", "allowed"),
         case("dirección IPv6 literal pública", "https://[2606:4700:4700::1111]/entrada", "allowed"),
+        case("IPv6 literal con puerto", "https://[2606:4700:4700::1111]:8443/entrada", "allowed"),
+        case("IPv6 literal en mayúsculas", "https://[2606:4700:4700::ABCD]/", "allowed"),
+        case("sin ruta", f"https://{host}", "allowed", ok),
+        case("sólo consulta", f"https://{host}?canal=1", "allowed", ok),
+        case("sólo fragmento", f"https://{host}#parte", "allowed", ok),
+        case("esquema y nombre en mayúsculas", "HTTPS://Hooks.Ejemplo.TEST/entrada", "allowed", ok),
+        case("nombre con punto final", f"https://{host}./entrada", "allowed", ok),
+        case("nombre con guion bajo y guiones", "https://mi_servicio.sub-dominio.test/", "allowed", ok),
+        case("nombre internacionalizado en su forma ASCII", "https://xn--maana-pta.test/", "allowed", ok),
+        case("etiqueta que empieza con dígitos", "https://1a.2b.test/", "allowed", ok),
+        case("puerto cero", f"https://{host}:0/", "allowed", ok),
+        case("puerto máximo", f"https://{host}:65535/", "allowed", ok),
+        case("ruta con caracteres fuera de ASCII", f"https://{host}/señal?año=1", "allowed", ok),
+        case("arroba en la ruta", f"https://{host}/a@b", "allowed", ok),
+        case("dos puntos en la ruta", f"https://{host}/a:b", "allowed", ok),
         case("texto que no es una URL", "esto no es una url", "invalid_url"),
         case("texto vacío", "", "invalid_url"),
         case("URL relativa", "/entrada", "invalid_url"),
-        case("esquema sin host", "mailto:alguien@ejemplo.test", "invalid_url"),
-        case("archivo local", "file:///etc/hosts", "invalid_url"),
+        case("sin esquema", f"//{host}/entrada", "invalid_url", ok),
+        case("nombre solo", f"{host}/entrada", "invalid_url", ok),
+        case("esquema sin host", "mailto:alguien@ejemplo.test", "scheme"),
+        case("archivo local", "file:///etc/hosts", "scheme"),
         case("http sin permiso", "http://hooks.ejemplo.test/entrada", "scheme", ok),
         case("otro esquema", "ftp://hooks.ejemplo.test/entrada", "scheme", ok),
         case(
@@ -1127,8 +1217,66 @@ def entregar_url() -> Vector:
             ok,
             allow_http=True,
         ),
+        case("el esquema se revisa antes que la forma", "http:///entrada", "scheme", ok),
+        case("https sin barras", f"https:{host}/entrada", "invalid_url", ok),
+        case("https con una sola barra", f"https:/{host}/entrada", "invalid_url", ok),
+        case("https con tres barras", f"https:///{host}/entrada", "invalid_url", ok),
+        case("https sin host", "https://", "invalid_url", ok),
+        case("https sin host y con puerto", "https://:443/entrada", "invalid_url", ok),
+        case("barra invertida en lugar de barra", f"https:\\\\{host}/entrada", "invalid_url", ok),
+        case("barra invertida antes de una arroba", f"https://{host}\\@10.0.0.5/", "invalid_url", ok),
+        case("barra invertida en la ruta", f"https://{host}/a\\b", "invalid_url", ok),
+        case("espacio al principio", f" https://{host}/entrada", "invalid_url", ok),
+        case("espacio al final", f"https://{host}/entrada ", "invalid_url", ok),
+        case("espacio en la ruta", f"https://{host}/con espacio", "invalid_url", ok),
+        case("tabulación en el nombre", "https://hooks.ejem\tplo.test/", "invalid_url", ok),
+        case("salto de línea en el nombre", "https://hooks.ejem\nplo.test/", "invalid_url", ok),
+        case("carácter nulo", f"https://{host}/\x00", "invalid_url", ok),
+        case("carácter de borrado", f"https://{host}/\x7f", "invalid_url", ok),
+        case("IPv4 abreviada", "https://127.1/", "invalid_url", ok),
+        case("IPv4 como un solo número", "https://2130706433/", "invalid_url", ok),
+        case("IPv4 en hexadecimal", "https://0x7f000001/", "invalid_url", ok),
+        case("IPv4 con una parte en hexadecimal", "https://0x7f.0.0.1/", "invalid_url", ok),
+        case("IPv4 con ceros a la izquierda", "https://010.0.0.1/", "invalid_url", ok),
+        case("IPv4 con una parte fuera de rango", "https://256.1.1.1/", "invalid_url", ok),
+        case("IPv4 con cinco partes", "https://1.2.3.4.5/", "invalid_url", ok),
+        case("nombre que termina en un número", "https://ejemplo.123/", "invalid_url", ok),
+        case("nombre que termina en un número y un punto", "https://ejemplo.123./", "invalid_url", ok),
+        case("nombre que termina en 0x", "https://ejemplo.0x/", "invalid_url", ok),
+        case("nombre con caracteres codificados", "https://%31%32%37.0.0.1/", "invalid_url", ok),
+        case("nombre con caracteres fuera de ASCII", "https://mañana.test/", "invalid_url", ok),
+        case("nombre con una etiqueta vacía", "https://hooks..test/", "invalid_url", ok),
+        case("nombre que empieza con punto", "https://.hooks.test/", "invalid_url", ok),
+        case("etiqueta de más de 63 caracteres", f"https://{'a' * 64}.test/", "invalid_url", ok),
+        case("etiqueta de 63 caracteres", f"https://{'a' * 63}.test/", "allowed", ok),
+        case(
+            "nombre de más de 253 caracteres",
+            f"https://{'.'.join(['a' * 50] * 5)}.test/",
+            "invalid_url",
+            ok,
+        ),
+        case("puerto vacío", f"https://{host}:/entrada", "invalid_url", ok),
+        case("puerto fuera de rango", f"https://{host}:65536/", "invalid_url", ok),
+        case("puerto con letras", f"https://{host}:80a/", "invalid_url", ok),
+        case("puerto de seis dígitos", f"https://{host}:000080/", "invalid_url", ok),
+        case("IPv6 sin corchetes", "https://2606:4700:4700::1111/", "invalid_url", ok),
+        case("IPv6 sin cerrar el corchete", "https://[2606:4700:4700::1111/", "invalid_url", ok),
+        case("IPv6 con identificador de zona", "https://[fe80::1%25eth0]/", "invalid_url", ok),
+        case("IPv6 inválida", "https://[2606:4700::gggg]/", "invalid_url", ok),
+        case("IPv4 entre corchetes", "https://[93.184.216.34]/", "invalid_url", ok),
+        case("texto después del corchete", "https://[2606:4700:4700::1111]x/", "invalid_url", ok),
         case("con usuario y contraseña", "https://ana:clave@hooks.ejemplo.test/entrada", "credentials", ok),
         case("sólo con usuario", "https://ana@hooks.ejemplo.test/entrada", "credentials", ok),
+        case("usuario vacío", f"https://@{host}/entrada", "credentials", ok),
+        case("usuario y contraseña vacíos", f"https://:@{host}/entrada", "credentials", ok),
+        case(
+            "dos arrobas: el host es lo que sigue a la última",
+            f"https://a@10.0.0.5@{host}/",
+            "credentials",
+            ok,
+        ),
+        case("usuario que parece un host", f"https://93.184.216.34@{host}/", "credentials", ok),
+        case("usuario y host sin forma", "https://ana@/entrada", "invalid_url", ok),
         case(
             "el esquema se revisa antes que las credenciales",
             "http://ana:clave@hooks.ejemplo.test/",
@@ -1167,7 +1315,14 @@ def entregar_url() -> Vector:
             "https://[::ffff:10.0.0.1]/entrada",
             "blocked_address",
         ),
+        case("IPv6 literal que envuelve una IPv4 pública", "https://[::ffff:93.184.216.34]/", "allowed"),
         case("una dirección literal no usa la resolución", "https://10.0.0.5/entrada", "blocked_address", ok),
+        case(
+            "localhost resuelve a la máquina local",
+            "https://localhost/",
+            "blocked_address",
+            ["127.0.0.1", "::1"],
+        ),
     ]
     return {"spec": SPEC, "id": "entregar/url", "kind": "url", "cases": cases}
 

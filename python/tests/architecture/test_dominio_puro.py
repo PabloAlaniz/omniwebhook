@@ -24,8 +24,6 @@ PERMITIDOS = frozenset(
         "typing",
     }
 )
-# De `urllib` sólo la parte que analiza texto: el resto hace entrada/salida.
-MODULOS_PERMITIDOS = frozenset({"urllib.parse"})
 
 
 def modulos_importados(archivo: Path) -> set[str]:
@@ -42,7 +40,7 @@ def modulos_importados(archivo: Path) -> set[str]:
 def es_valido(modulo: str) -> bool:
     if modulo.startswith(".") or modulo == "omniwebhook.domain" or modulo.startswith("omniwebhook.domain."):
         return True
-    return modulo in MODULOS_PERMITIDOS or modulo.split(".")[0] in PERMITIDOS
+    return modulo.split(".")[0] in PERMITIDOS
 
 
 @pytest.mark.parametrize("archivo", sorted(DOMINIO.rglob("*.py")), ids=lambda p: p.name)

@@ -58,7 +58,13 @@ from omniwebhook.domain.delivery import (
     DeliveryState,
     classify_delivery,
 )
-from omniwebhook.domain.destination import DestinationProblem, DestinationVerdict, evaluate_destination
+from omniwebhook.domain.destination import (
+    DestinationProblem,
+    DestinationVerdict,
+    InspectedDestination,
+    evaluate_destination,
+    inspect_destination,
+)
 from omniwebhook.domain.errors import ConfigurationError
 from omniwebhook.domain.freshness import DEFAULT_TOLERANCE_SECONDS
 from omniwebhook.domain.incoming_request import Field, IncomingRequest
@@ -123,6 +129,7 @@ __all__ = [
     "HttpTransport",
     "IdempotencyStore",
     "IncomingRequest",
+    "InspectedDestination",
     "MemoryDeliveryLedger",
     "MemoryIdempotencyStore",
     "MessageSigner",
@@ -164,6 +171,7 @@ __all__ = [
     "http_status_for",
     "incoming_request",
     "incoming_request_from_scope",
+    "inspect_destination",
     "is_blocked_address",
     "mercadopago_scheme",
     "next_attempt",

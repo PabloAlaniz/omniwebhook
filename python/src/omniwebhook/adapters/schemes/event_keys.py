@@ -27,7 +27,8 @@ def _not_json(constant: str) -> NoReturn:
 
 def _json_id(body: bytes) -> str | None:
     try:
-        data = json.loads(body.decode("utf-8"), parse_constant=_not_json)
+        # Los números no interesan; leerlos como decimales evita el tope de dígitos de los enteros.
+        data = json.loads(body.decode("utf-8"), parse_constant=_not_json, parse_int=float)
     except (ValueError, RecursionError):
         return None
     if not isinstance(data, dict):

@@ -61,6 +61,8 @@ export {
   type DestinationProblem,
   type DestinationVerdict,
   evaluateDestination,
+  type InspectedDestination,
+  inspectDestination,
 } from './domain/destination';
 export { ConfigurationError } from './domain/errors';
 export { DEFAULT_TOLERANCE_SECONDS } from './domain/freshness';

@@ -153,7 +153,8 @@ Este es además el esquema con el que se firma lo que se emite (sección 7).
   JSON con un `id` de texto no vacío. Si no, la huella del cuerpo.
   El cuerpo se interpreta como JSON estricto en UTF-8: con una marca de orden de bytes al
   principio, o con valores que no son JSON como `NaN` o `Infinity`, se usa la huella. Con un
-  anidamiento tan profundo que la plataforma no lo puede interpretar, también.
+  anidamiento tan profundo que la plataforma no lo puede interpretar, también. El tamaño de un
+  número no cambia el resultado.
 
 ### 5.3. `mercadopago`
 
@@ -308,14 +309,44 @@ Rangos bloqueados:
 
 Una dirección IPv6 que envuelve una IPv4 (`::ffff:0:0/96`) se evalúa por la IPv4 que contiene.
 
-La URL se interpreta con el analizador de URLs de cada plataforma, que es el mismo que usa después
-para conectarse. Los vectores fijan los casos que todos los paquetes resuelven igual.
+#### Forma de la URL
+
+La URL no se le entrega al analizador de URLs de la plataforma hasta comprobar que tiene esta forma,
+porque los analizadores no coinciden entre sí ante una URL rara y esa diferencia es justo lo que
+aprovecha quien quiere llegar a una dirección interna.
+
+```
+url       = esquema "://" [ usuario "@" ] host [ ":" puerto ] [ resto ]
+esquema   = "http" / "https"                    ; sin distinguir mayúsculas
+host      = "[" IPv6 "]" / IPv4 / nombre
+nombre    = etiqueta *( "." etiqueta ) [ "." ]  ; hasta 253 caracteres
+etiqueta  = 1*63( letra ASCII / dígito / "-" / "_" )
+puerto    = 1*5 dígito                          ; hasta 65535
+resto     = ( "/" / "?" / "#" ) cualquier cosa
+```
+
+- La URL NO DEBE contener la barra invertida, ni caracteres de U+0000 a U+0020, ni U+007F.
+- `usuario` es todo lo que hay antes del último `@` de la parte que va entre `://` y el `resto`.
+- `IPv4` son cuatro números decimales de 0 a 255 sin ceros a la izquierda; `IPv6`, la notación
+  habitual, sin identificador de zona. Son las únicas formas que cuentan como dirección literal.
+- Un `nombre` cuya última etiqueta es un número (sólo dígitos, o `0x` seguido de dígitos
+  hexadecimales) no se acepta: hay analizadores que lo leen como una dirección.
+- Un nombre con caracteres fuera de ASCII va en su forma ASCII (`xn--…`).
+- El host se usa en minúsculas.
+
+Se revisa en este orden:
+
+1. Sin un esquema al principio (`^[A-Za-z][A-Za-z0-9+.-]*:`), o con un carácter prohibido:
+   `invalid_url`.
+2. Con un esquema que no es `https`, ni `http` con el permiso expreso: `scheme`.
+3. Si lo que sigue no tiene la forma de arriba: `invalid_url`.
+4. Si trae `usuario`, aunque esté vacío: `credentials`.
 
 El resultado de la política es `allowed` o el primer motivo de rechazo, en este orden:
 
 | Motivo | Cuándo |
 |---|---|
-| `invalid_url` | No se puede interpretar como una URL absoluta con nombre de host |
+| `invalid_url` | No tiene la forma de una URL de destino |
 | `scheme` | El esquema no es `https`, ni `http` con el permiso expreso |
 | `credentials` | Trae usuario o contraseña |
 | `unresolved` | El nombre no resolvió a ninguna dirección |
