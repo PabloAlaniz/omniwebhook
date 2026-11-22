@@ -6,9 +6,12 @@ const nucleo = { statements: 90, branches: 90, functions: 90, lines: 90 };
 export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],
+    exclude: ['test/integration/**'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
+      // El almacén de PostgreSQL se prueba contra una base real en test:integration.
+      exclude: ['src/adapters/stores/postgres.ts'],
       reporter: ['text-summary', 'lcov'],
       thresholds: {
         'src/domain/**': nucleo,

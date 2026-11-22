@@ -45,7 +45,8 @@ Vector = dict[str, Any]
 
 NOW = 1_700_000_000
 TOLERANCE = 300
-DIGITS = re.compile(r"[0-9]{1,15}")
+SECONDS = re.compile(r"[0-9]{1,11}")
+SECONDS_OR_MILLIS = re.compile(r"[0-9]{1,15}")
 B64 = re.compile(r"[A-Za-z0-9+/]*={0,2}")
 
 Pairs = list[list[str]]
@@ -135,7 +136,7 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             need([ident, ts, sig])
             unique(ident, ts, sig)
             candidates = [token[3:] for token in sig[0].split(" ") if token.startswith("v1,")]
-            if not DIGITS.fullmatch(ts[0]) or not candidates:
+            if not SECONDS.fullmatch(ts[0]) or not candidates:
                 raise Stop("malformed")
             signed = f"{ident[0]}.{ts[0]}.".encode() + body
             valid = any(b64mac(key, signed) in candidates for key in keys if key is not None)
@@ -149,7 +150,7 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             times = [value for key, value in parts if key == "t"]
             sigs = [value.lower() for key, value in parts if key == "v1"]
             unique(times)
-            if not times or not sigs or not DIGITS.fullmatch(times[0]):
+            if not times or not sigs or not SECONDS.fullmatch(times[0]):
                 raise Stop("malformed")
             signed = f"{times[0]}.".encode() + body
             valid = any(hexmac(secret, signed) in sigs for secret in secrets)
@@ -165,7 +166,7 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             times = [value for key, value in parts if key == "ts"]
             sigs = [value.lower() for key, value in parts if key == "v1"]
             unique(times, sigs)
-            if not times or not sigs or not DIGITS.fullmatch(times[0]):
+            if not times or not sigs or not SECONDS_OR_MILLIS.fullmatch(times[0]):
                 raise Stop("malformed")
             manifest = "".join(
                 f"{label}:{group[0]};"
@@ -353,7 +354,7 @@ def verificar_standard() -> Vector:
             case("marca de tiempo con letras", "malformed", swap(good, "webhook-timestamp", "ahora")),
             case("marca de tiempo con signo", "malformed", swap(good, "webhook-timestamp", f"-{NOW}")),
             case("marca de tiempo con decimales", "malformed", swap(good, "webhook-timestamp", f"{NOW}.5")),
-            case("marca de tiempo demasiado larga", "malformed", swap(good, "webhook-timestamp", "1" * 16)),
+            case("marca de tiempo demasiado larga", "malformed", swap(good, "webhook-timestamp", "1" * 12)),
             case("ninguna firma v1", "malformed", swap(good, "webhook-signature", "v2a,AAAA")),
             case("firma sin versión", "malformed", swap(good, "webhook-signature", sig[3:])),
             case("firma de otro secreto", "invalid", std_headers(secret=STD_OTHER)),
@@ -429,6 +430,14 @@ def verificar_stripe() -> Vector:
             case("cuerpo que no es JSON: la clave es la huella", "ok", stripe_header(body=plain), plain),
             case("cuerpo sin id: la clave es la huella", "ok", stripe_header(body=no_id), no_id),
             case("id que no es texto: la clave es la huella", "ok", stripe_header(body=num_id), num_id),
+            case("id vacío: la clave es la huella", "ok", stripe_header(body='{"id":""}'), '{"id":""}'),
+            case(
+                "cuerpo JSON que es una lista: la clave es la huella",
+                "ok",
+                stripe_header(body='[{"id":"x"}]'),
+                '[{"id":"x"}]',
+            ),
+            case("cuerpo JSON nulo: la clave es la huella", "ok", stripe_header(body="null"), "null"),
             case("en el borde de la tolerancia", "ok", stripe_header(ts=NOW - 300)),
             case("sin secretos", "unconfigured", secrets=[]),
             case("falta la cabecera", "missing", None),
@@ -442,6 +451,7 @@ def verificar_stripe() -> Vector:
             case("sin marca de tiempo", "malformed", f"v1={sig}"),
             case("sin firma v1", "malformed", f"t={NOW},v0={sig}"),
             case("marca de tiempo con letras", "malformed", f"t=ayer,v1={sig}"),
+            case("marca de tiempo demasiado larga", "malformed", f"t={'1' * 12},v1={sig}"),
             case("sin pares", "malformed", "cualquier cosa"),
             case("un par con el valor vacío se ignora", "malformed", f"t={NOW},v1="),
             case("firma de otro secreto", "invalid", stripe_header(secret=TXT_OTHER)),
@@ -534,6 +544,7 @@ def verificar_mercadopago() -> Vector:
             case("sin marca de tiempo", "malformed", with_sig(f"v1={hash_only}")),
             case("sin firma", "malformed", with_sig(f"ts={NOW}")),
             case("marca de tiempo con letras", "malformed", with_sig(f"ts=hoy,v1={hash_only}")),
+            case("marca de tiempo demasiado larga", "malformed", with_sig(f"ts={'1' * 16},v1={hash_only}")),
             case("firma de otro secreto", "invalid", mp_request(secret=TXT_OTHER)),
             case("data.id alterado", "invalid", {**good, "query": [["data.id", "987654321"]]}),
             case(

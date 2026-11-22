@@ -10,6 +10,7 @@
     "test:architecture": "pnpm --filter omniwebhook test:architecture",
     "check:package": "pnpm --filter omniwebhook check:package",
     "check:spec": "python3 tools/gen_vectors.py --check",
-    "check": "pnpm check:spec && pnpm lint && pnpm typecheck && pnpm test:architecture && pnpm test && pnpm check:package"
+    "check": "pnpm check:spec && pnpm lint && pnpm typecheck && pnpm test:architecture && pnpm test && pnpm check:package",
+    "test:integration": "pnpm --filter omniwebhook test:integration"
   }
 }

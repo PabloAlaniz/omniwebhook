@@ -45,6 +45,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./standard": {
+      "import": {
+        "types": "./dist/standard.d.ts",
+        "default": "./dist/standard.js"
+      },
+      "require": {
+        "types": "./dist/standard.d.cts",
+        "default": "./dist/standard.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -56,17 +66,29 @@
     "test:architecture": "depcruise src --config .dependency-cruiser.cjs",
     "check:package": "pnpm build && publint --strict && attw --pack . --profile node16",
     "prepack": "cp ../LICENSE ./LICENSE && pnpm build",
-    "postpack": "rm -f LICENSE"
+    "postpack": "rm -f LICENSE",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.6.8",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "@vitest/coverage-v8": "^5.1.1",
     "dependency-cruiser": "^18.8.0",
+    "pg": "^8.23.1",
     "publint": "^0.3.25",
+    "standardwebhooks": "^1.3.0",
     "tsup": "^9.0.0",
     "typescript": "^5.9.0",
     "vitest": "^5.1.1"
+  },
+  "peerDependencies": {
+    "standardwebhooks": "^1.3.0"
+  },
+  "peerDependenciesMeta": {
+    "standardwebhooks": {
+      "optional": true
+    }
   }
 }

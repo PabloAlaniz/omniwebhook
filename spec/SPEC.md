@@ -126,7 +126,7 @@ El formato [Standard Webhooks](https://www.standardwebhooks.com/), con firma sim
 - Secreto: el prefijo `whsec_` es opcional; el resto es base64 y, decodificado, es la clave. Es
   utilizable si, sin el prefijo, no está vacío, su largo es múltiplo de cuatro y cumple
   `^[A-Za-z0-9+/]*={0,2}$`.
-- `webhook-timestamp` DEBE cumplir `^[0-9]{1,15}$`. Si no, `malformed`.
+- `webhook-timestamp` DEBE cumplir `^[0-9]{1,11}$`. Si no, `malformed`.
 - `webhook-signature` trae una o más firmas separadas por espacios. Sólo cuentan las que empiezan
   con `v1,`; el resto se ignora. Si no hay ninguna `v1,`, `malformed`.
 - Contenido firmado: `<webhook-id>.<webhook-timestamp>.<cuerpo>`.
@@ -141,7 +141,7 @@ Este es además el esquema con el que se firma lo que se emite (sección 7).
 - Cabecera exigida: `stripe-signature`, con pares `clave=valor` (sección 4.5.1).
 - Cuentan las claves `t` y `v1`. Cualquier otra se ignora.
 - Sin `t` o sin ningún `v1`, `malformed`. Más de un `t`, `ambiguous`. Puede haber varios `v1`.
-- `t` DEBE cumplir `^[0-9]{1,15}$`. Si no, `malformed`.
+- `t` DEBE cumplir `^[0-9]{1,11}$`. Si no, `malformed`.
 - Secreto: el texto completo, en UTF-8, es la clave.
 - Contenido firmado: `<t>.<cuerpo>`.
 - Firma: hexadecimal del HMAC. Es válida si coincide con cualquier `v1`.

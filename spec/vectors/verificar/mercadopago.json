@@ -681,6 +681,36 @@
    }
   },
   {
+   "name": "marca de tiempo demasiado larga",
+   "scheme": "mercadopago",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-request-id",
+      "a1b2c3d4-0000-4000-8000-000000000001"
+     ],
+     [
+      "x-signature",
+      "ts=1111111111111111,v1=b2bfac72d65648fb5ae91355708b08cef5dcc141603d39c06076cfedbd332a8f"
+     ]
+    ],
+    "query": [
+     [
+      "data.id",
+      "123456789"
+     ]
+    ],
+    "body": "{\"action\":\"payment.updated\",\"data\":{\"id\":\"123456789\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
    "name": "firma de otro secreto",
    "scheme": "mercadopago",
    "secrets": [

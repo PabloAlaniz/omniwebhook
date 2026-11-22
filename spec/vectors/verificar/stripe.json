@@ -212,6 +212,75 @@
    }
   },
   {
+   "name": "id vacío: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=6619dfce426e49f3294a7fe4558d0dface89a55584c55e5845219e73c5be58f5"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:72d427b7264997760074a94dcc1c9e54ae2c33b05276bfb3cfcd0f5d2d8bba3a",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo JSON que es una lista: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=50a2dd502094ebc87273cd8e138242ad0c41ebc5dcdf8639f6e5e51fdebd6e4c"
+     ]
+    ],
+    "query": [],
+    "body": "[{\"id\":\"x\"}]"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:66a687dfc2694176d84b63a338c9a36e6d7c631cea43b90fa166145cb43da479",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo JSON nulo: la clave es la huella",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=b1d835a7dad6a535917680068bd43aabba6925175afc01d54b22c5e88b1bb50b"
+     ]
+    ],
+    "query": [],
+    "body": "null"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:sha256:74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+    "timestamp": 1700000000
+   }
+  },
+  {
    "name": "en el borde de la tolerancia",
    "scheme": "stripe",
    "secrets": [
@@ -390,6 +459,27 @@
      [
       "stripe-signature",
       "t=ayer,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo demasiado larga",
+   "scheme": "stripe",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=111111111111,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
      ]
     ],
     "query": [],
