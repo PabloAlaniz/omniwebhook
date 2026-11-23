@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/PabloAlaniz/omniwebhook/compare/v0.1.1...v0.2.0) (2026-11-23)
+
+
+### Features
+
+* registro de entregas sobre PostgreSQL, compartido entre paquetes ([#4](https://github.com/PabloAlaniz/omniwebhook/issues/4)) ([0fcd23e](https://github.com/PabloAlaniz/omniwebhook/commit/0fcd23ec64c9097451cf42595e2aeb0678813d0c))
+* **spec:** redes permitidas en la política de URLs de destino ([#3](https://github.com/PabloAlaniz/omniwebhook/issues/3)) ([ebe8697](https://github.com/PabloAlaniz/omniwebhook/commit/ebe869746e0b88d124f4b5194b3286db718fe832))
+
+
+### Bug Fixes
+
+* el tiempo de espera es el plazo del intento completo ([#5](https://github.com/PabloAlaniz/omniwebhook/issues/5)) ([df23095](https://github.com/PabloAlaniz/omniwebhook/commit/df230959b1008d9719f1a3cc292f36d358732173))
+
 ## [0.1.1](https://github.com/PabloAlaniz/omniwebhook/compare/v0.1.0...v0.1.1) (2026-11-23)
 
 
