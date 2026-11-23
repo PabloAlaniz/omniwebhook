@@ -15,6 +15,7 @@ from omniwebhook import (
     hmac_body_scheme,
     mercadopago_scheme,
     stripe_scheme,
+    tiktok_scheme,
 )
 from omniwebhook.adapters.crypto import hmac_sha256
 from omniwebhook.standard import native_signer, reference_signer, standard_scheme, standard_signer
@@ -26,13 +27,20 @@ SECRETO_ESTANDAR = "whsec_" + base64.b64encode(b"omniwebhook-secreto-sintetico-0
 
 @pytest.mark.parametrize("tolerancia", [0, -5, 1.5, True])
 def test_una_tolerancia_invalida_es_un_error_de_configuracion(tolerancia: int) -> None:
-    for esquema in (stripe_scheme, mercadopago_scheme, standard_scheme):
+    for esquema in (stripe_scheme, tiktok_scheme, mercadopago_scheme, standard_scheme):
         with pytest.raises(ConfigurationError, match="tolerance_seconds"):
             esquema(secrets=[SECRETO], tolerance_seconds=tolerancia)
 
 
 def test_los_secretos_son_una_lista_y_no_un_texto() -> None:
-    for esquema in (stripe_scheme, mercadopago_scheme, github_scheme, creem_scheme, standard_scheme):
+    for esquema in (
+        stripe_scheme,
+        tiktok_scheme,
+        mercadopago_scheme,
+        github_scheme,
+        creem_scheme,
+        standard_scheme,
+    ):
         with pytest.raises(ConfigurationError, match="secrets tiene que ser una lista"):
             esquema(secrets=SECRETO)
     with pytest.raises(ConfigurationError, match="secrets tiene que ser una lista"):

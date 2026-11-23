@@ -11,7 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "Pablo Alaniz" }]
-keywords = ["webhooks", "webhook", "signature", "hmac", "idempotency", "retries", "standard-webhooks", "mercadopago"]
+keywords = ["webhooks", "webhook", "signature", "hmac", "idempotency", "retries", "standard-webhooks", "mercadopago", "tiktok"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",

@@ -8,6 +8,7 @@ from omniwebhook.adapters.schemes.github import github_scheme
 from omniwebhook.adapters.schemes.hmac_body import hmac_body_scheme
 from omniwebhook.adapters.schemes.mercadopago import mercadopago_scheme
 from omniwebhook.adapters.schemes.stripe import stripe_scheme
+from omniwebhook.adapters.schemes.tiktok import tiktok_scheme
 from omniwebhook.adapters.stores.memory import AsyncMemoryIdempotencyStore, MemoryIdempotencyStore
 from omniwebhook.adapters.tokens import random_message_id, random_tokens
 from omniwebhook.adapters.transport.http_client import HttpClientTransport
@@ -181,4 +182,5 @@ __all__ = [
     "random_tokens",
     "stripe_scheme",
     "system_clock",
+    "tiktok_scheme",
 ]

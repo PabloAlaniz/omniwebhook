@@ -28,6 +28,7 @@ import {
   sqliteLedgerSchema,
   sqliteStoreSchema,
   stripeScheme,
+  tiktokScheme,
 } from '../dist/index.js';
 import { standardScheme, standardSigner } from '../dist/standard.js';
 
@@ -43,6 +44,7 @@ function verifier({ scheme, secrets, now, options = {} }) {
   ]);
   if (scheme === 'standard') return standardScheme(timed);
   if (scheme === 'stripe') return stripeScheme(timed);
+  if (scheme === 'tiktok') return tiktokScheme(timed);
   if (scheme === 'mercadopago') return mercadoPagoScheme(timed);
   if (scheme === 'github') return githubScheme({ secrets });
   if (scheme === 'creem') return creemScheme({ secrets });
