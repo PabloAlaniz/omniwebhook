@@ -3,13 +3,22 @@
   "release-type": "simple",
   "include-component-in-tag": false,
   "bump-minor-pre-major": true,
+  "initial-version": "0.1.0",
   "packages": {
     ".": {
       "package-name": "omniwebhook",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        { "type": "json", "path": "ts/package.json", "jsonpath": "$.version" },
-        { "type": "toml", "path": "python/pyproject.toml", "jsonpath": "$.project.version" },
+        {
+          "type": "json",
+          "path": "ts/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "toml",
+          "path": "python/pyproject.toml",
+          "jsonpath": "$.project.version"
+        },
         {
           "type": "toml",
           "path": "python/uv.lock",
