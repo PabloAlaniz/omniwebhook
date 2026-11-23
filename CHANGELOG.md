@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/PabloAlaniz/omniwebhook/compare/v0.2.0...v0.3.0) (2026-11-23)
+
+
+### Features
+
+* almacén de reservas y registro de entregas sobre SQLite, también D1 ([#7](https://github.com/PabloAlaniz/omniwebhook/issues/7)) ([d2b2439](https://github.com/PabloAlaniz/omniwebhook/commit/d2b2439ddeb466f2dff12bf2b51f5044dbf4a4da))
+* **ts:** resolver de DNS sobre HTTPS para Workers y funciones edge ([#8](https://github.com/PabloAlaniz/omniwebhook/issues/8)) ([1b90135](https://github.com/PabloAlaniz/omniwebhook/commit/1b90135aeba054eb5a047f289b76320038400552))
+
 ## [0.2.0](https://github.com/PabloAlaniz/omniwebhook/compare/v0.1.1...v0.2.0) (2026-11-23)
 
 
