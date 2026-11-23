@@ -42,6 +42,8 @@ firestore = ["google-cloud-firestore>=2.16"]
 Homepage = "https://github.com/PabloAlaniz/omniwebhook"
 Repository = "https://github.com/PabloAlaniz/omniwebhook"
 Specification = "https://github.com/PabloAlaniz/omniwebhook/blob/main/spec/SPEC.md"
+Issues = "https://github.com/PabloAlaniz/omniwebhook/issues"
+Changelog = "https://github.com/PabloAlaniz/omniwebhook/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
