@@ -23,7 +23,7 @@ export interface PostgresStoreOptions {
 const IDENTIFIER = /^[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)?$/;
 const DEFAULT_TABLE = 'omniwebhook_events';
 
-function checkedTable(table: string): string {
+export function checkedTable(table: string): string {
   if (!IDENTIFIER.test(table)) {
     throw new ConfigurationError(
       'table tiene que ser un identificador en minúsculas, con esquema opcional',
