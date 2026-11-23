@@ -549,6 +549,62 @@ def shared_store(agents: list[Agent], report: Report, url: str) -> None:
             agent.ask("store_close", table=TABLE, drop=index == 0)
 
 
+LEDGER_TABLE = "omniwebhook_attempts_interop"
+ATTEMPTS = [
+    {
+        "message_id": "msg_interop",
+        "endpoint_id": "ep_1",
+        "attempt": 1,
+        "at": 1_700_000_000,
+        "delivery_class": "retryable",
+        "state": "pending",
+        "status": 503,
+        "problem": None,
+        "duration_ms": 40,
+        "next_at": 1_700_000_005,
+    },
+    {
+        "message_id": "msg_interop",
+        "endpoint_id": "ep_1",
+        "attempt": 2,
+        "at": 1_700_000_005,
+        "delivery_class": "blocked",
+        "state": "blocked",
+        "status": None,
+        "problem": "blocked_address",
+        "duration_ms": 0,
+        "next_at": None,
+    },
+    {
+        "message_id": "msg_interop",
+        "endpoint_id": "ep_1",
+        "attempt": 1,
+        "at": 4_102_444_800,
+        "delivery_class": "delivered",
+        "state": "delivered",
+        "status": 200,
+        "problem": None,
+        "duration_ms": 86_400_000,
+        "next_at": None,
+    },
+]
+
+
+def shared_ledger(agents: list[Agent], report: Report, url: str) -> None:
+    """Lo que registra un paquete en la tabla de intentos lo lee el otro tal cual."""
+    for index, agent in enumerate(agents):
+        agent.ask("ledger_open", url=url, table=LEDGER_TABLE, create=index == 0)
+    try:
+        for position, record in enumerate(ATTEMPTS):
+            agents[position % len(agents)].ask("ledger_record", record=record)
+        for agent in agents:
+            got = agent.ask("ledger_read", message_id="msg_interop", endpoint_id="ep_1")
+            report.expect(f"registro compartido leído en {agent.name}", got, {"attempts": ATTEMPTS})
+    finally:
+        for index, agent in enumerate(agents):
+            agent.ask("ledger_close", table=LEDGER_TABLE, drop=index == 0)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--seed", type=int, default=20261122)
@@ -573,8 +629,9 @@ def main() -> int:
         url = os.environ.get("OMNIWEBHOOK_PG_URL")
         if url:
             shared_store(agents, report, url)
+            shared_ledger(agents, report, url)
         else:
-            print("Sin OMNIWEBHOOK_PG_URL: no se prueba la tabla de reservas compartida.")
+            print("Sin OMNIWEBHOOK_PG_URL: no se prueban las tablas compartidas.")
     finally:
         for agent in agents:
             agent.close()

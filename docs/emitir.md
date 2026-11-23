@@ -169,7 +169,36 @@ red (conectar, enviar, leer la respuesta), no para el intento completo.
 ## El registro de entregas
 
 Cada intento se guarda en el registro, que es un puerto con un solo método. El paquete trae uno en
-memoria; para producción, escribí el tuyo sobre tu base:
+memoria, para tests, y uno sobre PostgreSQL, para producción. La tabla de PostgreSQL es la misma en
+los dos paquetes: lo que registra uno lo lee el otro.
+
+```ts
+import { PostgresDeliveryLedger, postgresLedgerSchema } from 'omniwebhook';
+
+await pool.query(postgresLedgerSchema());
+const ledger = new PostgresDeliveryLedger(pool);
+
+const intentos = await ledger.attemptsOf('msg_…', 'ep_42');
+await ledger.purgeBefore(Math.floor(Date.now() / 1000) - 30 * 86_400);
+```
+
+```python
+from omniwebhook.postgres import PostgresDeliveryLedger, PsycopgClient, postgres_ledger_schema
+
+with pool.connection() as connection:
+    connection.execute(postgres_ledger_schema())
+ledger = PostgresDeliveryLedger(PsycopgClient(pool.connection))
+```
+
+El SQL del esquema son varias sentencias (la tabla y dos índices): se corre sin parámetros. En
+Python también está `AsyncPostgresDeliveryLedger`.
+
+Un reenvío vuelve a empezar desde el intento 1, así que en la tabla puede haber dos filas con el
+mismo número de intento; `attemptsOf` (`attempts_of`) las devuelve en el orden en que se
+registraron. Los intentos viejos no se borran solos: `purgeBefore(at)` (`purge_before(at)`) borra
+los que empezaron antes de `at`.
+
+Para otra base, escribí tu propio registro:
 
 ```ts
 import type { AttemptRecord, DeliveryLedger } from 'omniwebhook';

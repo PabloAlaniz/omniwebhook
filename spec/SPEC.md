@@ -433,6 +433,30 @@ Después de cada intento, el estado sale de la clase del resultado: `delivered`,
 Reenviar a mano una entrega es enviarla de nuevo desde el intento 1 con el mismo `id` del mensaje,
 para que el receptor pueda reconocerla.
 
+#### La tabla de PostgreSQL
+
+Un registro sobre PostgreSQL DEBE usar esta tabla, para que lo que registra un paquete lo lea el
+otro. El nombre por defecto es `omniwebhook_attempts`:
+
+| Columna | Tipo | Contenido |
+|---|---|---|
+| `id` | `bigint`, identidad | El orden en que se registró |
+| `message_id` | `text` | El `id` del mensaje |
+| `endpoint_id` | `text` | El identificador del destino, nunca su URL |
+| `attempt` | `integer` | El número de intento |
+| `at` | `bigint` | Cuándo empezó el intento, en segundos |
+| `delivery_class` | `text` | La clase del resultado (sección 8.2) |
+| `state` | `text` | El estado de la entrega después del intento |
+| `status` | `integer`, nulo | El estado HTTP, si hubo respuesta |
+| `problem` | `text`, nulo | El motivo de la política de URLs, si rechazó el intento |
+| `duration_ms` | `bigint` | Cuánto duró el intento |
+| `next_at` | `bigint`, nulo | Cuándo corresponde el próximo intento |
+
+Un reenvío repite números de intento, así que la clave es `id` y no `(message_id, endpoint_id,
+attempt)`. Hay un índice por `(message_id, endpoint_id)` y otro por `(endpoint_id, at)`.
+
+Leer los intentos de un mensaje hacia un destino devuelve las filas en el orden de `id`.
+
 El paquete calcula cuándo corresponde el próximo intento pero no lo ejecuta: programarlo es
 responsabilidad de quien integra.
 

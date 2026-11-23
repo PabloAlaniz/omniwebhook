@@ -135,13 +135,14 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 | Esquemas de firma | Standard Webhooks, Stripe, Mercado Pago, GitHub, Creem y uno genérico de cuerpo firmado | Los mismos |
 | Almacén de reservas | Memoria, PostgreSQL | Memoria, PostgreSQL, Firestore |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
-| Registro de entregas | Memoria | Memoria |
+| Registro de entregas | Memoria, PostgreSQL | Memoria, PostgreSQL |
 | Entrada | API Fetch (`Request` y `Response`) | ASGI, Starlette y FastAPI, o cualquier framework |
 | Estilo | Asincrónico | Sincrónico y asincrónico |
 | Dependencias obligatorias | Ninguna | Ninguna |
 
 Los almacenes de PostgreSQL de los dos paquetes usan la misma tabla: un evento que procesó un
 servicio en un lenguaje, el otro lo reconoce como duplicado.
+Lo mismo pasa con el registro de entregas: los intentos que registra uno los lee el otro.
 
 ## Instalación
 

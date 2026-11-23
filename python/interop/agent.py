@@ -7,6 +7,7 @@ con el entorno del paquete: `uv run --project python python python/interop/agent
 import base64
 import json
 import sys
+from dataclasses import asdict
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -15,6 +16,7 @@ from standardwebhooks import Webhook
 
 from omniwebhook import (
     AttemptOutcome,
+    AttemptRecord,
     ClaimRequest,
     CompleteRequest,
     ConfigurationError,
@@ -38,7 +40,13 @@ from omniwebhook import (
     next_attempt,
     stripe_scheme,
 )
-from omniwebhook.postgres import PostgresIdempotencyStore, PsycopgClient, postgres_store_schema
+from omniwebhook.postgres import (
+    PostgresDeliveryLedger,
+    PostgresIdempotencyStore,
+    PsycopgClient,
+    postgres_ledger_schema,
+    postgres_store_schema,
+)
 from omniwebhook.standard import standard_scheme, standard_signer
 
 Json = dict[str, Any]
@@ -75,6 +83,7 @@ class Agent:
     def __init__(self) -> None:
         self._pool: ConnectionPool | None = None
         self._store: PostgresIdempotencyStore | None = None
+        self._ledger: PostgresDeliveryLedger | None = None
 
     def verify(
         self, scheme: str, secrets: list[str], now: int, request: Json, options: Json | None = None
@@ -176,6 +185,27 @@ class Agent:
                 connection.execute(f"DROP TABLE IF EXISTS {table}")
         self._pool.close()
         return {"closed": True}
+
+    def ledger_open(self, url: str, table: str, create: bool) -> Json:
+        self._pool = ConnectionPool(url, min_size=1, max_size=2, open=True)
+        if create:
+            with self._pool.connection() as connection:
+                connection.execute(f"DROP TABLE IF EXISTS {table}")
+                connection.execute(postgres_ledger_schema(table))
+        self._ledger = PostgresDeliveryLedger(PsycopgClient(self._pool.connection), table=table)
+        return {"ready": True}
+
+    def ledger_record(self, record: Json) -> Json:
+        assert self._ledger is not None
+        self._ledger.record(AttemptRecord(**record))
+        return {"recorded": True}
+
+    def ledger_read(self, message_id: str, endpoint_id: str) -> Json:
+        assert self._ledger is not None
+        return {"attempts": [asdict(a) for a in self._ledger.attempts_of(message_id, endpoint_id)]}
+
+    def ledger_close(self, table: str, drop: bool) -> Json:
+        return self.store_close(table, drop)
 
 
 def main() -> None:

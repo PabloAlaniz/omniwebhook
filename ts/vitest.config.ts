@@ -10,8 +10,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      // El almacén de PostgreSQL se prueba contra una base real en test:integration.
-      exclude: ['src/adapters/stores/postgres.ts'],
+      // Lo de PostgreSQL se prueba contra una base real en test:integration.
+      exclude: ['src/adapters/stores/postgres.ts', 'src/adapters/ledger/postgres.ts'],
       reporter: ['text-summary', 'lcov'],
       thresholds: {
         'src/domain/**': nucleo,

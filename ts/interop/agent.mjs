@@ -17,7 +17,9 @@ import {
   isBlockedAddress,
   mercadoPagoScheme,
   nextAttempt,
+  PostgresDeliveryLedger,
   PostgresIdempotencyStore,
+  postgresLedgerSchema,
   postgresStoreSchema,
   stripeScheme,
 } from '../dist/index.js';
@@ -55,6 +57,7 @@ function verifier({ scheme, secrets, now, options = {} }) {
 
 let pool = null;
 let store = null;
+let ledger = null;
 
 const commands = {
   async verify(input) {
@@ -163,6 +166,52 @@ const commands = {
     return { result: await store.release({ key: step.key, token: step.token }) };
   },
   async store_close({ table, drop }) {
+    if (drop) await pool.query(`DROP TABLE IF EXISTS ${table}`);
+    await pool.end();
+    return { closed: true };
+  },
+  async ledger_open({ url, table, create }) {
+    pool = new pg.Pool({ connectionString: url });
+    if (create) {
+      await pool.query(`DROP TABLE IF EXISTS ${table}`);
+      await pool.query(postgresLedgerSchema(table));
+    }
+    ledger = new PostgresDeliveryLedger(pool, { table });
+    return { ready: true };
+  },
+  async ledger_record({ record }) {
+    await ledger.record({
+      messageId: record.message_id,
+      endpointId: record.endpoint_id,
+      attempt: record.attempt,
+      at: record.at,
+      deliveryClass: record.delivery_class,
+      state: record.state,
+      status: record.status,
+      problem: record.problem,
+      durationMs: record.duration_ms,
+      nextAt: record.next_at,
+    });
+    return { recorded: true };
+  },
+  async ledger_read({ message_id, endpoint_id }) {
+    const attempts = await ledger.attemptsOf(message_id, endpoint_id);
+    return {
+      attempts: attempts.map((a) => ({
+        message_id: a.messageId,
+        endpoint_id: a.endpointId,
+        attempt: a.attempt,
+        at: a.at,
+        delivery_class: a.deliveryClass,
+        state: a.state,
+        status: a.status,
+        problem: a.problem,
+        duration_ms: a.durationMs,
+        next_at: a.nextAt,
+      })),
+    };
+  },
+  async ledger_close({ table, drop }) {
     if (drop) await pool.query(`DROP TABLE IF EXISTS ${table}`);
     await pool.end();
     return { closed: true };

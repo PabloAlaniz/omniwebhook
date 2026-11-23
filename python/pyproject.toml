@@ -79,6 +79,7 @@ branch = true
 # Estos almacenes se prueban contra el servicio de verdad, en los tests de integración.
 omit = [
     "*/omniwebhook/adapters/stores/postgres.py",
+    "*/omniwebhook/adapters/ledger/postgres.py",
     "*/omniwebhook/adapters/stores/firestore.py",
     "*/omniwebhook/postgres.py",
     "*/omniwebhook/firestore.py",
