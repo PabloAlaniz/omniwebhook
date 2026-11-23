@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omniwebhook"
-version = "0.3.0"
+version = "0.4.0"
 description = "Webhooks firmados que se emiten y se reciben igual en cualquier stack: verificación, frescura, idempotencia y reintentos con las mismas reglas."
 readme = "README.md"
 license = "MIT"
