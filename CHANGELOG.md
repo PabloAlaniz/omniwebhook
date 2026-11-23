@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/PabloAlaniz/omniwebhook/compare/v0.3.0...v0.4.0) (2026-11-23)
+
+
+### Features
+
+* esquema de firma de TikTok ([#10](https://github.com/PabloAlaniz/omniwebhook/issues/10)) ([2ac87cd](https://github.com/PabloAlaniz/omniwebhook/commit/2ac87cda1da73c7f9b3f0ae7035ad40d1a648ad3))
+
 ## [0.3.0](https://github.com/PabloAlaniz/omniwebhook/compare/v0.2.0...v0.3.0) (2026-11-23)
 
 
