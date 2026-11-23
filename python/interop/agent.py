@@ -6,6 +6,7 @@ con el entorno del paquete: `uv run --project python python python/interop/agent
 
 import base64
 import json
+import sqlite3
 import sys
 from dataclasses import asdict
 from typing import Any
@@ -47,6 +48,13 @@ from omniwebhook.postgres import (
     postgres_ledger_schema,
     postgres_store_schema,
 )
+from omniwebhook.sqlite import (
+    Sqlite3Client,
+    SqliteDeliveryLedger,
+    SqliteIdempotencyStore,
+    sqlite_ledger_schema,
+    sqlite_store_schema,
+)
 from omniwebhook.standard import standard_scheme, standard_signer
 
 Json = dict[str, Any]
@@ -82,8 +90,9 @@ def verifier(scheme: str, secrets: list[str], now: int, options: Json) -> Verifi
 class Agent:
     def __init__(self) -> None:
         self._pool: ConnectionPool | None = None
-        self._store: PostgresIdempotencyStore | None = None
-        self._ledger: PostgresDeliveryLedger | None = None
+        self._sqlite: sqlite3.Connection | None = None
+        self._store: PostgresIdempotencyStore | SqliteIdempotencyStore | None = None
+        self._ledger: PostgresDeliveryLedger | SqliteDeliveryLedger | None = None
 
     def verify(
         self, scheme: str, secrets: list[str], now: int, request: Json, options: Json | None = None
@@ -160,7 +169,19 @@ class Agent:
             return {"exhausted": True}
         return {"exhausted": False, "delay_seconds": following.delay_seconds, "next_at": following.next_at}
 
+    def _open_sqlite(self, url: str, table: str, create: bool, schema: str) -> Sqlite3Client:
+        """`sqlite:<archivo>` abre un archivo SQLite; cualquier otra URL, un PostgreSQL."""
+        self._sqlite = sqlite3.connect(url.removeprefix("sqlite:"), timeout=10)
+        if create:
+            self._sqlite.execute(f"DROP TABLE IF EXISTS {table}")
+            self._sqlite.executescript(schema)
+        return Sqlite3Client(self._sqlite)
+
     def store_open(self, url: str, table: str, create: bool) -> Json:
+        if url.startswith("sqlite:"):
+            client = self._open_sqlite(url, table, create, sqlite_store_schema(table))
+            self._store = SqliteIdempotencyStore(client, table=table)
+            return {"ready": True}
         self._pool = ConnectionPool(url, min_size=1, max_size=2, open=True)
         if create:
             with self._pool.connection() as connection:
@@ -179,6 +200,12 @@ class Agent:
         return {"result": self._store.release(ReleaseRequest(key=key, token=token))}
 
     def store_close(self, table: str, drop: bool) -> Json:
+        if self._sqlite is not None:
+            if drop:
+                self._sqlite.execute(f"DROP TABLE IF EXISTS {table}")
+            self._sqlite.close()
+            self._sqlite = None
+            return {"closed": True}
         assert self._pool is not None
         if drop:
             with self._pool.connection() as connection:
@@ -187,6 +214,10 @@ class Agent:
         return {"closed": True}
 
     def ledger_open(self, url: str, table: str, create: bool) -> Json:
+        if url.startswith("sqlite:"):
+            client = self._open_sqlite(url, table, create, sqlite_ledger_schema(table))
+            self._ledger = SqliteDeliveryLedger(client, table=table)
+            return {"ready": True}
         self._pool = ConnectionPool(url, min_size=1, max_size=2, open=True)
         if create:
             with self._pool.connection() as connection:

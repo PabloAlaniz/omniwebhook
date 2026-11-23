@@ -8,8 +8,9 @@ Levanta un agente por paquete y les manda los mismos pedidos. Comprueba tres cos
 2. Ante el mismo pedido, los dos responden exactamente lo mismo. Los pedidos salen de los
    vectores de conformidad y de variaciones al azar, con una semilla fija para que una
    diferencia se pueda reproducir.
-3. Con `OMNIWEBHOOK_PG_URL`, los dos comparten una misma tabla de reservas: lo que reserva
-   uno lo ve el otro.
+3. Los dos comparten una misma tabla de reservas y de intentos: lo que reserva o registra
+   uno lo ve el otro. Siempre sobre un archivo SQLite y, con `OMNIWEBHOOK_PG_URL`, también
+   sobre PostgreSQL.
 
 Uso: `python3 tools/interop.py [--seed N] [--rounds N]`. Antes hay que compilar el paquete
 de TypeScript (`pnpm build`). No importa ninguno de los paquetes.
@@ -27,6 +28,7 @@ import os
 import random
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -626,12 +628,16 @@ def main() -> int:
         cross_signing(agents, report, rng, arguments.rounds)
         differential_verify(agents, report, rng, arguments.rounds)
         differential_domain(agents, report, rng, arguments.rounds)
+        with tempfile.TemporaryDirectory() as folder:
+            sqlite_url = f"sqlite:{Path(folder) / 'interop.db'}"
+            shared_store(agents, report, sqlite_url)
+            shared_ledger(agents, report, sqlite_url)
         url = os.environ.get("OMNIWEBHOOK_PG_URL")
         if url:
             shared_store(agents, report, url)
             shared_ledger(agents, report, url)
         else:
-            print("Sin OMNIWEBHOOK_PG_URL: no se prueban las tablas compartidas.")
+            print("Sin OMNIWEBHOOK_PG_URL: no se prueban las tablas compartidas en PostgreSQL.")
     finally:
         for agent in agents:
             agent.close()
