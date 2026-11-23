@@ -12,10 +12,13 @@ from google.cloud import firestore
 
 from omniwebhook.adapters.crypto import sha256_hex
 from omniwebhook.application.ports import ClaimRequest, CompleteRequest, ReleaseRequest
-from omniwebhook.domain.errors import ConfigurationError
+from omniwebhook.domain.errors import ConfigurationError, positive_integer
 from omniwebhook.domain.reservation import ClaimOutcome
 
 DEFAULT_COLLECTION: Final = "omniwebhook_events"
+# Reintentos de la transacción optimista ante contención por la misma clave. Firestore usa 5 por
+# defecto; con muchos procesos reclamando a la vez conviene un número mayor.
+DEFAULT_MAX_ATTEMPTS: Final = 10
 
 _Entry = dict[str, Any]
 
@@ -59,9 +62,16 @@ def _reserved_by(stored: _Entry | None, token: str) -> bool:
 
 
 class FirestoreIdempotencyStore:
-    def __init__(self, client: firestore.Client, *, collection: str = DEFAULT_COLLECTION) -> None:
+    def __init__(
+        self,
+        client: firestore.Client,
+        *,
+        collection: str = DEFAULT_COLLECTION,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    ) -> None:
         self._client = client
         self._collection = client.collection(_checked_collection(collection))
+        self._max_attempts = positive_integer("max_attempts", max_attempts)
 
     def claim(self, request: ClaimRequest) -> ClaimOutcome:
         reference = self._collection.document(_document_id(request.key))
@@ -75,7 +85,7 @@ class FirestoreIdempotencyStore:
             transaction.set(reference, _entry(request.key, "reserved", request.token, expires_at))
             return "claimed"
 
-        outcome: ClaimOutcome = run(self._client.transaction())
+        outcome: ClaimOutcome = run(self._client.transaction(max_attempts=self._max_attempts))
         return outcome
 
     def complete(self, request: CompleteRequest) -> bool:
@@ -89,7 +99,7 @@ class FirestoreIdempotencyStore:
             transaction.set(reference, _entry(request.key, "completed", request.token, expires_at))
             return True
 
-        applied: bool = run(self._client.transaction())
+        applied: bool = run(self._client.transaction(max_attempts=self._max_attempts))
         return applied
 
     def release(self, request: ReleaseRequest) -> bool:
@@ -102,14 +112,21 @@ class FirestoreIdempotencyStore:
             transaction.delete(reference)
             return True
 
-        applied: bool = run(self._client.transaction())
+        applied: bool = run(self._client.transaction(max_attempts=self._max_attempts))
         return applied
 
 
 class AsyncFirestoreIdempotencyStore:
-    def __init__(self, client: firestore.AsyncClient, *, collection: str = DEFAULT_COLLECTION) -> None:
+    def __init__(
+        self,
+        client: firestore.AsyncClient,
+        *,
+        collection: str = DEFAULT_COLLECTION,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    ) -> None:
         self._client = client
         self._collection = client.collection(_checked_collection(collection))
+        self._max_attempts = positive_integer("max_attempts", max_attempts)
 
     async def claim(self, request: ClaimRequest) -> ClaimOutcome:
         reference = self._collection.document(_document_id(request.key))
@@ -124,7 +141,7 @@ class AsyncFirestoreIdempotencyStore:
             transaction.set(reference, _entry(request.key, "reserved", request.token, expires_at))
             return "claimed"
 
-        outcome: ClaimOutcome = await run(self._client.transaction())
+        outcome: ClaimOutcome = await run(self._client.transaction(max_attempts=self._max_attempts))
         return outcome
 
     async def complete(self, request: CompleteRequest) -> bool:
@@ -139,7 +156,7 @@ class AsyncFirestoreIdempotencyStore:
             transaction.set(reference, _entry(request.key, "completed", request.token, expires_at))
             return True
 
-        applied: bool = await run(self._client.transaction())
+        applied: bool = await run(self._client.transaction(max_attempts=self._max_attempts))
         return applied
 
     async def release(self, request: ReleaseRequest) -> bool:
@@ -153,5 +170,5 @@ class AsyncFirestoreIdempotencyStore:
             transaction.delete(reference)
             return True
 
-        applied: bool = await run(self._client.transaction())
+        applied: bool = await run(self._client.transaction(max_attempts=self._max_attempts))
         return applied

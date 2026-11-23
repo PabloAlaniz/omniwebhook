@@ -7,7 +7,7 @@ idempotencia y reintentos con las mismas reglas en TypeScript y en Python.
   vez. Devuelve un resultado tipado en vez de lanzar.
 - **Emitir**: firma con [Standard Webhooks](https://www.standardwebhooks.com/), no entrega a
   direcciones internas y dice cuándo reintentar.
-- **Sin dependencias obligatorias.** Usa Web Crypto, así que corre en Node 20 o superior y en
+- **Sin dependencias obligatorias.** Usa Web Crypto, así que corre en Node 22 o superior y en
   entornos edge.
 
 ```bash

@@ -11,7 +11,7 @@
 
 ## Preparar el entorno
 
-Hace falta Node 20 o superior con pnpm, y Python 3.11 o superior con [uv](https://docs.astral.sh/uv/).
+Hace falta Node 22 o superior con pnpm, y Python 3.11 o superior con [uv](https://docs.astral.sh/uv/).
 
 ```bash
 pnpm install

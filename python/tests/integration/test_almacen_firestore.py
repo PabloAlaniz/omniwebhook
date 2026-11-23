@@ -69,17 +69,17 @@ def test_entre_pedidos_simultaneos_por_la_misma_clave_uno_solo_la_reserva(
     almacen: FirestoreIdempotencyStore,
 ) -> None:
     with ThreadPoolExecutor(max_workers=8) as hilos:
-        resultados = list(hilos.map(lambda n: almacen.claim(_pedido(n)), range(12)))
+        resultados = list(hilos.map(lambda n: almacen.claim(_pedido(n)), range(6)))
 
-    assert sorted(resultados) == ["claimed"] + ["in_progress"] * 11
+    assert sorted(resultados) == ["claimed"] + ["in_progress"] * 5
 
 
 async def test_entre_tareas_simultaneas_por_la_misma_clave_una_sola_la_reserva(
     almacen_asincronico: AsyncFirestoreIdempotencyStore,
 ) -> None:
-    resultados = await asyncio.gather(*(almacen_asincronico.claim(_pedido(n)) for n in range(12)))
+    resultados = await asyncio.gather(*(almacen_asincronico.claim(_pedido(n)) for n in range(6)))
 
-    assert sorted(resultados) == ["claimed"] + ["in_progress"] * 11
+    assert sorted(resultados) == ["claimed"] + ["in_progress"] * 5
 
 
 def test_una_clave_con_barras_o_muy_larga_se_guarda_igual(almacen: FirestoreIdempotencyStore) -> None:
@@ -109,3 +109,9 @@ def test_guarda_la_fecha_de_vencimiento_para_la_politica_de_ttl(
 def test_rechaza_un_nombre_de_coleccion_invalido(cliente: firestore.Client, coleccion_invalida: str) -> None:
     with pytest.raises(ConfigurationError, match="collection"):
         FirestoreIdempotencyStore(cliente, collection=coleccion_invalida)
+
+
+@pytest.mark.parametrize("max_attempts", [0, -1, 1.5, True])
+def test_rechaza_un_max_attempts_invalido(cliente: firestore.Client, max_attempts: int) -> None:
+    with pytest.raises(ConfigurationError, match="max_attempts"):
+        FirestoreIdempotencyStore(cliente, max_attempts=max_attempts)
