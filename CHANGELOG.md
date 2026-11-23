@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/PabloAlaniz/omniwebhook/compare/v0.1.0...v0.1.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **python:** enlazar issues y changelog desde la página de PyPI ([7900ac4](https://github.com/PabloAlaniz/omniwebhook/commit/7900ac4be11027625f7f1070be97e318e997ddab))
+
 ## 0.1.0 (2026-11-23)
 
 
