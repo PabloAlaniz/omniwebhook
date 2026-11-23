@@ -96,6 +96,18 @@ describe('nodeTransport', () => {
         response.writeHead(503, { 'retry-after': '12' }).end();
       } else if (request.url === '/lento') {
         // No responde: el transporte tiene que cortar por tiempo.
+      } else if (request.url === '/goteo') {
+        // Manda la respuesta de a un byte: la conexión nunca queda inactiva.
+        const bytes = Buffer.from('HTTP/1.1 200 OK\r\ncontent-length: 0\r\n\r\n');
+        let index = 0;
+        const drip = setInterval(() => {
+          if (index >= bytes.length || request.socket.destroyed) {
+            clearInterval(drip);
+            return;
+          }
+          request.socket.write(bytes.subarray(index, index + 1));
+          index += 1;
+        }, 100);
       } else {
         response.writeHead(200).end('ok');
       }
@@ -152,6 +164,13 @@ describe('nodeTransport', () => {
 
   it('corta por tiempo de espera', async () => {
     expect(await nodeTransport().post(request('/lento', 0.2))).toEqual({ failure: 'timeout' });
+  });
+
+  it('el plazo es del intento completo: un servidor que gotea no lo estira', async () => {
+    const started = Date.now();
+
+    expect(await nodeTransport().post(request('/goteo', 1))).toEqual({ failure: 'timeout' });
+    expect(Date.now() - started).toBeLessThan(2_000);
   });
 
   it('una conexión rechazada es un error de red', async () => {

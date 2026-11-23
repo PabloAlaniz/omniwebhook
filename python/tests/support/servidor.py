@@ -33,6 +33,17 @@ def servidor(tls: ssl.SSLContext | None = None) -> Iterator[Servidor]:
             estado.recibidos.append(Recibido(self.path, cabeceras, cuerpo))
             if self.path.startswith("/lento"):
                 time.sleep(1.5)
+            if self.path.startswith("/goteo"):
+                # Manda la respuesta de a un byte: la conexión nunca queda inactiva.
+                try:
+                    for byte in b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n":
+                        self.wfile.write(bytes([byte]))
+                        self.wfile.flush()
+                        time.sleep(0.1)
+                except OSError:
+                    pass
+                self.close_connection = True
+                return
             if self.path.startswith("/tarde"):
                 self.send_response(503)
                 self.send_header("Retry-After", "120")

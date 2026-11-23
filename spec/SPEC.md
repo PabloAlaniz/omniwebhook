@@ -394,6 +394,10 @@ La URL de destino NO DEBE aparecer en un error ni en un log.
 | Cualquier otro estado, incluidos los 3xx | `rejected` | No se reintenta |
 | La política de URLs rechazó el intento | `blocked` | No se reintenta |
 
+El tiempo de espera es el plazo del intento completo, desde que se empieza a conectar hasta tener
+el estado de la respuesta. NO DEBE ser un plazo por operación de red: un servidor que manda la
+respuesta de a un byte no puede estirar el intento. Por defecto son 20 segundos.
+
 ### 8.3. Reintentos
 
 La política de reintentos es un dato: una lista de esperas en segundos entre un intento y el

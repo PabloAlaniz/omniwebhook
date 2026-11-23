@@ -18,6 +18,7 @@ export function pinnedTo(address: string): LookupFunction {
 /**
  * Transporte sobre los módulos de red de Node. Se conecta a la dirección validada y no
  * vuelve a resolver el nombre; el certificado se comprueba contra el nombre de la URL.
+ * El tiempo de espera es el plazo del intento completo, no el de cada operación de red.
  */
 export function nodeTransport(): HttpTransport {
   return {
@@ -27,25 +28,33 @@ export function nodeTransport(): HttpTransport {
         const send = url.protocol === 'https:' ? httpsRequest : httpRequest;
         const body = Buffer.from(request.body);
 
+        let settled = false;
+        const settle = (response: TransportResponse) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(deadline);
+          resolve(response);
+        };
+
         const outgoing = send(
           url,
           {
             method: 'POST',
             headers: { ...request.headers, 'content-length': String(body.length) },
             lookup: pinnedTo(request.address),
-            timeout: request.timeoutSeconds * 1000,
           },
           (response) => {
             response.resume();
             const header = response.headers['retry-after'];
-            resolve({ status: response.statusCode ?? 0, retryAfter: header ?? null });
+            settle({ status: response.statusCode ?? 0, retryAfter: header ?? null });
           },
         );
-        outgoing.on('timeout', () => {
-          resolve({ failure: 'timeout' });
+        // Un plazo para todo el intento: un servidor que manda de a un byte no lo estira.
+        const deadline = setTimeout(() => {
+          settle({ failure: 'timeout' });
           outgoing.destroy();
-        });
-        outgoing.on('error', () => resolve({ failure: 'network' }));
+        }, request.timeoutSeconds * 1000);
+        outgoing.on('error', () => settle({ failure: 'network' }));
         outgoing.end(body);
       });
     },
