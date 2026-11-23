@@ -6,6 +6,11 @@ export {
   type PostgresLedgerOptions,
   postgresLedgerSchema,
 } from './adapters/ledger/postgres';
+export {
+  SqliteDeliveryLedger,
+  type SqliteLedgerOptions,
+  sqliteLedgerSchema,
+} from './adapters/ledger/sqlite';
 export { creemScheme } from './adapters/schemes/creem';
 export { githubScheme } from './adapters/schemes/github';
 export { type HmacBodyOptions, hmacBodyScheme } from './adapters/schemes/hmac-body';
@@ -19,6 +24,16 @@ export {
   postgresStoreSchema,
   type SqlClient,
 } from './adapters/stores/postgres';
+export {
+  type D1Like,
+  d1Client,
+  type PreparedSqlite,
+  type SqliteClient,
+  SqliteIdempotencyStore,
+  type SqliteStoreOptions,
+  sqliteClient,
+  sqliteStoreSchema,
+} from './adapters/stores/sqlite';
 export { randomTokens } from './adapters/tokens/random-tokens';
 export { type FetchTransportOptions, fetchTransport } from './adapters/transport/fetch';
 export type {

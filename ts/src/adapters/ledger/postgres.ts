@@ -1,5 +1,6 @@
 import type { AttemptRecord, DeliveryLedger } from '../../application/ports';
 import { checkedTable, type SqlClient } from '../stores/postgres';
+import { attemptParams, LEDGER_COLUMNS as COLUMNS, type LedgerRow, toAttemptRecord } from './rows';
 
 export interface PostgresLedgerOptions {
   /** La tabla de intentos, con esquema opcional. Por defecto, `omniwebhook_attempts`. */
@@ -7,9 +8,6 @@ export interface PostgresLedgerOptions {
 }
 
 const DEFAULT_TABLE = 'omniwebhook_attempts';
-
-const COLUMNS =
-  'message_id, endpoint_id, attempt, at, delivery_class, state, status, problem, duration_ms, next_at';
 
 /** El nombre de la tabla sin el esquema: los índices viven en el esquema de su tabla. */
 function bareName(table: string): string {
@@ -40,36 +38,6 @@ CREATE INDEX IF NOT EXISTS ${bare}_message_idx ON ${name} (message_id, endpoint_
 CREATE INDEX IF NOT EXISTS ${bare}_endpoint_idx ON ${name} (endpoint_id, at)`;
 }
 
-interface Row {
-  readonly message_id: string;
-  readonly endpoint_id: string;
-  readonly attempt: number;
-  readonly at: string | number;
-  readonly delivery_class: AttemptRecord['deliveryClass'];
-  readonly state: AttemptRecord['state'];
-  readonly status: number | null;
-  readonly problem: AttemptRecord['problem'];
-  readonly duration_ms: string | number;
-  readonly next_at: string | number | null;
-}
-
-// Los clientes devuelven `bigint` como texto para no perder precisión. Los valores de acá
-// (segundos y milisegundos) entran en un número.
-function toRecord(row: Row): AttemptRecord {
-  return {
-    messageId: row.message_id,
-    endpointId: row.endpoint_id,
-    attempt: Number(row.attempt),
-    at: Number(row.at),
-    deliveryClass: row.delivery_class,
-    state: row.state,
-    status: row.status === null ? null : Number(row.status),
-    problem: row.problem,
-    durationMs: Number(row.duration_ms),
-    nextAt: row.next_at === null ? null : Number(row.next_at),
-  };
-}
-
 /**
  * Registro de entregas sobre PostgreSQL. Cada intento es una fila; la tabla es la misma que
  * usa el paquete de Python.
@@ -87,18 +55,7 @@ export class PostgresDeliveryLedger implements DeliveryLedger {
   async record(attempt: AttemptRecord): Promise<void> {
     await this.client.query(
       `INSERT INTO ${this.table} (${COLUMNS}) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-      [
-        attempt.messageId,
-        attempt.endpointId,
-        attempt.attempt,
-        attempt.at,
-        attempt.deliveryClass,
-        attempt.state,
-        attempt.status,
-        attempt.problem,
-        attempt.durationMs,
-        attempt.nextAt,
-      ],
+      attemptParams(attempt),
     );
   }
 
@@ -108,7 +65,7 @@ export class PostgresDeliveryLedger implements DeliveryLedger {
       `SELECT ${COLUMNS} FROM ${this.table} WHERE message_id = $1 AND endpoint_id = $2 ORDER BY id`,
       [messageId, endpointId],
     );
-    return result.rows.map((row) => toRecord(row as Row));
+    return result.rows.map((row) => toAttemptRecord(row as LedgerRow));
   }
 
   /** Borra los intentos que empezaron antes de `at` y devuelve cuántos eran. */

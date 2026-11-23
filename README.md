@@ -133,16 +133,17 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 | | TypeScript | Python |
 |---|---|---|
 | Esquemas de firma | Standard Webhooks, Stripe, Mercado Pago, GitHub, Creem y uno genérico de cuerpo firmado | Los mismos |
-| Almacén de reservas | Memoria, PostgreSQL | Memoria, PostgreSQL, Firestore |
+| Almacén de reservas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite, Firestore |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
-| Registro de entregas | Memoria, PostgreSQL | Memoria, PostgreSQL |
+| Registro de entregas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite |
 | Entrada | API Fetch (`Request` y `Response`) | ASGI, Starlette y FastAPI, o cualquier framework |
 | Estilo | Asincrónico | Sincrónico y asincrónico |
 | Dependencias obligatorias | Ninguna | Ninguna |
 
 Los almacenes de PostgreSQL de los dos paquetes usan la misma tabla: un evento que procesó un
 servicio en un lenguaje, el otro lo reconoce como duplicado.
-Lo mismo pasa con el registro de entregas: los intentos que registra uno los lee el otro.
+Lo mismo pasa con el registro de entregas: los intentos que registra uno los lee el otro. Y lo
+mismo con SQLite.
 
 ## Instalación
 

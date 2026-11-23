@@ -3,6 +3,7 @@
 // Lee un pedido JSON por línea de la entrada estándar y responde un JSON por línea. Usa el
 // paquete ya compilado (`pnpm build`), igual que lo usaría quien lo instala.
 import { createInterface } from 'node:readline';
+import { DatabaseSync } from 'node:sqlite';
 import pg from 'pg';
 import { Webhook } from 'standardwebhooks';
 import {
@@ -21,6 +22,11 @@ import {
   PostgresIdempotencyStore,
   postgresLedgerSchema,
   postgresStoreSchema,
+  SqliteDeliveryLedger,
+  SqliteIdempotencyStore,
+  sqliteClient,
+  sqliteLedgerSchema,
+  sqliteStoreSchema,
   stripeScheme,
 } from '../dist/index.js';
 import { standardScheme, standardSigner } from '../dist/standard.js';
@@ -55,9 +61,29 @@ function verifier({ scheme, secrets, now, options = {} }) {
   throw new Error(`esquema desconocido: ${scheme}`);
 }
 
-let pool = null;
+let database = null;
 let store = null;
 let ledger = null;
+
+// `sqlite:<archivo>` abre un archivo SQLite; cualquier otra URL, un PostgreSQL.
+function openDatabase(url) {
+  if (url.startsWith('sqlite:')) {
+    const db = new DatabaseSync(url.slice('sqlite:'.length), { timeout: 10_000 });
+    return {
+      kind: 'sqlite',
+      client: sqliteClient(db),
+      exec: async (sql) => db.exec(sql),
+      close: async () => db.close(),
+    };
+  }
+  const pool = new pg.Pool({ connectionString: url });
+  return {
+    kind: 'postgres',
+    client: pool,
+    exec: async (sql) => pool.query(sql),
+    close: async () => pool.end(),
+  };
+}
 
 const commands = {
   async verify(input) {
@@ -134,12 +160,15 @@ const commands = {
       : { exhausted: false, delay_seconds: next.delaySeconds, next_at: next.nextAt };
   },
   async store_open({ url, table, create }) {
-    pool = new pg.Pool({ connectionString: url });
+    database = openDatabase(url);
+    const sqlite = database.kind === 'sqlite';
     if (create) {
-      await pool.query(`DROP TABLE IF EXISTS ${table}`);
-      await pool.query(postgresStoreSchema(table));
+      await database.exec(`DROP TABLE IF EXISTS ${table}`);
+      await database.exec(sqlite ? sqliteStoreSchema(table) : postgresStoreSchema(table));
     }
-    store = new PostgresIdempotencyStore(pool, { table });
+    store = sqlite
+      ? new SqliteIdempotencyStore(database.client, { table })
+      : new PostgresIdempotencyStore(database.client, { table });
     return { ready: true };
   },
   async store_step(step) {
@@ -166,17 +195,20 @@ const commands = {
     return { result: await store.release({ key: step.key, token: step.token }) };
   },
   async store_close({ table, drop }) {
-    if (drop) await pool.query(`DROP TABLE IF EXISTS ${table}`);
-    await pool.end();
+    if (drop) await database.exec(`DROP TABLE IF EXISTS ${table}`);
+    await database.close();
     return { closed: true };
   },
   async ledger_open({ url, table, create }) {
-    pool = new pg.Pool({ connectionString: url });
+    database = openDatabase(url);
+    const sqlite = database.kind === 'sqlite';
     if (create) {
-      await pool.query(`DROP TABLE IF EXISTS ${table}`);
-      await pool.query(postgresLedgerSchema(table));
+      await database.exec(`DROP TABLE IF EXISTS ${table}`);
+      await database.exec(sqlite ? sqliteLedgerSchema(table) : postgresLedgerSchema(table));
     }
-    ledger = new PostgresDeliveryLedger(pool, { table });
+    ledger = sqlite
+      ? new SqliteDeliveryLedger(database.client, { table })
+      : new PostgresDeliveryLedger(database.client, { table });
     return { ready: true };
   },
   async ledger_record({ record }) {
@@ -212,8 +244,8 @@ const commands = {
     };
   },
   async ledger_close({ table, drop }) {
-    if (drop) await pool.query(`DROP TABLE IF EXISTS ${table}`);
-    await pool.end();
+    if (drop) await database.exec(`DROP TABLE IF EXISTS ${table}`);
+    await database.close();
     return { closed: true };
   },
 };

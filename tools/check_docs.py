@@ -24,7 +24,7 @@ TS_PREAMBLE = """\
 declare const pool: any, store: any, ledger: any, signer: any, db: any, cola: any, logger: any;
 declare const secreto: string, nuevo: string, anterior: string, secretoCompartido: string, url: string;
 declare const secrets: string[], payload: Uint8Array, entrega: any, pedido: any, procesar: any;
-declare const receive: any;
+declare const receive: any, env: any;
 declare function registrarPago(evento: unknown): Promise<void>;
 declare function tipoDe(request: unknown): string;
 """

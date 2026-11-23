@@ -169,8 +169,8 @@ intento completo en todos los transportes: un servidor que responde de a un byte
 ## El registro de entregas
 
 Cada intento se guarda en el registro, que es un puerto con un solo método. El paquete trae uno en
-memoria, para tests, y uno sobre PostgreSQL, para producción. La tabla de PostgreSQL es la misma en
-los dos paquetes: lo que registra uno lo lee el otro.
+memoria, para tests, y uno sobre PostgreSQL y otro sobre SQLite, para producción. Las tablas son
+las mismas en los dos paquetes: lo que registra uno lo lee el otro.
 
 ```ts
 import { PostgresDeliveryLedger, postgresLedgerSchema } from 'omniwebhook';
@@ -192,6 +192,16 @@ ledger = PostgresDeliveryLedger(PsycopgClient(pool.connection))
 
 El SQL del esquema son varias sentencias (la tabla y dos índices): se corre sin parámetros. En
 Python también está `AsyncPostgresDeliveryLedger`.
+
+Sobre SQLite o D1 es igual, con `SqliteDeliveryLedger` y `sqliteLedgerSchema()`
+(`sqlite_ledger_schema()` en Python). En un Worker de Cloudflare, el esquema va en una migración de
+D1 y el registro usa el binding:
+
+```ts
+import { d1Client, SqliteDeliveryLedger } from 'omniwebhook';
+
+const ledger = new SqliteDeliveryLedger(d1Client(db));
+```
 
 Un reenvío vuelve a empezar desde el intento 1, así que en la tabla puede haber dos filas con el
 mismo número de intento; `attemptsOf` (`attempts_of`) las devuelve en el orden en que se

@@ -70,6 +70,7 @@ attempt = send.execute(
 | `omniwebhook` | Recepción, emisión, esquemas, almacén en memoria y transporte de la biblioteca estándar | Ninguno |
 | `omniwebhook.standard` | El formato Standard Webhooks: verificar y firmar | `omniwebhook[standard]` |
 | `omniwebhook.postgres` | El almacén de reservas sobre PostgreSQL | `omniwebhook[postgres]`, para el pool de psycopg |
+| `omniwebhook.sqlite` | El almacén de reservas y el registro de entregas sobre SQLite | Ninguno: usa `sqlite3` |
 | `omniwebhook.firestore` | El almacén de reservas sobre Firestore | `omniwebhook[firestore]` |
 | `omniwebhook.starlette` | Ayudas para Starlette y FastAPI | `omniwebhook[starlette]` |
 | `omniwebhook.httpx` | Un transporte asincrónico sobre httpx | `omniwebhook[httpx]` |

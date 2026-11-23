@@ -122,6 +122,7 @@ o lo reciban dos procesos a la vez.
 |---|---|
 | Memoria | Tests y desarrollo. No sirve con más de un proceso |
 | PostgreSQL | Producción. Cada operación es una sola sentencia |
+| SQLite | Producción con D1 de Cloudflare, libSQL o un solo servidor. Cada operación es una sola sentencia |
 | Firestore (Python) | Producción. Cada operación es una transacción |
 
 ### PostgreSQL
@@ -149,6 +150,57 @@ objeto que tenga `query(texto, parámetros)`, con parámetros `%s`, y devuelva l
 
 Las entradas vencidas no molestan, pero ocupan lugar. `purgeExpired(now)` (`purge_expired(now)` en
 Python) las borra; conviene correrlo cada tanto.
+
+### SQLite y D1
+
+Para SQLite (y para D1, que también es SQLite) el paquete trae su propia variante del SQL, con
+parámetros `?` y las mismas columnas que la tabla de PostgreSQL.
+
+En un Worker de Cloudflare, `d1Client` adapta el binding de D1. Conviene crear la tabla en una
+migración de D1 con el SQL de `sqliteStoreSchema()`, copiado tal cual:
+
+```ts
+import { createReceiver, d1Client, SqliteIdempotencyStore } from 'omniwebhook';
+import { standardScheme } from 'omniwebhook/standard';
+
+const receive = createReceiver({
+  verifier: standardScheme({ secrets: [env.WEBHOOK_SECRET] }),
+  store: new SqliteIdempotencyStore(d1Client(env.DB)),
+});
+```
+
+Con una base SQLite sincrónica (`node:sqlite`, `better-sqlite3` o `bun:sqlite`), `sqliteClient`
+la adapta:
+
+```ts
+import { DatabaseSync } from 'node:sqlite';
+import { SqliteIdempotencyStore, sqliteClient, sqliteStoreSchema } from 'omniwebhook';
+
+const db = new DatabaseSync('webhooks.db');
+db.exec(sqliteStoreSchema());
+const store = new SqliteIdempotencyStore(sqliteClient(db));
+```
+
+En Python, `Sqlite3Client` adapta una conexión de `sqlite3`, de la biblioteca estándar. Confirma
+cada sentencia y las ejecuta de a una, así que la misma conexión sirve para varios hilos si se abre
+con `check_same_thread=False`:
+
+```python
+import sqlite3
+
+from omniwebhook.sqlite import Sqlite3Client, SqliteIdempotencyStore, sqlite_store_schema
+
+conexion = sqlite3.connect("webhooks.db", check_same_thread=False)
+conexion.executescript(sqlite_store_schema())
+store = SqliteIdempotencyStore(Sqlite3Client(conexion))
+```
+
+Para otro cliente, en los dos lenguajes alcanza con un objeto que ejecute una sentencia con
+parámetros `?`, la confirme y devuelva las filas: `all(sql, parámetros)` en TypeScript y
+`query(texto, parámetros)` en Python. En Python sólo hay variante sincrónica, porque `sqlite3` no es
+asincrónico; desde código asincrónico se puede correr en un hilo con `asyncio.to_thread`.
+
+Un archivo SQLite lo pueden compartir los dos paquetes: lo que reserva uno lo ve el otro.
 
 ### Firestore
 
@@ -197,6 +249,7 @@ Cada pieza que hace entrada/salida tiene las dos variantes. La asincrónica llev
 | `MemoryIdempotencyStore` | `AsyncMemoryIdempotencyStore` |
 | `PostgresIdempotencyStore` | `AsyncPostgresIdempotencyStore` |
 | `FirestoreIdempotencyStore` | `AsyncFirestoreIdempotencyStore` |
+| `SqliteIdempotencyStore` | No hay: `sqlite3` no es asincrónico |
 
 Los esquemas de firma son los mismos en los dos casos: verificar es sólo cálculo.
 
