@@ -200,6 +200,32 @@ describe('SendWebhook', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  it('entrega a una dirección privada de una red permitida, conectando a esa dirección', async () => {
+    const { execute, post } = build({
+      allowedNetworks: ['192.168.0.0/16'],
+      resolver: { resolve: async () => ['192.168.1.20'] },
+    });
+
+    const result = await execute();
+
+    expect(result.state).toBe('delivered');
+    expect(sent(post).address).toBe('192.168.1.20');
+  });
+
+  it('una red permitida no habilita los metadatos de la nube', async () => {
+    const { execute, post } = build({
+      allowedNetworks: ['0.0.0.0/0'],
+      resolver: { resolve: async () => ['169.254.169.254'] },
+    });
+
+    expect(await execute()).toMatchObject({ state: 'blocked', problem: 'blocked_address' });
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('una red permitida inválida es un error de configuración al construir', () => {
+    expect(() => build({ allowedNetworks: ['10.0.0.1/8'] })).toThrow(ConfigurationError);
+  });
+
   it('con permiso expreso entrega a http', async () => {
     const { execute } = build({ allowHttp: true });
 

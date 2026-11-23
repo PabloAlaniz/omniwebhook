@@ -67,7 +67,7 @@ export {
 export { ConfigurationError } from './domain/errors';
 export { DEFAULT_TOLERANCE_SECONDS } from './domain/freshness';
 export type { Field, IncomingRequest } from './domain/incoming-request';
-export { isBlockedAddress } from './domain/ip-address';
+export { type AllowedNetworks, allowedNetworks, isBlockedAddress } from './domain/ip-address';
 export type { OutgoingMessage, Signing, SigningProblem } from './domain/message';
 export { httpStatusFor, type ReceptionOutcome } from './domain/reception';
 export {

@@ -1,6 +1,7 @@
 import { type AttemptOutcome, classifyDelivery, stateAfter } from '../domain/delivery';
 import { type DestinationProblem, inspectDestination, selectAddress } from '../domain/destination';
 import { ConfigurationError, positiveInteger } from '../domain/errors';
+import { type AllowedNetworks, allowedNetworks } from '../domain/ip-address';
 import { checkRetryPolicy, nextAttempt, type RetryPolicy } from '../domain/retry';
 import type {
   AttemptRecord,
@@ -41,6 +42,11 @@ export interface SendWebhookDependencies {
   readonly retryPolicy?: RetryPolicy;
   /** Permite destinos `http`. Por defecto sólo se entrega a `https`. */
   readonly allowHttp?: boolean;
+  /**
+   * Redes, como `192.168.0.0/16`, a las que se permite entregar aunque estén en un rango
+   * bloqueado. Por defecto ninguna. Los servicios de metadatos de las nubes no se permiten nunca.
+   */
+  readonly allowedNetworks?: readonly string[];
   readonly timeoutSeconds?: number;
   readonly contentType?: string;
   /** Cabeceras extra. No pueden pisar las de la firma ni el tipo de contenido. */
@@ -64,6 +70,7 @@ interface Attempted {
 export class SendWebhook {
   private readonly timeoutSeconds: number;
   private readonly baseHeaders: Readonly<Record<string, string>>;
+  private readonly allowed: AllowedNetworks;
 
   constructor(private readonly deps: SendWebhookDependencies) {
     // Los nombres van en minúsculas para que una cabecera extra no conviva con la firma.
@@ -78,6 +85,7 @@ export class SendWebhook {
       deps.timeoutSeconds ?? DEFAULT_TIMEOUT_SECONDS,
     );
     checkRetryPolicy(deps.retryPolicy ?? {});
+    this.allowed = allowedNetworks(deps.allowedNetworks ?? []);
   }
 
   async execute(delivery: Delivery): Promise<DeliveryResult> {
@@ -150,7 +158,7 @@ export class SendWebhook {
         return networkFailure;
       }
     }
-    const selected = selectAddress(addresses);
+    const selected = selectAddress(addresses, this.allowed);
     if (typeof selected === 'string') return blocked(selected);
 
     try {

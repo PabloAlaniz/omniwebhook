@@ -68,7 +68,7 @@ from omniwebhook.domain.destination import (
 from omniwebhook.domain.errors import ConfigurationError
 from omniwebhook.domain.freshness import DEFAULT_TOLERANCE_SECONDS
 from omniwebhook.domain.incoming_request import Field, IncomingRequest
-from omniwebhook.domain.ip_address import is_blocked_address
+from omniwebhook.domain.ip_address import AllowedNetworks, allowed_networks, is_blocked_address
 from omniwebhook.domain.message import NotSigned, OutgoingMessage, Signed, Signing, SigningProblem
 from omniwebhook.domain.reception import ReceptionOutcome, http_status_for
 from omniwebhook.domain.reservation import DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS, ClaimOutcome
@@ -97,6 +97,7 @@ __all__ = [
     "DEFAULT_TIMEOUT_SECONDS",
     "DEFAULT_TOLERANCE_SECONDS",
     "SPEC_VERSION",
+    "AllowedNetworks",
     "AsyncDeliveryLedger",
     "AsyncDnsResolver",
     "AsyncEventHandler",
@@ -159,6 +160,7 @@ __all__ = [
     "Verified",
     "VerifiedEvent",
     "Verifier",
+    "allowed_networks",
     "classify_delivery",
     "create_async_receiver",
     "create_async_sender",

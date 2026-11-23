@@ -28,6 +28,7 @@ from omniwebhook.application.ports import (
 from omniwebhook.domain.delivery import AttemptOutcome, classify_delivery, state_after
 from omniwebhook.domain.destination import DestinationProblem, inspect_destination, select_address
 from omniwebhook.domain.errors import ConfigurationError, positive_integer
+from omniwebhook.domain.ip_address import allowed_networks as _allowed_networks
 from omniwebhook.domain.message import OutgoingMessage
 from omniwebhook.domain.retry import RetryPolicy, next_attempt
 
@@ -95,6 +96,7 @@ class _Sending:
         random: RandomSource,
         retry_policy: RetryPolicy | None = None,
         allow_http: bool = False,
+        allowed_networks: Sequence[str] = (),
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
         content_type: str = DEFAULT_CONTENT_TYPE,
         headers: Mapping[str, str] | None = None,
@@ -105,6 +107,7 @@ class _Sending:
         self._random = random
         self._retry_policy = retry_policy or RetryPolicy()
         self._allow_http = allow_http
+        self._allowed = _allowed_networks(allowed_networks)
         self._timeout_seconds = positive_integer("timeout_seconds", timeout_seconds)
         # Los nombres van en minúsculas para que una cabecera extra no conviva con la firma.
         self._base_headers = {
@@ -131,7 +134,7 @@ class _Sending:
     def _request(
         self, delivery: Delivery, plan: _Planned, addresses: Sequence[str]
     ) -> TransportRequest | _Attempted:
-        selected = select_address(addresses)
+        selected = select_address(addresses, self._allowed)
         if isinstance(selected, str):
             return _blocked(selected)
         return TransportRequest(
@@ -186,6 +189,7 @@ class SendWebhook(_Sending):
         random: RandomSource,
         retry_policy: RetryPolicy | None = None,
         allow_http: bool = False,
+        allowed_networks: Sequence[str] = (),
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
         content_type: str = DEFAULT_CONTENT_TYPE,
         headers: Mapping[str, str] | None = None,
@@ -197,6 +201,7 @@ class SendWebhook(_Sending):
             random=random,
             retry_policy=retry_policy,
             allow_http=allow_http,
+            allowed_networks=allowed_networks,
             timeout_seconds=timeout_seconds,
             content_type=content_type,
             headers=headers,
@@ -253,6 +258,7 @@ class AsyncSendWebhook(_Sending):
         random: RandomSource,
         retry_policy: RetryPolicy | None = None,
         allow_http: bool = False,
+        allowed_networks: Sequence[str] = (),
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
         content_type: str = DEFAULT_CONTENT_TYPE,
         headers: Mapping[str, str] | None = None,
@@ -264,6 +270,7 @@ class AsyncSendWebhook(_Sending):
             random=random,
             retry_policy=retry_policy,
             allow_http=allow_http,
+            allowed_networks=allowed_networks,
             timeout_seconds=timeout_seconds,
             content_type=content_type,
             headers=headers,

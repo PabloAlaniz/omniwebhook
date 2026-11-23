@@ -1,3 +1,5 @@
+import { ConfigurationError } from './errors';
+
 /** Una dirección IP como bytes: 4 para IPv4, 16 para IPv6. */
 type AddressBytes = readonly number[];
 
@@ -109,18 +111,68 @@ const BLOCKED: readonly Network[] = [
 
 const IPV4_MAPPED = network('::ffff:0:0/96');
 
+/** Los servicios de metadatos de las nubes: ninguna red permitida los habilita (sección 8.1). */
+const NEVER_ALLOWED: readonly Network[] = [
+  '169.254.0.0/16',
+  '100.100.100.200/32',
+  'fd00:ec2::254/128',
+].map(network);
+
+const PREFIX = /^(0|[1-9][0-9]{0,2})$/;
+
+/** Las redes a las que se permite entregar aunque estén en un rango bloqueado. */
+export type AllowedNetworks = readonly Network[];
+
+/** Una red con la forma `dirección/prefijo` de la sección 8.1, o `null` si no la tiene. */
+function parseNetwork(text: string): Network | null {
+  const slash = text.indexOf('/');
+  if (slash === -1) return null;
+  const prefixText = text.slice(slash + 1);
+  const bytes = parseAddress(text.slice(0, slash));
+  if (bytes === null || !PREFIX.test(prefixText)) return null;
+  const prefix = Number(prefixText);
+  if (prefix > bytes.length * 8) return null;
+  // Los bits fuera del prefijo tienen que ser cero.
+  const net = { bytes, prefix };
+  const masked = bytes.map((byte, index) => {
+    const remaining = prefix - index * 8;
+    if (remaining >= 8) return byte;
+    if (remaining <= 0) return 0;
+    return byte & ((0xff << (8 - remaining)) & 0xff);
+  });
+  if (masked.some((byte, index) => byte !== bytes[index])) return null;
+  // Las IPv6 que envuelven una IPv4 se evalúan por la IPv4: una red así nunca coincidiría.
+  if (prefix >= 96 && contains(IPV4_MAPPED, bytes)) return null;
+  return net;
+}
+
+/**
+ * Lee la lista de redes permitidas. Una red que no tiene la forma `dirección/prefijo` de la
+ * sección 8.1 es un error de configuración.
+ */
+export function allowedNetworks(cidrs: readonly string[]): AllowedNetworks {
+  return cidrs.map((cidr) => {
+    const net = parseNetwork(cidr);
+    if (net === null) throw new ConfigurationError(`red permitida inválida: ${cidr}`);
+    return net;
+  });
+}
+
 /** Si el texto es una dirección IP literal. */
 export function isIpAddress(text: string): boolean {
   return parseAddress(text) !== null;
 }
 
 /**
- * Si no se puede entregar a esta dirección: está en un rango bloqueado o no es una
- * dirección IP. Una IPv6 que envuelve una IPv4 se evalúa por la IPv4 que contiene.
+ * Si no se puede entregar a esta dirección: no es una dirección IP, o está en un rango
+ * bloqueado y fuera de las redes permitidas. Una IPv6 que envuelve una IPv4 se evalúa por
+ * la IPv4 que contiene.
  */
-export function isBlockedAddress(text: string): boolean {
+export function isBlockedAddress(text: string, allowed: AllowedNetworks = []): boolean {
   const parsed = parseAddress(text);
   if (parsed === null) return true;
   const address = contains(IPV4_MAPPED, parsed) ? parsed.slice(12) : parsed;
-  return BLOCKED.some((net) => contains(net, address));
+  const inside = (net: Network) => contains(net, address);
+  if (NEVER_ALLOWED.some(inside)) return true;
+  return BLOCKED.some(inside) && !allowed.some(inside);
 }

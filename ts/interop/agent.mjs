@@ -13,6 +13,7 @@ import {
   hmacBodyScheme,
   httpStatusFor,
   inspectDestination,
+  allowedNetworks,
   isBlockedAddress,
   mercadoPagoScheme,
   nextAttempt,
@@ -78,8 +79,20 @@ const commands = {
   async address({ address }) {
     return { blocked: isBlockedAddress(address) };
   },
-  async url({ url, allow_http, resolved }) {
-    const result = evaluateDestination(url, { allowHttp: allow_http, resolved });
+  async network({ network }) {
+    try {
+      allowedNetworks([network]);
+      return { valid: true };
+    } catch {
+      return { valid: false };
+    }
+  },
+  async url({ url, allow_http, allowed_networks = [], resolved }) {
+    const result = evaluateDestination(url, {
+      allowHttp: allow_http,
+      allowedNetworks: allowed_networks,
+      resolved,
+    });
     const inspected = inspectDestination(url, { allowHttp: allow_http });
     if (typeof inspected === 'string') return { result };
     // Lo que entiende el analizador de la plataforma, que es el que usa el transporte.

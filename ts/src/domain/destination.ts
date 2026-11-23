@@ -1,4 +1,4 @@
-import { isBlockedAddress, isIpAddress } from './ip-address';
+import { type AllowedNetworks, allowedNetworks, isBlockedAddress, isIpAddress } from './ip-address';
 
 /** Por qué la política de URLs rechazó un destino (sección 8.1), en el orden en que se revisa. */
 export type DestinationProblem =
@@ -88,21 +88,33 @@ export function inspectDestination(
  */
 export function selectAddress(
   addresses: readonly string[],
+  allowed: AllowedNetworks = [],
 ): { readonly address: string } | Extract<DestinationProblem, 'unresolved' | 'blocked_address'> {
   const [address] = addresses;
   if (address === undefined) return 'unresolved';
-  return addresses.some(isBlockedAddress) ? 'blocked_address' : { address };
+  return addresses.some((each) => isBlockedAddress(each, allowed))
+    ? 'blocked_address'
+    : { address };
 }
 
-/** La política completa, dadas las direcciones a las que resolvió el nombre. */
+/**
+ * La política completa, dadas las direcciones a las que resolvió el nombre. Lanza
+ * `ConfigurationError` si alguna red permitida no tiene la forma de la sección 8.1.
+ */
 export function evaluateDestination(
   url: string,
-  options: { allowHttp?: boolean; resolved: readonly string[] },
+  options: {
+    allowHttp?: boolean;
+    allowedNetworks?: readonly string[];
+    resolved: readonly string[];
+  },
 ): DestinationVerdict {
+  const allowed = allowedNetworks(options.allowedNetworks ?? []);
   const inspected = inspectDestination(url, options);
   if (typeof inspected === 'string') return inspected;
   const selected = selectAddress(
     inspected.literalAddress === null ? options.resolved : [inspected.literalAddress],
+    allowed,
   );
   return typeof selected === 'string' ? selected : 'allowed';
 }

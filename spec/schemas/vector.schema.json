@@ -27,6 +27,7 @@
         "response",
         "address",
         "url",
+        "network",
         "delivery-class",
         "retry"
       ]

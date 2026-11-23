@@ -17,6 +17,7 @@ from omniwebhook import (
     AttemptOutcome,
     ClaimRequest,
     CompleteRequest,
+    ConfigurationError,
     IncomingRequest,
     OutgoingMessage,
     ReleaseRequest,
@@ -24,6 +25,7 @@ from omniwebhook import (
     Signed,
     Verified,
     Verifier,
+    allowed_networks,
     classify_delivery,
     creem_scheme,
     evaluate_destination,
@@ -105,8 +107,19 @@ class Agent:
     def address(self, address: str) -> Json:
         return {"blocked": is_blocked_address(address)}
 
-    def url(self, url: str, allow_http: bool, resolved: list[str]) -> Json:
-        result = evaluate_destination(url, allow_http=allow_http, resolved=resolved)
+    def network(self, network: str) -> Json:
+        try:
+            allowed_networks([network])
+        except ConfigurationError:
+            return {"valid": False}
+        return {"valid": True}
+
+    def url(
+        self, url: str, allow_http: bool, resolved: list[str], allowed_networks: list[str] | None = None
+    ) -> Json:
+        result = evaluate_destination(
+            url, allow_http=allow_http, allowed_networks=allowed_networks or [], resolved=resolved
+        )
         inspected = inspect_destination(url, allow_http=allow_http)
         if isinstance(inspected, str):
             return {"result": result}
