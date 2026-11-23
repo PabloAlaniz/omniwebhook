@@ -18,6 +18,7 @@ export { type HmacBodyOptions, hmacBodyScheme } from './adapters/schemes/hmac-bo
 export { mercadoPagoScheme } from './adapters/schemes/mercadopago';
 export type { SchemeConfig, TimedSchemeConfig } from './adapters/schemes/scheme-verifier';
 export { stripeScheme } from './adapters/schemes/stripe';
+export { tiktokScheme } from './adapters/schemes/tiktok';
 export { MemoryIdempotencyStore } from './adapters/stores/memory';
 export {
   PostgresIdempotencyStore,

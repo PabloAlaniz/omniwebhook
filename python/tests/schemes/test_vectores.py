@@ -14,6 +14,7 @@ from omniwebhook import (
     hmac_body_scheme,
     mercadopago_scheme,
     stripe_scheme,
+    tiktok_scheme,
 )
 from omniwebhook.standard import (
     StandardSigner,
@@ -43,6 +44,7 @@ def _estandar(firmante: StandardSigner) -> Fabrica:
 ESQUEMAS: dict[str, tuple[str, Fabrica]] = {
     **{f"standard ({n})": ("standard", _estandar(f)) for n, f in FIRMANTES.items()},
     "stripe": ("stripe", lambda c, reloj: stripe_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c))),
+    "tiktok": ("tiktok", lambda c, reloj: tiktok_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c))),
     "mercadopago": (
         "mercadopago",
         lambda c, reloj: mercadopago_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c)),

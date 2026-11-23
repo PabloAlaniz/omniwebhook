@@ -163,6 +163,20 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             valid = any(hexmac(secret, signed) in sigs for secret in secrets)
             stamp, event = int(times[0]), json_id("stripe", body)
 
+        elif scheme == "tiktok":
+            header = values(headers, "tiktok-signature")
+            need([header])
+            unique(header)
+            parts = split_pairs(header[0])
+            times = [value for key, value in parts if key == "t"]
+            sigs = [value.lower() for key, value in parts if key == "s"]
+            unique(times, sigs)
+            if not times or not sigs or not SECONDS.fullmatch(times[0]):
+                raise Stop("malformed")
+            signed = f"{times[0]}.".encode() + body
+            valid = any(hexmac(secret, signed) == sigs[0] for secret in secrets)
+            stamp, event = int(times[0]), fingerprint("tiktok", body)
+
         elif scheme == "mercadopago":
             header = values(headers, "x-signature")
             request_id = values(headers, "x-request-id")
@@ -491,6 +505,78 @@ def verificar_stripe() -> Vector:
             case("la clave v1 distingue mayúsculas", "malformed", f"t={NOW},V1={sig}"),
             case("un segundo después de la tolerancia", "stale", stripe_header(ts=NOW - 301)),
             case("del futuro", "stale", stripe_header(ts=NOW + 301)),
+        ],
+    )
+
+
+# --- tiktok -----------------------------------------------------------------
+
+TIKTOK_BODY = (
+    '{"client_key":"clave_sintetica","event":"authorization.removed","create_time":1700000000,'
+    '"user_openid":"openid_sintetico","content":"{\\"reason\\":1}"}'
+)
+
+
+def tiktok_header(ts: int | str = NOW, body: str = TIKTOK_BODY, secret: str = TXT_SECRET) -> str:
+    return f"t={ts},s={hexmac(secret, f'{ts}.{body}'.encode())}"
+
+
+def verificar_tiktok() -> Vector:
+    good = tiktok_header()
+    sig = good.split("s=")[1]
+
+    def case(
+        name: str, want: str, header: str | None = good, body: str = TIKTOK_BODY, **extra: Any
+    ) -> dict[str, Any]:
+        headers = extra.pop("headers", None)
+        if headers is None:
+            headers = [] if header is None else [["tiktok-signature", header]]
+        return {
+            "name": name,
+            "want": want,
+            "secrets": [TXT_SECRET],
+            "request": request(headers, body),
+            **extra,
+        }
+
+    return verify_file(
+        "tiktok",
+        [
+            case("firma válida", "ok"),
+            case("el orden de los pares no importa", "ok", f"s={sig},t={NOW}"),
+            case("claves desconocidas se ignoran", "ok", f"{good},v=1"),
+            case("espacios alrededor de los pares", "ok", good.replace(",", " , ")),
+            case("firma en mayúsculas", "ok", f"t={NOW},s={sig.upper()}"),
+            case("nombre de la cabecera en mayúsculas", "ok", headers=[["TikTok-Signature", good]]),
+            case("rotación: coincide el segundo secreto", "ok", secrets=[TXT_OTHER, TXT_SECRET]),
+            case(
+                "un cuerpo con id no cambia la clave: es la huella",
+                "ok",
+                tiktok_header(body='{"id":"x"}'),
+                '{"id":"x"}',
+            ),
+            case("en el borde de la tolerancia", "ok", tiktok_header(ts=NOW - 300)),
+            case("sin secretos", "unconfigured", secrets=[]),
+            case("falta la cabecera", "missing", None),
+            case(
+                "cabecera repetida",
+                "ambiguous",
+                headers=[["tiktok-signature", good], ["TikTok-Signature", good]],
+            ),
+            case("marca de tiempo repetida", "ambiguous", f"{good},t={NOW - 1}"),
+            case("firma repetida", "ambiguous", f"{good},s={'0' * 64}"),
+            case("sin marca de tiempo", "malformed", f"s={sig}"),
+            case("sin firma", "malformed", f"t={NOW}"),
+            case("la firma de Stripe no cuenta", "malformed", f"t={NOW},v1={sig}"),
+            case("marca de tiempo con letras", "malformed", f"t=ayer,s={sig}"),
+            case("marca de tiempo demasiado larga", "malformed", f"t={'1' * 12},s={sig}"),
+            case("sin pares", "malformed", "cualquier cosa"),
+            case("la clave s distingue mayúsculas", "malformed", f"t={NOW},S={sig}"),
+            case("firma de otro secreto", "invalid", tiktok_header(secret=TXT_OTHER)),
+            case("cuerpo alterado", "invalid", body=TIKTOK_BODY + "\n"),
+            case("firma de otra marca de tiempo", "invalid", f"t={NOW - 1},s={sig}"),
+            case("un segundo después de la tolerancia", "stale", tiktok_header(ts=NOW - 301)),
+            case("del futuro", "stale", tiktok_header(ts=NOW + 301)),
         ],
     )
 
@@ -1685,6 +1771,7 @@ def entregar_reintentos() -> Vector:
 ALL: list[Callable[[], Vector]] = [
     verificar_standard,
     verificar_stripe,
+    verificar_tiktok,
     verificar_mercadopago,
     verificar_github,
     verificar_creem,

@@ -228,7 +228,7 @@ def ask_verify(agents: list[Agent], report: Report, what: str, case: Json) -> Js
 
 
 def differential_verify(agents: list[Agent], report: Report, rng: random.Random, rounds: int) -> None:
-    schemes = ["standard", "stripe", "mercadopago", "github", "creem", "hmac-body"]
+    schemes = ["standard", "stripe", "tiktok", "mercadopago", "github", "creem", "hmac-body"]
     seeds = [case for scheme in schemes for case in cases(f"verificar/{scheme}")]
     for case in seeds:
         got = ask_verify(agents, report, f"vector {case['scheme']}: {case['name']}", case)
@@ -251,6 +251,7 @@ def differential_verify(agents: list[Agent], report: Report, rng: random.Random,
         for scheme, headers in (
             ("creem", [["creem-signature", mac]]),
             ("stripe", [["stripe-signature", f"t=1700000000,v1={stamped}"]]),
+            ("tiktok", [["tiktok-signature", f"t=1700000000,s={stamped}"]]),
         ):
             case = {
                 "scheme": scheme,

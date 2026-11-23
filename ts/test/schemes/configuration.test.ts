@@ -5,6 +5,7 @@ import {
   hmacBodyScheme,
   mercadoPagoScheme,
   stripeScheme,
+  tiktokScheme,
 } from '../../src/index';
 import { standardScheme } from '../../src/standard';
 
@@ -12,7 +13,7 @@ describe('configuración de los esquemas', () => {
   it.each([0, -1, 1.5, Number.NaN])(
     'rechaza la tolerancia %s: la frescura no se puede desactivar',
     (toleranceSeconds) => {
-      for (const build of [standardScheme, stripeScheme, mercadoPagoScheme]) {
+      for (const build of [standardScheme, stripeScheme, tiktokScheme, mercadoPagoScheme]) {
         expect(() => build({ secrets: ['c2VjcmV0bw=='], toleranceSeconds })).toThrow(
           ConfigurationError,
         );

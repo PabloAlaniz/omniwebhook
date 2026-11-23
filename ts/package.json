@@ -19,7 +19,8 @@
     "idempotency",
     "retries",
     "standard-webhooks",
-    "mercadopago"
+    "mercadopago",
+    "tiktok"
   ],
   "type": "module",
   "engines": {

@@ -196,7 +196,20 @@ este esquema.
 - Sin marca de tiempo.
 - Clave del evento: `creem:<id>`, con la misma regla del campo `id` que en `stripe`.
 
-### 5.6. `hmac-body`
+### 5.6. `tiktok`
+
+- Cabecera exigida: `tiktok-signature`, con pares `clave=valor` (sección 4.5.1).
+- Cuentan las claves `t` y `s`. Cualquier otra se ignora.
+- Sin `t` o sin `s`, `malformed`. Cualquiera de las dos repetida, `ambiguous`.
+- `t` DEBE cumplir `^[0-9]{1,11}$`. Si no, `malformed`.
+- Secreto: el texto completo, en UTF-8, es la clave (el *client secret* de la app).
+- Contenido firmado: `<t>.<cuerpo>`.
+- Firma: hexadecimal del HMAC.
+- Marca de tiempo: `t`, en segundos.
+- Clave del evento: la huella del cuerpo. El emisor no manda un identificador de entrega y el cuerpo
+  no trae un `id`; los reintentos llegan con el mismo cuerpo.
+
+### 5.7. `hmac-body`
 
 Un esquema genérico para emisores que firman sólo el cuerpo. Se configura con:
 

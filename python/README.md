@@ -38,7 +38,7 @@ async def stripe_webhook(request: Request) -> Response:
     return to_response(await receive.execute(await to_incoming_request(request), procesar))
 ```
 
-Esquemas incluidos: `stripe_scheme`, `mercadopago_scheme`, `github_scheme`, `creem_scheme`,
+Esquemas incluidos: `stripe_scheme`, `tiktok_scheme`, `mercadopago_scheme`, `github_scheme`, `creem_scheme`,
 `hmac_body_scheme` y, en `omniwebhook.standard`, `standard_scheme`.
 
 ## Emitir

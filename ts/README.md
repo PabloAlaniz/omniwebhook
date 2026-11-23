@@ -32,7 +32,7 @@ export async function POST(request: Request): Promise<Response> {
 }
 ```
 
-Esquemas incluidos: `stripeScheme`, `mercadoPagoScheme`, `githubScheme`, `creemScheme`,
+Esquemas incluidos: `stripeScheme`, `tiktokScheme`, `mercadoPagoScheme`, `githubScheme`, `creemScheme`,
 `hmacBodyScheme` y, en `omniwebhook/standard`, `standardScheme`.
 
 ## Emitir

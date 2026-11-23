@@ -1,0 +1,569 @@
+{
+ "spec": "0",
+ "id": "verificar/tiktok",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "el orden de los pares no importa",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7,t=1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "claves desconocidas se ignoran",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7,v=1"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "espacios alrededor de los pares",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000 , s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "firma en mayúsculas",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=C45F7924E7F55C426DFACCC9E3700B2DB4167FEC8AE1DF4CD0F7C53DDD5CA2F7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "nombre de la cabecera en mayúsculas",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "TikTok-Signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-dos",
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "un cuerpo con id no cambia la clave: es la huella",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=a6d3cbb32587d30d03fd3079840af8c0d7ac1888c13ac09fc1f2eea32cbdba17"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"x\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:5e2b92cc57ce618dfbb54844a31775e4b95c6fb552ee6bf5a068133c12d2ad90",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "en el borde de la tolerancia",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1699999700,s=648fd5e13024bade688753c200e0f4fbc64b02446736b0715badc59d06f1cc83"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "tiktok:sha256:039f4b5002bf6db3b383e5500be00bf9f39d797d6202fc313e2835b310a75573",
+    "timestamp": 1699999700
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "tiktok",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera repetida",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ],
+     [
+      "TikTok-Signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo repetida",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7,t=1699999999"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "firma repetida",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7,s=0000000000000000000000000000000000000000000000000000000000000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "sin marca de tiempo",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "sin firma",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "la firma de Stripe no cuenta",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,v1=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo con letras",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=ayer,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo demasiado larga",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=111111111111,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "sin pares",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "cualquier cosa"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "la clave s distingue mayúsculas",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,S=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=581609bcddf0b0db539c95cbe3ad190a770e806c1e7fcf02c2039d301edda2b5"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000000,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}\n"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma de otra marca de tiempo",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1699999999,s=c45f7924e7f55c426dfaccc9e3700b2db4167fec8ae1df4cd0f7c53ddd5ca2f7"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un segundo después de la tolerancia",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1699999699,s=ca9f3554ebb802d04833c70d6b07c654ec933767aecd658f6fffa82728219b5e"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "del futuro",
+   "scheme": "tiktok",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "tiktok-signature",
+      "t=1700000301,s=c8c225eabbe959d1eac25e0ac9a250c07ac9fa86d2745191ce0a693cc13a36ff"
+     ]
+    ],
+    "query": [],
+    "body": "{\"client_key\":\"clave_sintetica\",\"event\":\"authorization.removed\",\"create_time\":1700000000,\"user_openid\":\"openid_sintetico\",\"content\":\"{\\\"reason\\\":1}\"}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  }
+ ]
+}

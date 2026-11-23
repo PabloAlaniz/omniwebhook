@@ -5,6 +5,7 @@ import {
   hmacBodyScheme,
   mercadoPagoScheme,
   stripeScheme,
+  tiktokScheme,
 } from '../../src/index';
 import { standardScheme } from '../../src/standard';
 import { describeVerifyVectors, toleranceOf } from '../support/verify-vectors';
@@ -14,6 +15,9 @@ describeVerifyVectors('standard', (c, clock) =>
 );
 describeVerifyVectors('stripe', (c, clock) =>
   stripeScheme({ secrets: c.secrets, clock, ...toleranceOf(c) }),
+);
+describeVerifyVectors('tiktok', (c, clock) =>
+  tiktokScheme({ secrets: c.secrets, clock, ...toleranceOf(c) }),
 );
 describeVerifyVectors('mercadopago', (c, clock) =>
   mercadoPagoScheme({ secrets: c.secrets, clock, ...toleranceOf(c) }),

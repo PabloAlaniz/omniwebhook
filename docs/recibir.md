@@ -41,6 +41,7 @@ como `ambiguous`: simplemente la firma no coincide.
 |---|---|---|---|---|
 | Standard Webhooks | `standardScheme` | `standard_scheme` | Sí | `webhook-id` |
 | Stripe | `stripeScheme` | `stripe_scheme` | Sí | `id` del cuerpo |
+| TikTok | `tiktokScheme` | `tiktok_scheme` | Sí | La huella del cuerpo |
 | Mercado Pago | `mercadoPagoScheme` | `mercadopago_scheme` | Sí | `data.id` y `x-request-id` |
 | GitHub | `githubScheme` | `github_scheme` | No | `x-github-delivery` |
 | Creem | `creemScheme` | `creem_scheme` | No | `id` del cuerpo |

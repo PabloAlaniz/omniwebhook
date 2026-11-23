@@ -40,6 +40,7 @@ from omniwebhook import (
     mercadopago_scheme,
     next_attempt,
     stripe_scheme,
+    tiktok_scheme,
 )
 from omniwebhook.postgres import (
     PostgresDeliveryLedger,
@@ -76,6 +77,8 @@ def verifier(scheme: str, secrets: list[str], now: int, options: Json) -> Verifi
         return standard_scheme(**timed)
     if scheme == "stripe":
         return stripe_scheme(**timed)
+    if scheme == "tiktok":
+        return tiktok_scheme(**timed)
     if scheme == "mercadopago":
         return mercadopago_scheme(**timed)
     if scheme == "github":
