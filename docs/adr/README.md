@@ -11,3 +11,4 @@ anterior.
 | [0003](0003-forma-de-la-url-de-destino.md) | La forma de la URL de destino se comprueba con una gramática propia | Aceptada |
 | [0004](0004-variantes-sincronica-y-asincronica.md) | En Python, cada pieza con entrada/salida tiene variante sincrónica y asincrónica | Aceptada |
 | [0005](0005-redes-permitidas.md) | Redes permitidas explícitas, sin habilitar nunca los metadatos de la nube | Aceptada |
+| [0006](0006-dns-sobre-https.md) | DNS sobre HTTPS para entornos sin DNS del sistema | Aceptada |

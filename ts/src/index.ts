@@ -1,4 +1,5 @@
 export { systemClock } from './adapters/clock/system-clock';
+export { type DohResolverOptions, dohResolver } from './adapters/dns/doh';
 export { randomMessageId } from './adapters/ids/message-id';
 export { MemoryDeliveryLedger } from './adapters/ledger/memory';
 export {

@@ -163,6 +163,31 @@ queda a su alcance.
 Con la API Fetch, entre la validación y la conexión el nombre podría resolver a otra dirección. Usá
 ese transporte sólo donde no haya otro, y sabiendo que la protección es parcial.
 
+### Sin DNS del sistema: Workers y funciones edge
+
+`createSender` necesita un resolver para validar las direcciones. Donde no hay DNS del sistema
+(Cloudflare Workers, Deno Deploy, funciones edge), `dohResolver` resuelve con DNS sobre HTTPS:
+
+```ts
+import { createSender, dohResolver } from 'omniwebhook';
+import { standardSigner } from 'omniwebhook/standard';
+
+const send = createSender({
+  signer: standardSigner({ secrets: [secreto] }),
+  ledger,
+  resolver: dohResolver(),
+});
+```
+
+Por defecto pregunta al servicio de Cloudflare; `endpoint` elige otro que hable el formato JSON,
+como `https://dns.google/resolve`. Los nombres de los destinos viajan a ese servicio. Un nombre que
+no existe deja el intento `blocked` con `unresolved`; si el servicio no responde, el intento cuenta
+como un error de red y se reintenta.
+
+La conexión sigue sin poder fijarse a la dirección validada, porque el transporte es la API Fetch.
+En Cloudflare Workers conviene sumar la opción `global_fetch_strictly_public` en `wrangler.toml`,
+que impide que `fetch` llegue a direcciones internas.
+
 El tiempo de espera (`timeoutSeconds`, `timeout_seconds`; 20 segundos por defecto) es el plazo del
 intento completo en todos los transportes: un servidor que responde de a un byte no lo estira.
 
