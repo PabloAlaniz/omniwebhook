@@ -163,8 +163,8 @@ queda a su alcance.
 Con la API Fetch, entre la validación y la conexión el nombre podría resolver a otra dirección. Usá
 ese transporte sólo donde no haya otro, y sabiendo que la protección es parcial.
 
-En Python, el tiempo de espera del transporte de la biblioteca estándar vale para cada operación de
-red (conectar, enviar, leer la respuesta), no para el intento completo.
+El tiempo de espera (`timeoutSeconds`, `timeout_seconds`; 20 segundos por defecto) es el plazo del
+intento completo en todos los transportes: un servidor que responde de a un byte no lo estira.
 
 ## El registro de entregas
 

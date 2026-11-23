@@ -3,13 +3,15 @@
 Se conecta a la dirección validada y no vuelve a resolver el nombre; el certificado se
 comprueba contra el nombre de la URL. Cada intento usa una conexión nueva.
 
-El tiempo de espera vale para cada operación de red (conectar, enviar, leer la respuesta),
-no para el intento completo.
+El tiempo de espera es el plazo del intento completo: al vencer se corta la conexión,
+aunque el servidor siga mandando de a un byte.
 """
 
+import contextlib
 import http.client
 import socket
 import ssl
+import threading
 from urllib.parse import quote, urlsplit
 
 from omniwebhook.application.ports import TransportFailure, TransportRequest, TransportResponse
@@ -55,15 +57,31 @@ class HttpClientTransport:
             connection, target = self._connection(request)
         except ValueError:
             return TransportFailure("network")
+        expired = threading.Event()
+
+        def expire() -> None:
+            # Cortar el socket destraba la lectura en curso; el intento termina como vencido.
+            expired.set()
+            sock = connection.sock
+            if sock is not None:
+                with contextlib.suppress(OSError):
+                    sock.shutdown(socket.SHUT_RDWR)
+
+        deadline = threading.Timer(request.timeout_seconds, expire)
+        deadline.daemon = True
+        deadline.start()
         try:
             connection.request("POST", target, body=request.body, headers=dict(request.headers))
             response = connection.getresponse()
+            if expired.is_set():
+                return TransportFailure("timeout")
             return TransportResponse(response.status, response.getheader("retry-after"))
         except TimeoutError:
             return TransportFailure("timeout")
         except (OSError, http.client.HTTPException, ValueError):
-            return TransportFailure("network")
+            return TransportFailure("timeout" if expired.is_set() else "network")
         finally:
+            deadline.cancel()
             connection.close()
 
     def _connection(self, request: TransportRequest) -> tuple[http.client.HTTPConnection, str]:

@@ -1,6 +1,7 @@
 import asyncio
 import socket
 import ssl
+import time
 from collections.abc import Callable, Iterator
 
 import pytest
@@ -104,6 +105,15 @@ def test_si_el_servidor_tarda_de_mas_es_un_tiempo_de_espera_agotado(
     respuesta = fabrica(None)(_pedido(f"http://hooks.ejemplo.invalid:{local.port}/lento", espera=1))
 
     assert respuesta == TransportFailure("timeout")
+
+
+def test_el_plazo_es_del_intento_completo_aunque_el_servidor_gotee(fabrica: Fabrica, local: Servidor) -> None:
+    inicio = time.monotonic()
+
+    respuesta = fabrica(None)(_pedido(f"http://hooks.ejemplo.invalid:{local.port}/goteo", espera=1))
+
+    assert respuesta == TransportFailure("timeout")
+    assert time.monotonic() - inicio < 2
 
 
 def test_si_nadie_escucha_es_un_error_de_red(fabrica: Fabrica) -> None:

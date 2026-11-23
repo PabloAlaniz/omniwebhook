@@ -2,8 +2,8 @@
 
 Webhooks firmados que se emiten y se reciben igual en cualquier stack.
 
-> **Todavía no hay una versión publicada.** Los dos paquetes están completos y pasan la
-> especificación, pero la API puede cambiar hasta la versión 1.0.
+> **Antes de la 1.0.** Los dos paquetes están publicados en npm y PyPI, completos y con la
+> especificación cubierta, pero la API todavía puede cambiar entre versiones menores.
 
 Casi todo producto termina recibiendo webhooks de un proveedor de pagos y emitiendo los suyos. Y
 casi siempre se escribe de nuevo: una verificación de firma por proveedor, una tabla para no
