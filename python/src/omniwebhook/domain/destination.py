@@ -10,7 +10,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final, Literal
 
-from omniwebhook.domain.ip_address import is_blocked_address, is_ip_address
+from omniwebhook.domain.ip_address import AllowedNetworks, is_blocked_address, is_ip_address
+from omniwebhook.domain.ip_address import allowed_networks as _allowed_networks
 
 UrlProblem = Literal["invalid_url", "scheme", "credentials"]
 AddressProblem = Literal["unresolved", "blocked_address"]
@@ -94,25 +95,35 @@ class SelectedAddress:
     address: str
 
 
-def select_address(addresses: Sequence[str]) -> SelectedAddress | AddressProblem:
+def select_address(
+    addresses: Sequence[str], allowed: AllowedNetworks | None = None
+) -> SelectedAddress | AddressProblem:
     """Elige la dirección a la que conectarse.
 
     Tiene que haber alguna y ninguna puede estar bloqueada. Devuelve la primera.
     """
     if not addresses:
         return "unresolved"
-    if any(is_blocked_address(address) for address in addresses):
+    if any(is_blocked_address(address, allowed) for address in addresses):
         return "blocked_address"
     return SelectedAddress(addresses[0])
 
 
 def evaluate_destination(
-    url: str, *, allow_http: bool = False, resolved: Sequence[str]
+    url: str,
+    *,
+    allow_http: bool = False,
+    allowed_networks: Sequence[str] = (),
+    resolved: Sequence[str],
 ) -> DestinationVerdict:
-    """La política completa, dadas las direcciones a las que resolvió el nombre."""
+    """La política completa, dadas las direcciones a las que resolvió el nombre.
+
+    Lanza `ConfigurationError` si alguna red permitida no tiene la forma de la sección 8.1.
+    """
+    allowed = _allowed_networks(allowed_networks)
     inspected = inspect_destination(url, allow_http=allow_http)
     if isinstance(inspected, str):
         return inspected
     addresses = resolved if inspected.literal_address is None else [inspected.literal_address]
-    selected = select_address(addresses)
+    selected = select_address(addresses, allowed)
     return selected if isinstance(selected, str) else "allowed"

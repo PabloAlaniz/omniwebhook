@@ -1,7 +1,9 @@
 import pytest
 
 from omniwebhook import (
+    ConfigurationError,
     RetryPolicy,
+    allowed_networks,
     classify_delivery,
     evaluate_destination,
     is_blocked_address,
@@ -18,9 +20,23 @@ def test_direcciones(caso: Caso) -> None:
 
 @pytest.mark.parametrize("caso", casos("entregar/url"), ids=nombre)
 def test_url(caso: Caso) -> None:
-    resultado = evaluate_destination(caso["url"], allow_http=caso["allow_http"], resolved=caso["resolved"])
+    resultado = evaluate_destination(
+        caso["url"],
+        allow_http=caso["allow_http"],
+        allowed_networks=caso["allowed_networks"],
+        resolved=caso["resolved"],
+    )
 
     assert resultado == caso["expected"]["result"]
+
+
+@pytest.mark.parametrize("caso", casos("entregar/redes"), ids=nombre)
+def test_redes(caso: Caso) -> None:
+    if caso["expected"]["valid"]:
+        allowed_networks([caso["network"]])
+    else:
+        with pytest.raises(ConfigurationError):
+            allowed_networks([caso["network"]])
 
 
 @pytest.mark.parametrize("caso", casos("entregar/clasificacion"), ids=nombre)

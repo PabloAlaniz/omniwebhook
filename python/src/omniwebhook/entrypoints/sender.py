@@ -3,7 +3,7 @@
 Resuelve con el sistema y se conecta a la dirección validada.
 """
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from omniwebhook.adapters.clock import MonotonicTimer, system_clock
 from omniwebhook.adapters.dns.system import AsyncSystemDnsResolver, SystemDnsResolver
@@ -42,6 +42,7 @@ def create_sender(
     random: RandomSource | None = None,
     retry_policy: RetryPolicy | None = None,
     allow_http: bool = False,
+    allowed_networks: Sequence[str] = (),
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     content_type: str = DEFAULT_CONTENT_TYPE,
     headers: Mapping[str, str] | None = None,
@@ -56,6 +57,7 @@ def create_sender(
         random=random or SystemRandom(),
         retry_policy=retry_policy,
         allow_http=allow_http,
+        allowed_networks=allowed_networks,
         timeout_seconds=timeout_seconds,
         content_type=content_type,
         headers=headers,
@@ -73,6 +75,7 @@ def create_async_sender(
     random: RandomSource | None = None,
     retry_policy: RetryPolicy | None = None,
     allow_http: bool = False,
+    allowed_networks: Sequence[str] = (),
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     content_type: str = DEFAULT_CONTENT_TYPE,
     headers: Mapping[str, str] | None = None,
@@ -88,6 +91,7 @@ def create_async_sender(
         random=random or SystemRandom(),
         retry_policy=retry_policy,
         allow_http=allow_http,
+        allowed_networks=allowed_networks,
         timeout_seconds=timeout_seconds,
         content_type=content_type,
         headers=headers,

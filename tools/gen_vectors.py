@@ -1037,14 +1037,45 @@ BLOCKED_NETS = [
 ]
 
 
-def is_blocked(text: str) -> bool:
+NEVER_ALLOWED_NETS = [
+    ipaddress.ip_network(net) for net in "169.254.0.0/16 100.100.100.200/32 fd00:ec2::254/128".split()
+]
+MAPPED_NET = ipaddress.ip_network("::ffff:0:0/96")
+PREFIX = re.compile(r"0|[1-9][0-9]{0,2}")
+
+Net = ipaddress.IPv4Network | ipaddress.IPv6Network
+
+
+def parse_network(text: str) -> Net | None:
+    """Una red permitida con la forma de la sección 8.1, o `None` si no la tiene."""
+    address, slash, prefix = text.partition("/")
+    if not slash or PREFIX.fullmatch(prefix) is None or "%" in address or not is_literal(address):
+        return None
+    try:
+        net = ipaddress.ip_network(f"{address}/{prefix}", strict=True)
+    except ValueError:
+        return None
+    if net.version == 6 and net.prefixlen >= 96 and net.subnet_of(MAPPED_NET):  # type: ignore[arg-type]
+        return None
+    return net
+
+
+def is_blocked(text: str, allowed: list[str] | None = None) -> bool:
     try:
         address = ipaddress.ip_address(text)
     except ValueError:
         return True
     if address.version == 6 and address.ipv4_mapped is not None:
         address = address.ipv4_mapped
-    return any(address.version == net.version and address in net for net in BLOCKED_NETS)
+
+    def inside(nets: list[Net]) -> bool:
+        return any(address.version == net.version and address in net for net in nets)
+
+    if inside(NEVER_ALLOWED_NETS):
+        return True
+    nets = [parse_network(text) for text in allowed or []]
+    assert all(net is not None for net in nets), allowed
+    return inside(BLOCKED_NETS) and not inside([net for net in nets if net is not None])
 
 
 def entregar_direcciones() -> Vector:
@@ -1136,7 +1167,7 @@ def url_host(authority: str) -> str | None:
     return host
 
 
-def url_policy(url: str, allow_http: bool, resolved: list[str]) -> str:
+def url_policy(url: str, allow_http: bool, resolved: list[str], allowed: list[str] | None = None) -> str:
     scheme = URL_SCHEME.match(url)
     if scheme is None or FORBIDDEN_IN_URL.search(url) is not None:
         return "invalid_url"
@@ -1152,28 +1183,35 @@ def url_policy(url: str, allow_http: bool, resolved: list[str]) -> str:
     addresses = [host] if is_literal(host) else resolved
     if not addresses:
         return "unresolved"
-    return "blocked_address" if any(is_blocked(address) for address in addresses) else "allowed"
+    return "blocked_address" if any(is_blocked(address, allowed) for address in addresses) else "allowed"
 
 
 def entregar_url() -> Vector:
     names: set[str] = set()
 
     def case(
-        name: str, url: str, expected: str, resolved: list[str] | None = None, allow_http: bool = False
+        name: str,
+        url: str,
+        expected: str,
+        resolved: list[str] | None = None,
+        allow_http: bool = False,
+        allowed: list[str] | None = None,
     ) -> dict[str, Any]:
         assert name not in names, name
         names.add(name)
-        assert url_policy(url, allow_http, resolved or []) == expected, (name, url)
+        assert url_policy(url, allow_http, resolved or [], allowed) == expected, (name, url)
         return {
             "name": name,
             "url": url,
             "allow_http": allow_http,
+            "allowed_networks": allowed or [],
             "resolved": resolved or [],
             "expected": {"result": expected},
         }
 
     ok = ["93.184.216.34"]
     host = "hooks.ejemplo.test"
+    lan = ["192.168.0.0/16"]
     cases = [
         case("https con dirección pública", "https://hooks.ejemplo.test/entrada", "allowed", ok),
         case("https con puerto y consulta", "https://hooks.ejemplo.test:8443/entrada?canal=1", "allowed", ok),
@@ -1323,8 +1361,176 @@ def entregar_url() -> Vector:
             "blocked_address",
             ["127.0.0.1", "::1"],
         ),
+        # Redes permitidas.
+        case("resuelve a una red permitida", f"https://{host}/", "allowed", ["192.168.1.20"], allowed=lan),
+        case("dirección literal en una red permitida", "https://192.168.1.20/", "allowed", allowed=lan),
+        case(
+            "privada fuera de las redes permitidas",
+            f"https://{host}/",
+            "blocked_address",
+            ["10.0.0.5"],
+            allowed=lan,
+        ),
+        case(
+            "una permitida y una bloqueada alcanza para rechazar",
+            f"https://{host}/",
+            "blocked_address",
+            ["192.168.1.20", "10.0.0.5"],
+            allowed=lan,
+        ),
+        case(
+            "una pública y una permitida",
+            f"https://{host}/",
+            "allowed",
+            ["93.184.216.34", "192.168.1.20"],
+            allowed=lan,
+        ),
+        case(
+            "varias redes permitidas",
+            f"https://{host}/",
+            "allowed",
+            ["10.1.2.3", "fd12:3456:789a::1"],
+            allowed=["10.0.0.0/8", "fc00::/7"],
+        ),
+        case(
+            "bucle local permitido",
+            "https://localhost/",
+            "allowed",
+            ["127.0.0.1", "::1"],
+            allowed=["127.0.0.0/8", "::1/128"],
+        ),
+        case(
+            "bucle local permitido sólo para IPv4",
+            "https://localhost/",
+            "blocked_address",
+            ["127.0.0.1", "::1"],
+            allowed=["127.0.0.0/8"],
+        ),
+        case(
+            "IPv6 que envuelve una IPv4 de una red permitida",
+            "https://[::ffff:192.168.1.20]/",
+            "allowed",
+            allowed=lan,
+        ),
+        case(
+            "una red IPv6 no permite una IPv4 envuelta",
+            "https://[::ffff:192.168.1.20]/",
+            "blocked_address",
+            allowed=["::/0"],
+        ),
+        case("red de un solo host", "https://10.0.0.5/", "allowed", allowed=["10.0.0.5/32"]),
+        case(
+            "red de un solo host, otra dirección",
+            "https://10.0.0.6/",
+            "blocked_address",
+            allowed=["10.0.0.5/32"],
+        ),
+        case("todo IPv4 permitido", "https://10.0.0.5/", "allowed", allowed=["0.0.0.0/0"]),
+        case(
+            "metadatos de la nube aunque se permita todo",
+            f"https://{host}/",
+            "blocked_address",
+            ["169.254.169.254"],
+            allowed=["0.0.0.0/0"],
+        ),
+        case(
+            "enlace local aunque se permita su red",
+            "https://169.254.10.1/",
+            "blocked_address",
+            allowed=["169.254.0.0/16"],
+        ),
+        case(
+            "metadatos de Alibaba aunque se permita la red compartida",
+            "https://100.100.100.200/",
+            "blocked_address",
+            allowed=["100.64.0.0/10"],
+        ),
+        case(
+            "otra dirección de la red compartida permitida",
+            "https://100.100.100.100/",
+            "allowed",
+            allowed=["100.64.0.0/10"],
+        ),
+        case(
+            "metadatos de AWS por IPv6 aunque se permita su red",
+            "https://[fd00:ec2::254]/",
+            "blocked_address",
+            allowed=["fc00::/7"],
+        ),
+        case(
+            "metadatos envueltos en IPv6 aunque se permita todo",
+            "https://[::ffff:169.254.169.254]/",
+            "blocked_address",
+            allowed=["0.0.0.0/0"],
+        ),
+        case(
+            "permitir no salta la revisión de la forma",
+            "https://127.1/",
+            "invalid_url",
+            ["127.0.0.1"],
+            allowed=["127.0.0.0/8"],
+        ),
+        case(
+            "permitir no salta las credenciales",
+            "https://ana@192.168.1.20/",
+            "credentials",
+            allowed=lan,
+        ),
+        case(
+            "permitir no cambia el esquema",
+            "http://192.168.1.20/",
+            "scheme",
+            allowed=lan,
+        ),
+        case(
+            "permitir una red no bloqueada no cambia nada",
+            f"https://{host}/",
+            "allowed",
+            ok,
+            allowed=["93.184.216.0/24"],
+        ),
     ]
     return {"spec": SPEC, "id": "entregar/url", "kind": "url", "cases": cases}
+
+
+def entregar_redes() -> Vector:
+    valid = (
+        "10.0.0.0/8 192.168.0.0/16 192.168.1.20/32 0.0.0.0/0 127.0.0.0/8 100.64.0.0/10 "
+        "fc00::/7 ::1/128 ::/0 fd12:3456:789a::/48 FD12:3456:789A::/48 2001:db8::/32 "
+        "::/95 ::/96 ::ffff:0:0:0/96"
+    )
+    invalid = [
+        "",
+        "10.0.0.0",
+        "10.0.0.0/",
+        "/8",
+        "10.0.0.1/8",
+        "10.0.0.0/33",
+        "10.0.0.0/08",
+        "10.0.0.0/-1",
+        "10.0.0.0/+8",
+        "10.0.0.0/ 8",
+        " 10.0.0.0/8",
+        "10.0.0.0/8 ",
+        "010.0.0.0/8",
+        "10.0/8",
+        "10.0.0.0/255.0.0.0",
+        "10.0.0.0/8/8",
+        "fc00::/129",
+        "fc00::1/7",
+        "[fc00::]/7",
+        "fe80::%eth0/10",
+        "::ffff:0:0/96",
+        "::ffff:10.0.0.0/104",
+        "::ffff:192.168.0.0/112",
+        "ejemplo.test/8",
+        "10.0.0.0/1000",
+    ]
+    cases = []
+    for text, want in [*((n, True) for n in valid.split()), *((n, False) for n in invalid)]:
+        assert (parse_network(text) is not None) is want, text
+        cases.append({"name": f"«{text}»", "network": text, "expected": {"valid": want}})
+    return {"spec": SPEC, "id": "entregar/redes", "kind": "network", "cases": cases}
 
 
 def classify(status: int | None, failure: str | None) -> str:
@@ -1489,6 +1695,7 @@ ALL: list[Callable[[], Vector]] = [
     recibir_caso_de_uso,
     entregar_direcciones,
     entregar_url,
+    entregar_redes,
     entregar_clasificacion,
     entregar_reintentos,
 ]

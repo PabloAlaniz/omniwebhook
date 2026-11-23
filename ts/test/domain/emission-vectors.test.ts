@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  allowedNetworks,
+  ConfigurationError,
   classifyDelivery,
   type DeliveryFailure,
   evaluateDestination,
@@ -24,14 +26,32 @@ describe('vectores de entregar/url', () => {
     name: string;
     url: string;
     allow_http: boolean;
+    allowed_networks: string[];
     resolved: string[];
     expected: { result: string };
   }>('entregar/url');
 
   it.each(vector.cases.map((c) => [c.name, c] as const))('%s', (_name, c) => {
-    expect(evaluateDestination(c.url, { allowHttp: c.allow_http, resolved: c.resolved })).toBe(
-      c.expected.result,
-    );
+    const verdict = evaluateDestination(c.url, {
+      allowHttp: c.allow_http,
+      allowedNetworks: c.allowed_networks,
+      resolved: c.resolved,
+    });
+
+    expect(verdict).toBe(c.expected.result);
+  });
+});
+
+describe('vectores de entregar/redes', () => {
+  const vector = loadVector<{ name: string; network: string; expected: { valid: boolean } }>(
+    'entregar/redes',
+  );
+
+  it.each(vector.cases.map((c) => [c.name, c] as const))('%s', (_name, c) => {
+    const read = () => allowedNetworks([c.network]);
+
+    if (c.expected.valid) expect(read).not.toThrow();
+    else expect(read).toThrow(ConfigurationError);
   });
 });
 

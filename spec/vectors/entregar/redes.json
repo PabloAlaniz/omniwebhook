@@ -1,0 +1,287 @@
+{
+ "spec": "0",
+ "id": "entregar/redes",
+ "kind": "network",
+ "cases": [
+  {
+   "name": "«10.0.0.0/8»",
+   "network": "10.0.0.0/8",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«192.168.0.0/16»",
+   "network": "192.168.0.0/16",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«192.168.1.20/32»",
+   "network": "192.168.1.20/32",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«0.0.0.0/0»",
+   "network": "0.0.0.0/0",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«127.0.0.0/8»",
+   "network": "127.0.0.0/8",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«100.64.0.0/10»",
+   "network": "100.64.0.0/10",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«fc00::/7»",
+   "network": "fc00::/7",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«::1/128»",
+   "network": "::1/128",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«::/0»",
+   "network": "::/0",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«fd12:3456:789a::/48»",
+   "network": "fd12:3456:789a::/48",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«FD12:3456:789A::/48»",
+   "network": "FD12:3456:789A::/48",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«2001:db8::/32»",
+   "network": "2001:db8::/32",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«::/95»",
+   "network": "::/95",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«::/96»",
+   "network": "::/96",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«::ffff:0:0:0/96»",
+   "network": "::ffff:0:0:0/96",
+   "expected": {
+    "valid": true
+   }
+  },
+  {
+   "name": "«»",
+   "network": "",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0»",
+   "network": "10.0.0.0",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/»",
+   "network": "10.0.0.0/",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«/8»",
+   "network": "/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.1/8»",
+   "network": "10.0.0.1/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/33»",
+   "network": "10.0.0.0/33",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/08»",
+   "network": "10.0.0.0/08",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/-1»",
+   "network": "10.0.0.0/-1",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/+8»",
+   "network": "10.0.0.0/+8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/ 8»",
+   "network": "10.0.0.0/ 8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "« 10.0.0.0/8»",
+   "network": " 10.0.0.0/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/8 »",
+   "network": "10.0.0.0/8 ",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«010.0.0.0/8»",
+   "network": "010.0.0.0/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0/8»",
+   "network": "10.0/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/255.0.0.0»",
+   "network": "10.0.0.0/255.0.0.0",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/8/8»",
+   "network": "10.0.0.0/8/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«fc00::/129»",
+   "network": "fc00::/129",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«fc00::1/7»",
+   "network": "fc00::1/7",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«[fc00::]/7»",
+   "network": "[fc00::]/7",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«fe80::%eth0/10»",
+   "network": "fe80::%eth0/10",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«::ffff:0:0/96»",
+   "network": "::ffff:0:0/96",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«::ffff:10.0.0.0/104»",
+   "network": "::ffff:10.0.0.0/104",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«::ffff:192.168.0.0/112»",
+   "network": "::ffff:192.168.0.0/112",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«ejemplo.test/8»",
+   "network": "ejemplo.test/8",
+   "expected": {
+    "valid": false
+   }
+  },
+  {
+   "name": "«10.0.0.0/1000»",
+   "network": "10.0.0.0/1000",
+   "expected": {
+    "valid": false
+   }
+  }
+ ]
+}

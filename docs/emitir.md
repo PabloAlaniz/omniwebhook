@@ -123,6 +123,34 @@ puede cambiar de dirección después de registrado.
 
 Un nombre con caracteres fuera de ASCII tiene que venir en su forma ASCII (`xn--…`).
 
+### Entregar a una red propia
+
+Si el emisor corre en tu infraestructura y tiene que entregar a servicios de la misma red (otro
+contenedor, una máquina de la red local, una VPN), podés permitir esas redes de forma explícita.
+Una dirección de una red permitida se acepta aunque esté en un rango bloqueado:
+
+```ts
+const send = createNodeSender({
+  signer,
+  ledger,
+  allowedNetworks: ['192.168.0.0/16', 'fd00::/8'],
+});
+```
+
+```python
+send = create_sender(signer=signer, ledger=ledger, allowed_networks=["192.168.0.0/16", "fd00::/8"])
+```
+
+- Cada red se escribe `dirección/prefijo`, con los bits fuera del prefijo en cero: `10.0.0.0/8`
+  sí, `10.0.0.1/8` no. Una red mal escrita es un error de configuración al armar el emisor.
+- Los servicios de metadatos de las nubes (`169.254.0.0/16`, `100.100.100.200`,
+  `fd00:ec2::254`) no se permiten nunca, aunque una red de la lista los incluya.
+- El resto de la política no cambia: forma estricta, sin credenciales, `https` salvo permiso
+  expreso y conexión a la dirección validada.
+
+Permití sólo lo que necesitás. Si los destinos los registran terceros, cualquier red de la lista
+queda a su alcance.
+
 ### Qué transporte usar
 
 | Transporte | Se conecta a la dirección validada |

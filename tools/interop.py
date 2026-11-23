@@ -373,7 +373,37 @@ RESOLVED = [
     ["93.184.216.34", "127.0.0.1"],
     ["2606:4700:4700::1111"],
     ["no-es-ip"],
+    ["192.168.1.20"],
+    ["169.254.169.254"],
+    ["fd12:3456:789a::1", "::ffff:10.0.0.5"],
 ]
+ALLOWED = [
+    [],
+    [],
+    ["192.168.0.0/16"],
+    ["10.0.0.0/8", "fc00::/7"],
+    ["127.0.0.0/8", "::1/128"],
+    ["0.0.0.0/0", "::/0"],
+]
+NETWORK_ADDRESSES = [
+    "10.0.0.0",
+    "10.0.0.1",
+    "192.168.0.0",
+    "0.0.0.0",
+    "fc00::",
+    "fc00::1",
+    "::ffff:0:0",
+    "::",
+    "01.0.0.0",
+]
+
+
+def random_network(rng: random.Random) -> str:
+    address = rng.choice([*NETWORK_ADDRESSES, random_address(rng)])
+    prefix = rng.choice(
+        ["0", "7", "8", "16", "32", "33", "64", "96", "104", "128", "129", "08", "", "-1", " 8"]
+    )
+    return rng.choice(["{}/{}", "{}/{}", "{}{}", "{}//{}", "[{}]/{}"]).format(address, prefix)
 
 
 def random_url(rng: random.Random) -> str:
@@ -418,11 +448,23 @@ def differential_domain(agents: list[Agent], report: Report, rng: random.Random,
         address = random_address(rng)
         both(agents, report, f"dirección {address!r}", "address", {"address": address})
 
+    for case in cases("entregar/redes"):
+        reply = both(agents, report, f"red {case['network']!r}", "network", {"network": case["network"]})
+        report.expect(f"red {case['network']!r}", reply.get("valid"), case["expected"]["valid"])
+    for _ in range(rounds * 40):
+        network = random_network(rng)
+        both(agents, report, f"red {network!r}", "network", {"network": network})
+
     for case in cases("entregar/url"):
-        data = {key: case[key] for key in ("url", "allow_http", "resolved")}
+        data = {key: case[key] for key in ("url", "allow_http", "allowed_networks", "resolved")}
         check_url(agents, report, data, case["expected"]["result"])
     for _ in range(rounds * 80):
-        data = {"url": random_url(rng), "allow_http": rng.random() < 0.4, "resolved": rng.choice(RESOLVED)}
+        data = {
+            "url": random_url(rng),
+            "allow_http": rng.random() < 0.4,
+            "allowed_networks": rng.choice(ALLOWED),
+            "resolved": rng.choice(RESOLVED),
+        }
         check_url(agents, report, data)
 
     for status in [None, *range(100, 600)]:

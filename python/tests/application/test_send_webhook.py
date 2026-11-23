@@ -243,6 +243,30 @@ def test_bloquea_segun_a_donde_resuelve_el_nombre(
     assert banco.enviados == []
 
 
+def test_entrega_a_una_direccion_de_una_red_permitida(asincronico: bool) -> None:
+    banco = Banco(
+        asincronico, direcciones=["192.168.1.20"], opciones={"allowed_networks": ["192.168.0.0/16"]}
+    )
+
+    assert banco.ejecutar().state == "delivered"
+    assert banco.enviados[0].address == "192.168.1.20"
+
+
+def test_una_red_permitida_no_habilita_los_metadatos_de_la_nube(asincronico: bool) -> None:
+    banco = Banco(asincronico, direcciones=["169.254.169.254"], opciones={"allowed_networks": ["0.0.0.0/0"]})
+
+    resultado = banco.ejecutar()
+
+    assert (resultado.state, resultado.problem) == ("blocked", "blocked_address")
+    assert banco.enviados == []
+
+
+@pytest.mark.parametrize("redes", [["10.0.0.1/8"], "10.0.0.0/8"])
+def test_una_red_permitida_invalida_es_un_error_de_configuracion(asincronico: bool, redes: Any) -> None:
+    with pytest.raises(ConfigurationError, match="red"):
+        Banco(asincronico, opciones={"allowed_networks": redes}).ejecutar()
+
+
 def test_con_permiso_expreso_entrega_a_http(asincronico: bool) -> None:
     banco = Banco(asincronico, opciones={"allow_http": True})
 

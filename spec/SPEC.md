@@ -291,8 +291,8 @@ Antes de cada intento se valida la URL y las direcciones a las que resuelve.
 - El esquema DEBE ser `https`. `http` sólo se acepta si la configuración lo permite expresamente.
 - La URL NO DEBE traer usuario ni contraseña.
 - Si el nombre es una dirección IP literal, se evalúa esa dirección y no se resuelve nada.
-- Si no, el nombre se resuelve a direcciones IP. Si alguna dirección está en un rango bloqueado,
-  el intento se rechaza. Si no resuelve a ninguna, también.
+- Si no, el nombre se resuelve a direcciones IP. Si alguna dirección está bloqueada, el intento se
+  rechaza. Si no resuelve a ninguna, también.
 - Si la resolución falla, en vez de responder sin direcciones, el intento cuenta como un error de
   red (sección 8.2): puede ser pasajero.
 - La conexión DEBE hacerse a una de las direcciones validadas, no a una resolución nueva.
@@ -308,6 +308,35 @@ Rangos bloqueados:
 | `224.0.0.0/4`, `240.0.0.0/4` | `fe80::/10`, `ff00::/8` |
 
 Una dirección IPv6 que envuelve una IPv4 (`::ffff:0:0/96`) se evalúa por la IPv4 que contiene.
+
+#### Redes permitidas
+
+La configuración PUEDE traer una lista de redes permitidas, vacía por defecto. Sirve para entregar
+a servicios de una red propia, como los de una instalación en la misma máquina o la misma red
+local. Una dirección está bloqueada si no es una dirección IP, o si cae en un rango bloqueado y no
+cae en ninguna red permitida.
+
+Nunca se permiten, aunque una red de la lista las incluya, las direcciones de los servicios de
+metadatos de las nubes:
+
+| IPv4 | IPv6 |
+|---|---|
+| `169.254.0.0/16`, `100.100.100.200/32` | `fd00:ec2::254/128` |
+
+Una IPv6 que envuelve una IPv4 se evalúa por la IPv4 también acá: se compara con las redes IPv4
+de la lista.
+
+Cada red se escribe `dirección/prefijo`:
+
+- `dirección` es una IPv4 o una IPv6 con la forma de la gramática de abajo, sin corchetes.
+- `prefijo` es un número decimal sin ceros a la izquierda, de 0 a 32 para IPv4 y de 0 a 128 para
+  IPv6.
+- Los bits de la dirección que quedan fuera del prefijo DEBEN ser cero: `10.0.0.0/8` sí,
+  `10.0.0.1/8` no.
+- Una red IPv6 dentro de `::ffff:0:0/96` no se acepta: esas direcciones se evalúan por su IPv4.
+
+Una red que no cumple esto es un error de configuración y se rechaza al armar el emisor, no en
+cada intento. Permitir una red que no está bloqueada no cambia nada.
 
 #### Forma de la URL
 
@@ -350,7 +379,7 @@ El resultado de la política es `allowed` o el primer motivo de rechazo, en este
 | `scheme` | El esquema no es `https`, ni `http` con el permiso expreso |
 | `credentials` | Trae usuario o contraseña |
 | `unresolved` | El nombre no resolvió a ninguna dirección |
-| `blocked_address` | Alguna dirección está en un rango bloqueado o no es una dirección IP |
+| `blocked_address` | Alguna dirección está bloqueada: en un rango bloqueado y fuera de las redes permitidas, o no es una dirección IP |
 
 La URL de destino NO DEBE aparecer en un error ni en un log.
 
