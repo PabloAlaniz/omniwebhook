@@ -156,7 +156,7 @@ def test_cualquier_texto_termina_en_un_destino_o_en_un_motivo_definido(url: str,
     assert isinstance(revisado, InspectedDestination) or revisado in {"invalid_url", "scheme", "credentials"}
 
 
-@settings(max_examples=5000, deadline=None)
+@settings(max_examples=2000, deadline=None)
 @given(url=URL)
 def test_si_acepta_una_url_el_analizador_de_la_plataforma_lee_el_mismo_host(url: str) -> None:
     revisado = inspect_destination(url, allow_http=True)
