@@ -6,6 +6,7 @@ export default defineConfig({
     standard: 'src/standard.ts',
     node: 'src/node.ts',
     testing: 'src/testing.ts',
+    bin: 'src/bin.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

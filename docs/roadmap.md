@@ -124,8 +124,9 @@ aparte, sin dependencia obligatoria.
 - **Hecho. Un módulo de pruebas por paquete** (`omniwebhook/testing`, `omniwebhook.testing`) que arma un
   pedido firmado válido para cualquier esquema, y sus variantes inválidas: vencido, con firma
   alterada, repetido. Sale de las mismas reglas que el generador de vectores.
-- **Pendiente. Una línea de comandos mínima**: firmar un archivo, verificar un pedido guardado y reenviar un
-  pedido firmado a una URL local. Sirve para depurar sin escribir código.
+- **Hecho. Una línea de comandos mínima**, la misma en los dos paquetes: firmar un cuerpo,
+  verificar un pedido guardado y mandar un pedido firmado a una URL local. Lo que firma una lo
+  verifica la otra.
 
 ### Lo que pasa después de verificar
 
