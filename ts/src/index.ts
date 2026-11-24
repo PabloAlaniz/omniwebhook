@@ -157,6 +157,7 @@ export {
   summarizeFailures,
 } from './domain/endpoint-health';
 export { ConfigurationError } from './domain/errors';
+export { isEventPattern, isEventType, subscribes } from './domain/event-type';
 export { DEFAULT_TOLERANCE_SECONDS } from './domain/freshness';
 export type { Field, IncomingRequest } from './domain/incoming-request';
 export { type AllowedNetworks, allowedNetworks, isBlockedAddress } from './domain/ip-address';

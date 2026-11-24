@@ -140,6 +140,41 @@ servicio puede encolar en un lenguaje y otro despachar en el otro. En Python est
 `AsyncPostgresOutbox` y `create_async_dispatcher`. Hay un
 [ejemplo completo](../examples/python-outbox/app.py).
 
+## Que cada destino reciba sólo lo que pidió
+
+Un tipo de evento nombra lo que pasó, de lo general a lo particular: `pedido.creado`,
+`pedido.item.agregado`. Cada destino declara cuáles recibe con una lista de patrones, y
+`subscribes` dice si le corresponde un evento:
+
+```ts
+import { subscribes } from 'omniwebhook';
+
+subscribes(['pedido.*', 'pago.aprobado'], 'pedido.creado'); // true
+subscribes(['pedido.*'], 'pago.aprobado'); // false
+subscribes(null, 'pago.aprobado'); // true: sin lista, recibe todo
+```
+
+```python
+from omniwebhook import subscribes
+
+subscribes(["pedido.*", "pago.aprobado"], "pedido.creado")  # True
+```
+
+| Patrón | Coincide con |
+|---|---|
+| `*` | Cualquier tipo |
+| `pedido.*` | Lo que empieza con `pedido.`, a cualquier profundidad. No con `pedido` solo |
+| `pedido.creado` | Ese tipo exacto |
+
+El comodín sólo va al final, y se distinguen mayúsculas. Una lista vacía no recibe nada. Un tipo
+o un patrón mal escrito lanza un error de configuración en vez de no coincidir en silencio:
+conviene validar los patrones con `isEventPattern` (`is_event_pattern`) cuando el dueño del
+destino los guarda.
+
+Se usa al encolar: por cada destino suscripto, una entrada en la bandeja con el mismo
+identificador de mensaje. Dónde va el tipo dentro del payload lo decidís vos; lo habitual es un
+campo `type`.
+
 ## Destinos caídos
 
 Un destino que lleva días sin responder sigue consumiendo intentos. Con `health`, el despacho

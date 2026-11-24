@@ -736,6 +736,38 @@ el otro. El nombre por defecto es `omniwebhook_outbox`:
 
 La clave es `(message_id, endpoint_id)`. Hay un índice por `(state, available_at)`.
 
+### 8.6. Tipos de evento
+
+Un tipo de evento nombra lo que pasó, de lo general a lo particular: `pedido.creado`,
+`pedido.item.agregado`. Sirve para que cada destino reciba sólo lo que le interesa.
+
+```
+tipo     = segmento *( "." segmento )
+patrón   = "*" / segmento *( "." segmento ) [ ".*" ]
+segmento = 1*( letra ASCII / dígito / "-" / "_" )
+```
+
+Los dos tienen como mucho 256 caracteres. Se comparan distinguiendo mayúsculas.
+
+Un patrón coincide con un tipo así:
+
+| Patrón | Coincide con |
+|---|---|
+| `*` | Cualquier tipo |
+| `pedido.*` | Los tipos que empiezan con `pedido.`, a cualquier profundidad. No con `pedido` solo |
+| `pedido.creado` | Ese tipo exacto |
+
+El comodín sólo va al final. `pedido.*.creado`, `pedido.cre*` y `*.*` no son patrones.
+
+Un destino declara los tipos que recibe con una lista de patrones. Recibe un evento si alguno
+coincide. Sin lista, recibe todos; con una lista vacía, ninguno.
+
+Un tipo o un patrón que no cumple la gramática es un error de quien integra, no un evento que no
+coincide: se rechaza al configurarlo.
+
+El tipo es parte del contenido del mensaje, no de su firma ni de sus cabeceras: dónde va en el
+payload lo decide quien emite.
+
 ## 9. Vectores de conformidad
 
 Cada archivo de `vectors/` tiene la forma que describe

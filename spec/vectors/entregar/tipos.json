@@ -1,0 +1,451 @@
+{
+ "spec": "0",
+ "id": "entregar/tipos",
+ "kind": "event-match",
+ "cases": [
+  {
+   "name": "sin lista de tipos: recibe todo",
+   "type": "pedido.creado",
+   "patterns": null,
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": null,
+    "subscribed": true
+   }
+  },
+  {
+   "name": "una lista vacía no recibe nada",
+   "type": "pedido.creado",
+   "patterns": [],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "coincidencia exacta",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido.creado"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "otro tipo del mismo grupo",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido.cancelado"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "coincide alguno de la lista",
+   "type": "pedido.creado",
+   "patterns": [
+    "pago.aprobado",
+    "pedido.creado"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true,
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "comodín de grupo",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "el comodín de grupo alcanza a cualquier profundidad",
+   "type": "pedido.item.agregado",
+   "patterns": [
+    "pedido.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "comodín de un grupo anidado",
+   "type": "pedido.item.agregado",
+   "patterns": [
+    "pedido.item.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "el comodín de un grupo anidado no alcanza al de arriba",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido.item.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "el comodín de grupo no coincide con el grupo solo",
+   "type": "pedido",
+   "patterns": [
+    "pedido.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "un grupo que empieza igual no coincide",
+   "type": "pedidos.creado",
+   "patterns": [
+    "pedido.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "un prefijo sin comodín no coincide",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "comodín total",
+   "type": "pedido.creado",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "comodín total con un tipo de un solo segmento",
+   "type": "ping",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "distingue mayúsculas",
+   "type": "Pedido.Creado",
+   "patterns": [
+    "pedido.creado"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "distingue mayúsculas en el comodín",
+   "type": "pedido.creado",
+   "patterns": [
+    "Pedido.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": false
+   }
+  },
+  {
+   "name": "guiones y guiones bajos",
+   "type": "pedido_v2.re-enviado",
+   "patterns": [
+    "pedido_v2.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": true
+   }
+  },
+  {
+   "name": "un tipo del largo máximo",
+   "type": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.b",
+   "patterns": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     false
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "un tipo más largo que el máximo",
+   "type": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "tipo vacío",
+   "type": "",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "tipo con un segmento vacío",
+   "type": "pedido..creado",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "tipo que termina en punto",
+   "type": "pedido.",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "tipo que empieza con punto",
+   "type": ".creado",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "un tipo no puede llevar comodín",
+   "type": "pedido.*",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "tipo con espacio",
+   "type": "pedido creado",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "tipo con caracteres fuera de ASCII",
+   "type": "pedido.creación",
+   "patterns": [
+    "*"
+   ],
+   "expected": {
+    "valid_type": false,
+    "valid_patterns": [
+     true
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "patrón con el comodín en el medio",
+   "type": "pedido.x.creado",
+   "patterns": [
+    "pedido.*.creado"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     false
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "patrón con comodín parcial",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido.cre*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     false
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "patrón con dos comodines",
+   "type": "pedido.creado",
+   "patterns": [
+    "*.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     false
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "patrón vacío",
+   "type": "pedido.creado",
+   "patterns": [
+    ""
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     false
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "un patrón inválido invalida toda la lista",
+   "type": "pedido.creado",
+   "patterns": [
+    "pedido.creado",
+    "pedido.*.x"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     true,
+     false
+    ],
+    "subscribed": null
+   }
+  },
+  {
+   "name": "patrón más largo que el máximo",
+   "type": "pedido.creado",
+   "patterns": [
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.*"
+   ],
+   "expected": {
+    "valid_type": true,
+    "valid_patterns": [
+     false
+    ],
+    "subscribed": null
+   }
+  }
+ ]
+}

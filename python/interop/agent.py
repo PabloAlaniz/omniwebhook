@@ -43,11 +43,14 @@ from omniwebhook import (
     http_status_for,
     inspect_destination,
     is_blocked_address,
+    is_event_pattern,
+    is_event_type,
     mercadopago_scheme,
     next_attempt,
     shopify_scheme,
     slack_scheme,
     stripe_scheme,
+    subscribes,
     summarize_failures,
     tiktok_scheme,
 )
@@ -200,6 +203,17 @@ class Agent:
         summary = summarize_failures([Attempt(**attempt) for attempt in attempts], since)
         health = endpoint_health(summary, now, HealthPolicy(**policy) if policy else None)
         return {"summary": asdict(summary), "health": asdict(health)}
+
+    def event(self, type: str, patterns: list[str] | None) -> Json:
+        try:
+            subscribed: bool | None = subscribes(patterns, type)
+        except ConfigurationError:
+            subscribed = None
+        return {
+            "valid_type": is_event_type(type),
+            "valid_patterns": None if patterns is None else [is_event_pattern(p) for p in patterns],
+            "subscribed": subscribed,
+        }
 
     def status(self, outcome: Any) -> Json:
         return {"status": http_status_for(outcome)}

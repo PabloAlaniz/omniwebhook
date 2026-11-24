@@ -180,10 +180,10 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 
 ### Suscripciones
 
-- **Tipos de evento.** El mensaje lleva un tipo con forma `grupo.accion`, y un destino declara a
-  cuáles se suscribe, con comodín por grupo. El filtrado es una función pura del dominio, con
-  vectores.
-- **Catálogo de eventos.** Los tipos se declaran con su esquema de payload, y de ahí sale un
+- **Hecho. Tipos de evento.** Un tipo tiene la forma `grupo.accion`, a cualquier profundidad, y
+  un destino declara a cuáles se suscribe con patrones, con comodín por grupo. El filtrado es
+  una función pura del dominio, con vectores.
+- **Postergado. Catálogo de eventos.** Los tipos se declaran con su esquema de payload, y de ahí sale un
   documento [OpenAPI](https://www.openapis.org/) con la sección `webhooks`, para que quien recibe
   genere sus tipos.
 

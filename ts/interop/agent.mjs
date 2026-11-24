@@ -18,6 +18,8 @@ import {
   inspectDestination,
   allowedNetworks,
   isBlockedAddress,
+  isEventPattern,
+  isEventType,
   mercadoPagoScheme,
   nextAttempt,
   PostgresDeliveryLedger,
@@ -34,6 +36,7 @@ import {
   shopifyScheme,
   slackScheme,
   stripeScheme,
+  subscribes,
   summarizeFailures,
   tiktokScheme,
 } from '../dist/index.js';
@@ -184,6 +187,15 @@ const commands = {
       summary: { failures: summary.failures, failing_since: summary.failingSince, gone: summary.gone },
       health,
     };
+  },
+  async event({ type, patterns }) {
+    const valid_type = isEventType(type);
+    const valid_patterns = patterns === null ? null : patterns.map(isEventPattern);
+    let subscribed = null;
+    try {
+      subscribed = subscribes(patterns, type);
+    } catch {}
+    return { valid_type, valid_patterns, subscribed };
   },
   async status({ outcome }) {
     return { status: httpStatusFor(outcome) };

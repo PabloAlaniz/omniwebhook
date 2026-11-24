@@ -2043,6 +2043,82 @@ def entregar_salud() -> Vector:
     return {"spec": SPEC, "id": "entregar/salud", "kind": "endpoint-health", "cases": cases}
 
 
+# --- tipos de evento ---------------------------------------------------------------
+
+EVENT_SEGMENT = r"[A-Za-z0-9_-]+"
+EVENT_TYPE = re.compile(rf"{EVENT_SEGMENT}(\.{EVENT_SEGMENT})*")
+EVENT_PATTERN = re.compile(rf"\*|{EVENT_SEGMENT}(\.{EVENT_SEGMENT})*(\.\*)?")
+EVENT_MAX = 256
+
+
+def is_event_type(text: str) -> bool:
+    return len(text) <= EVENT_MAX and EVENT_TYPE.fullmatch(text) is not None
+
+
+def is_event_pattern(text: str) -> bool:
+    return len(text) <= EVENT_MAX and EVENT_PATTERN.fullmatch(text) is not None
+
+
+def pattern_matches(pattern: str, event: str) -> bool:
+    if pattern == "*":
+        return True
+    if pattern.endswith(".*"):
+        return event.startswith(pattern[:-1])
+    return pattern == event
+
+
+def entregar_tipos() -> Vector:
+    def case(name: str, event: str, patterns: list[str] | None) -> dict[str, Any]:
+        valid_type = is_event_type(event)
+        valid_patterns = None if patterns is None else [is_event_pattern(pattern) for pattern in patterns]
+        usable = valid_type and (valid_patterns is None or all(valid_patterns))
+        if not usable:
+            subscribed = None
+        elif patterns is None:
+            subscribed = True
+        else:
+            subscribed = any(pattern_matches(pattern, event) for pattern in patterns)
+        expected = {"valid_type": valid_type, "valid_patterns": valid_patterns, "subscribed": subscribed}
+        return {"name": name, "type": event, "patterns": patterns, "expected": expected}
+
+    long_type = ".".join(["a" * 63] * 4)
+    cases = [
+        case("sin lista de tipos: recibe todo", "pedido.creado", None),
+        case("una lista vacía no recibe nada", "pedido.creado", []),
+        case("coincidencia exacta", "pedido.creado", ["pedido.creado"]),
+        case("otro tipo del mismo grupo", "pedido.creado", ["pedido.cancelado"]),
+        case("coincide alguno de la lista", "pedido.creado", ["pago.aprobado", "pedido.creado"]),
+        case("comodín de grupo", "pedido.creado", ["pedido.*"]),
+        case("el comodín de grupo alcanza a cualquier profundidad", "pedido.item.agregado", ["pedido.*"]),
+        case("comodín de un grupo anidado", "pedido.item.agregado", ["pedido.item.*"]),
+        case("el comodín de un grupo anidado no alcanza al de arriba", "pedido.creado", ["pedido.item.*"]),
+        case("el comodín de grupo no coincide con el grupo solo", "pedido", ["pedido.*"]),
+        case("un grupo que empieza igual no coincide", "pedidos.creado", ["pedido.*"]),
+        case("un prefijo sin comodín no coincide", "pedido.creado", ["pedido"]),
+        case("comodín total", "pedido.creado", ["*"]),
+        case("comodín total con un tipo de un solo segmento", "ping", ["*"]),
+        case("distingue mayúsculas", "Pedido.Creado", ["pedido.creado"]),
+        case("distingue mayúsculas en el comodín", "pedido.creado", ["Pedido.*"]),
+        case("guiones y guiones bajos", "pedido_v2.re-enviado", ["pedido_v2.*"]),
+        case("un tipo del largo máximo", long_type + "." + "b", [long_type + ".*"]),
+        case("un tipo más largo que el máximo", "a" * 257, ["*"]),
+        case("tipo vacío", "", ["*"]),
+        case("tipo con un segmento vacío", "pedido..creado", ["*"]),
+        case("tipo que termina en punto", "pedido.", ["*"]),
+        case("tipo que empieza con punto", ".creado", ["*"]),
+        case("un tipo no puede llevar comodín", "pedido.*", ["*"]),
+        case("tipo con espacio", "pedido creado", ["*"]),
+        case("tipo con caracteres fuera de ASCII", "pedido.creación", ["*"]),
+        case("patrón con el comodín en el medio", "pedido.x.creado", ["pedido.*.creado"]),
+        case("patrón con comodín parcial", "pedido.creado", ["pedido.cre*"]),
+        case("patrón con dos comodines", "pedido.creado", ["*.*"]),
+        case("patrón vacío", "pedido.creado", [""]),
+        case("un patrón inválido invalida toda la lista", "pedido.creado", ["pedido.creado", "pedido.*.x"]),
+        case("patrón más largo que el máximo", "pedido.creado", ["a" * 255 + ".*"]),
+    ]
+    return {"spec": SPEC, "id": "entregar/tipos", "kind": "event-match", "cases": cases}
+
+
 # --- recibir -------------------------------------------------------------------
 
 STATUS = {
@@ -2922,6 +2998,7 @@ ALL: list[Callable[[], Vector]] = [
     entregar_reintentos,
     entregar_bandeja,
     entregar_salud,
+    entregar_tipos,
 ]
 
 
