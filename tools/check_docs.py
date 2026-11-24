@@ -58,7 +58,12 @@ def hoist_imports(code: str) -> tuple[str, str]:
     return "\n".join(imports), code
 
 
-ENTRIES = {"omniwebhook": "index.ts", "omniwebhook/standard": "standard.ts", "omniwebhook/node": "node.ts"}
+ENTRIES = {
+    "omniwebhook": "index.ts",
+    "omniwebhook/standard": "standard.ts",
+    "omniwebhook/node": "node.ts",
+    "omniwebhook/testing": "testing.ts",
+}
 
 
 def missing_imports(imports: str, body: str) -> str:
@@ -94,7 +99,8 @@ def check_typescript() -> bool:
     (folder / "tsconfig.json").write_text(
         '{"extends": "../tsconfig.json", "compilerOptions": {"noEmit": true, "noUnusedLocals": false, '
         '"rootDir": "..", "paths": {"omniwebhook": ["../src/index.ts"], '
-        '"omniwebhook/standard": ["../src/standard.ts"], "omniwebhook/node": ["../src/node.ts"]}}, '
+        '"omniwebhook/standard": ["../src/standard.ts"], "omniwebhook/node": ["../src/node.ts"], '
+        '"omniwebhook/testing": ["../src/testing.ts"]}}, '
         '"include": ["*.ts"]}',
         encoding="utf-8",
     )
