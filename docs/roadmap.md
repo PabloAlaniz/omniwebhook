@@ -206,13 +206,14 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 
 ### Documentación para llegar a la 1.0
 
-- **Documentación en inglés** además de la de español, con la especificación como primera pieza
-  traducida y el comprobador de ejemplos cubriendo los dos idiomas.
-- **Sitio de documentación** generado desde el repositorio, con referencia de la API extraída de
+- **En curso. Documentación en inglés** además de la de español. Hecho: el README, con sus
+  ejemplos pasando por el comprobador. Pendiente: las guías y la especificación.
+- **Postergado. Sitio de documentación** generado desde el repositorio, con referencia de la API extraída de
   los tipos.
-- **Guía para implementar la especificación en otro lenguaje**, con los vectores publicados como
+- **Pendiente. Guía para implementar la especificación en otro lenguaje**, con los vectores publicados como
   artefacto versionado para consumirlos sin clonar el repositorio.
-- **Criterios de la 1.0** escritos: qué tiene que estar estable, y qué queda afuera.
+- **Hecho. Criterios de la 1.0** escritos en [su propia página](criterios-1.0.md): qué tiene que
+  estar, qué queda afuera y qué no va a estar nunca.
 
 **Hecho cuando:** un ejemplo completo encola dentro de una transacción, entrega con el
 despachador, deshabilita un destino caído y muestra la traza de punta a punta; y la prueba de
