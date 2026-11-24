@@ -140,7 +140,7 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 | Almacén de reservas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite, Firestore |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
 | Registro de entregas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite |
-| Entrada | API Fetch (`Request` y `Response`) | ASGI, Starlette y FastAPI, o cualquier framework |
+| Entrada | API Fetch (`Request` y `Response`), `node:http` y lo que se monta encima | ASGI, Starlette y FastAPI, WSGI, Django, o cualquier framework |
 | Estilo | Asincrónico | Sincrónico y asincrónico |
 | Dependencias obligatorias | Ninguna | Ninguna |
 

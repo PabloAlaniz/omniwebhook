@@ -16,24 +16,66 @@ JSON antes y vos lo volvés a escribir, la firma deja de coincidir. Pasale al pa
 tocar:
 
 - **API Fetch**: `toIncomingRequest(request)` lo lee por vos. Llamalo antes de `request.json()`.
-- **Starlette y FastAPI**: `await to_incoming_request(request)`.
+- **`node:http` y los frameworks montados encima**: `nodeIncomingRequest(request)`, de
+  `omniwebhook/node`.
+- **Starlette y FastAPI**: `await to_incoming_request(request)`, de `omniwebhook.starlette`.
+- **Django**: `to_incoming_request(request)`, de `omniwebhook.django`.
+- **WSGI**, que incluye a Flask: `incoming_request_from_environ(environ)`.
 - **Otro framework de Python**: `incoming_request(headers=..., query=..., body=...)`, con el cuerpo en
   bytes.
 
-```python
-# Flask
-from omniwebhook import incoming_request
+Con `node:http`, el adaptador lee el flujo y `writeNodeResponse` escribe la respuesta:
 
-pedido = incoming_request(
-    headers=request.headers.items(),
-    query=request.query_string.decode(),
-    body=request.get_data(),
-)
+```ts
+import { createServer } from 'node:http';
+import { nodeIncomingRequest, writeNodeResponse } from 'omniwebhook/node';
+
+createServer(async (request, response) => {
+  const reception = await receive.execute(await nodeIncomingRequest(request), procesar);
+  writeNodeResponse(response, reception);
+});
 ```
 
-Pasar las cabeceras como pares, y no como diccionario, permite detectar una cabecera repetida. La
-API Fetch une con comas las cabeceras repetidas, así que ahí una cabecera repetida no se informa
-como `ambiguous`: simplemente la firma no coincide.
+Si un middleware ya leyó el cuerpo, pasáselo crudo. Con Express, la ruta del webhook tiene que usar
+`express.raw({ type: '*/*' })` en lugar de `express.json()`, y entonces `request.body` es el
+`Buffer` que llegó:
+
+```ts
+const pedidoDeExpress = await nodeIncomingRequest(request, { body: request.body });
+```
+
+En Django es una vista común:
+
+```python
+from django.http import HttpRequest, HttpResponse
+from omniwebhook.django import to_incoming_request, to_response
+
+def webhook(request: HttpRequest) -> HttpResponse:
+    return to_response(receive.execute(to_incoming_request(request), procesar))
+```
+
+Y en cualquier aplicación WSGI, Flask incluido:
+
+```python
+from collections.abc import Iterable
+from omniwebhook import incoming_request_from_environ, wsgi_response
+
+def aplicacion(environ: dict[str, Any], start_response: Any) -> Iterable[bytes]:
+    pedido = incoming_request_from_environ(environ)
+    return wsgi_response(receive.execute(pedido, procesar), start_response)
+```
+
+```python
+# Flask: el cuerpo ya lo leyó el framework
+pedido = incoming_request_from_environ(request.environ, body=request.get_data())
+```
+
+Los adaptadores de `node:http` y de WSGI leen el cuerpo ellos mismos y cortan al pasarse de
+`maxBodyBytes` (`max_body_bytes`): el pedido termina en `too_large` sin traer el resto a memoria.
+
+Una cabecera repetida se informa como `ambiguous` sólo donde el entorno la conserva: `node:http`,
+ASGI y Starlette. La API Fetch, WSGI y Django unen con comas las cabeceras repetidas, así que ahí
+simplemente la firma no coincide.
 
 ## Esquemas de firma
 
