@@ -10,6 +10,11 @@ import { createSender, type SenderOptions } from './entrypoints/sender';
 
 export { type NodeDnsResolverOptions, nodeDnsResolver } from './adapters/dns/node';
 export { nodeTransport } from './adapters/transport/node';
+export {
+  type NodeIncomingRequestOptions,
+  nodeIncomingRequest,
+  writeNodeResponse,
+} from './entrypoints/node-http';
 
 export interface NodeSenderOptions extends Omit<SenderOptions, 'resolver'> {
   readonly resolver?: DnsResolver;

@@ -95,6 +95,7 @@ from omniwebhook.entrypoints.asgi import incoming_request_from_scope
 from omniwebhook.entrypoints.receiver import create_async_receiver, create_receiver
 from omniwebhook.entrypoints.requests import incoming_request
 from omniwebhook.entrypoints.sender import create_async_sender, create_sender
+from omniwebhook.entrypoints.wsgi import incoming_request_from_environ, wsgi_response
 
 __all__ = [
     "DEFAULT_CONTENT_TYPE",
@@ -185,6 +186,7 @@ __all__ = [
     "hmac_body_scheme",
     "http_status_for",
     "incoming_request",
+    "incoming_request_from_environ",
     "incoming_request_from_scope",
     "inspect_destination",
     "is_blocked_address",
@@ -195,4 +197,5 @@ __all__ = [
     "stripe_scheme",
     "system_clock",
     "tiktok_scheme",
+    "wsgi_response",
 ]
