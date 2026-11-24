@@ -3,6 +3,8 @@
 [![CI](https://github.com/PabloAlaniz/omniwebhook/actions/workflows/ci.yml/badge.svg)](https://github.com/PabloAlaniz/omniwebhook/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/PabloAlaniz/omniwebhook/badge)](https://scorecard.dev/viewer/?uri=github.com/PabloAlaniz/omniwebhook)
 
+[English](README.en.md) · Español
+
 Webhooks firmados que se emiten y se reciben igual en cualquier stack.
 
 > **Antes de la 1.0.** Los dos paquetes están publicados en npm y PyPI, completos y con la
@@ -164,23 +166,24 @@ pip install omniwebhook                   # Python
 pip install "omniwebhook[standard]"       # con la librería de referencia de Standard Webhooks
 ```
 
-Los demás extras de Python (`httpx`, `starlette`, `postgres`, `firestore`) están descritos en el
-[README del paquete](python/README.md).
+Los demás extras de Python (`httpx`, `starlette`, `django`, `postgres`, `firestore`, `ed25519`,
+`otel`) están descritos en el [README del paquete](python/README.md).
 
 ## Documentación
 
 | | |
 |---|---|
 | [Guía para recibir](docs/recibir.md) | Esquemas, almacenes, claves de evento y respuestas |
+| [Guía para emitir](docs/emitir.md) | Firma, política de URLs, reintentos, bandeja de salida y salud de destinos |
 | [Telemetría](docs/telemetria.md) | Métricas y trazas con OpenTelemetry |
-| [Ejemplos](examples/README.md) | Un receptor mínimo en `node:http`, WSGI, Starlette y Django |
-| [Guía para emitir](docs/emitir.md) | Firma, política de URLs, reintentos y registro |
+| [Ejemplos](examples/README.md) | Receptores mínimos y una bandeja de salida, probados en la integración continua |
 | [Cómo agregar un esquema de firma](docs/agregar-un-esquema.md) | De la especificación al adaptador |
 | [Especificación](spec/SPEC.md) | El comportamiento que comparten todos los paquetes |
 | [Decisiones de arquitectura](docs/adr/README.md) | Por qué está hecho así |
 | [Cómo se publica una versión](docs/publicar.md) | El circuito de versiones y la publicación de confianza |
 | [Compatibilidad](docs/compatibilidad.md) | Qué es estable, qué entornos se soportan y cómo se avisa un cambio |
-| [Hoja de ruta](docs/roadmap.md) | Lo que viene en los próximos tres sprints |
+| [Hoja de ruta](docs/roadmap.md) | Qué está hecho y qué falta |
+| [Criterios de la 1.0](docs/criterios-1.0.md) | Qué tiene que pasar para congelar la API |
 
 ## Estructura del repositorio
 
@@ -195,8 +198,8 @@ Los demás extras de Python (`httpx`, `starlette`, `postgres`, `firestore`) est�
 
 ## Contribuir
 
-Ver [CONTRIBUTING.md](CONTRIBUTING.md) y el [código de conducta](CODE_OF_CONDUCT.md). Para reportar un problema de seguridad, ver
-[SECURITY.md](SECURITY.md).
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) y el [código de conducta](CODE_OF_CONDUCT.md). Para reportar
+un problema de seguridad, ver [SECURITY.md](SECURITY.md).
 
 ## Licencia
 

@@ -19,6 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DOCUMENTS = [
     "README.md",
+    "README.en.md",
     "ts/README.md",
     "python/README.md",
     "docs/recibir.md",
@@ -34,6 +35,7 @@ declare const secrets: string[], payload: Uint8Array, entrega: any, pedido: any,
 declare const receive: any, env: any, request: any, send: any, meter: any, tracer: any;
 declare const esquemaDePedido: import("omniwebhook").PayloadSchema<{ id: string }>;
 declare function registrarPago(evento: unknown): Promise<void>;
+declare function recordPayment(event: unknown): Promise<void>;
 declare function tipoDe(request: unknown): string;
 """
 PY_PREAMBLE = """\
@@ -43,7 +45,7 @@ from omniwebhook import *
 from omniwebhook.standard import *
 app: Any; pool: Any; store: Any; ledger: Any; signer: Any; db: Any; cola: Any; firestore: Any; request: Any
 secreto: str; nuevo: str; anterior: str; url: str; identificador: str; secrets: list[str]; payload: bytes
-entrega: Any; Request = Any; Response = Any; registrar_pago: Any; tipo_de: Any
+entrega: Any; Request = Any; Response = Any; registrar_pago: Any; tipo_de: Any; record_payment: Any
 receive: Any; procesar: Any; Pedido: Any; destinos: Any; send: Any; ahora: int; meter: Any; tracer: Any
 """
 
