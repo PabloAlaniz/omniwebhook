@@ -16,7 +16,13 @@ from omniwebhook import (
     stripe_scheme,
     tiktok_scheme,
 )
-from omniwebhook.standard import native_signer, standard_scheme
+from omniwebhook.discord import discord_scheme
+from omniwebhook.standard import (
+    generate_standard_key_pair,
+    native_signer,
+    standard_public_key_scheme,
+    standard_scheme,
+)
 from omniwebhook.testing import SignedScheme, signed_request, tampered
 from tests.support.dobles import RelojFijo
 
@@ -125,3 +131,43 @@ def test_por_defecto_firma_con_la_hora_actual_y_genera_el_identificador() -> Non
 def test_rechaza_lo_que_no_puede_firmar(esquema: Any, extra: dict[str, Any]) -> None:
     with pytest.raises(ConfigurationError):
         signed_request(esquema, **{"secret": TEXTO, "body": CUERPO, **extra})
+
+
+def test_standard_v2a_lo_que_arma_lo_verifica_la_clave_publica() -> None:
+    par = generate_standard_key_pair()
+    esquema = standard_public_key_scheme(public_keys=[par.public_key], endpoint_id="ep_1", clock=RELOJ)
+
+    pedido = signed_request(
+        "standard-v2a", secret=par.secret_key, body=CUERPO, timestamp=AHORA, id="msg_1", endpoint_id="ep_1"
+    )
+
+    assert esquema.verify(pedido) == Verified("standard:msg_1", AHORA)
+    assert esquema.verify(tampered(pedido)) == Rejected("invalid")
+
+
+def test_discord_lo_que_arma_lo_verifica_la_clave_publica_de_esa_semilla() -> None:
+    semilla = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
+    publica = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+    esquema = discord_scheme(public_keys=[publica], clock=RELOJ)
+
+    pedido = signed_request("discord", secret=semilla, body=CUERPO, timestamp=AHORA)
+
+    assert esquema.verify(pedido) == Verified("discord:evt_1", AHORA)
+    assert esquema.verify(tampered(pedido)) == Rejected("invalid")
+
+
+@pytest.mark.parametrize(
+    ("esquema", "extra"),
+    [
+        ("standard-v2a", {"secret": "whsk_" + "A" * 43 + "="}),
+        ("standard-v2a", {"secret": "whpk_abc", "endpoint_id": "e"}),
+        ("standard-v2a", {"secret": "whsk_" + "A" * 43 + "=", "endpoint_id": "e.1"}),
+        ("standard-v2a", {"secret": "whsk_***", "endpoint_id": "e"}),
+        ("discord", {"secret": "abcd"}),
+    ],
+)
+def test_los_esquemas_de_clave_publica_rechazan_lo_que_no_pueden_firmar(
+    esquema: Any, extra: dict[str, Any]
+) -> None:
+    with pytest.raises(ConfigurationError):
+        signed_request(esquema, **{"body": CUERPO, **extra})

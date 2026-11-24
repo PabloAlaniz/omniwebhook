@@ -129,7 +129,12 @@ class _Sending:
 
     def _plan(self, delivery: Delivery, at: int) -> _Planned | _Attempted:
         signing = self._signer.sign(
-            OutgoingMessage(id=delivery.message_id, timestamp=at, payload=delivery.payload)
+            OutgoingMessage(
+                id=delivery.message_id,
+                timestamp=at,
+                payload=delivery.payload,
+                endpoint_id=delivery.endpoint.id,
+            )
         )
         if signing.outcome != "signed":
             raise ConfigurationError(f"no se puede firmar el mensaje: {signing.outcome}")

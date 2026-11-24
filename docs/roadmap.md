@@ -189,9 +189,11 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 
 ### Firma y transporte
 
-- **Firma asimétrica al emitir**, con la misma pieza que el sprint 2 agregó para verificar. Quien
-  recibe guarda una clave pública y no un secreto compartido.
-- **Rotación con fecha.** Un secreto anterior deja de firmar solo después de un plazo, en vez de
+- **Hecho. Firma asimétrica al emitir.** `standardKeySigner` firma con una clave privada; quien
+  recibe guarda la pública. Un firmante combinado manda las dos firmas juntas para migrar. El
+  paquete genera pares y deriva la clave pública. Ver la
+  [decisión 0010](adr/0010-firma-asimetrica-al-emitir.md).
+- **Postergado. Rotación con fecha.** Un secreto anterior deja de firmar solo después de un plazo, en vez de
   depender de que alguien lo quite de la lista.
 
 ### Observabilidad

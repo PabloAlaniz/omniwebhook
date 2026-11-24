@@ -5,6 +5,8 @@ para producción.
 """
 
 import base64
+import hashlib
+import re
 import time
 import uuid
 from dataclasses import replace
@@ -18,8 +20,41 @@ from omniwebhook.domain.incoming_request import Field, IncomingRequest
 __all__ = ["SignedScheme", "signed_request", "tampered"]
 
 SignedScheme = Literal[
-    "standard", "stripe", "slack", "shopify", "tiktok", "mercadopago", "github", "creem", "hmac-body"
+    "standard",
+    "standard-v2a",
+    "discord",
+    "stripe",
+    "slack",
+    "shopify",
+    "tiktok",
+    "mercadopago",
+    "github",
+    "creem",
+    "hmac-body",
 ]
+_SEED_BYTES = 32
+_STRICT_BASE64 = re.compile(r"[A-Za-z0-9+/]*={0,2}")
+_HEX_SEED = re.compile(r"[0-9A-Fa-f]{64}")
+
+
+def _seed(scheme: str, secret: str) -> bytes | None:
+    """La semilla de la clave privada de un esquema de clave pública, o `None` si no tiene la forma."""
+    if scheme == "discord":
+        return bytes.fromhex(secret) if _HEX_SEED.fullmatch(secret) else None
+    encoded = secret.removeprefix("whsk_")
+    if encoded == secret or len(encoded) % 4 != 0 or _STRICT_BASE64.fullmatch(encoded) is None:
+        return None
+    seed = base64.b64decode(encoded)
+    return seed if len(seed) == _SEED_BYTES else None
+
+
+def _sign_ed25519(seed: bytes, message: bytes) -> bytes:
+    # Se importa recién acá: es lo único de este módulo que necesita `omniwebhook[ed25519]`.
+    try:
+        from omniwebhook.adapters.ed25519 import sign_ed25519
+    except ImportError as error:
+        raise ConfigurationError("falta la librería de Ed25519: instalá `omniwebhook[ed25519]`") from error
+    return sign_ed25519(seed, message)
 
 
 def signed_request(
@@ -30,6 +65,7 @@ def signed_request(
     timestamp: int | None = None,
     id: str | None = None,
     data_id: str | None = None,
+    endpoint_id: str | None = None,
     header: str | None = None,
     prefix: str = "",
     encoding: Literal["hex", "base64"] = "hex",
@@ -46,12 +82,24 @@ def signed_request(
       `mercadopago` o la cabecera `id_header` de `hmac-body`. En `standard`, si falta, se
       genera uno.
     - `data_id`: sólo `mercadopago`, el parámetro `data.id` de la URL.
+    - `endpoint_id`: sólo `standard-v2a`, el identificador del destino, que es parte de lo
+      que se firma.
+
+    En los esquemas de clave pública, `secret` es la clave privada: `whsk_…` en
+    `standard-v2a` y la semilla en hexadecimal en `discord`. Necesitan
+    `omniwebhook[ed25519]`.
     - `header`, `prefix`, `encoding`, `id_header`: sólo `hmac-body`, la misma configuración
       que recibe `hmac_body_scheme`.
     """
     raw = body.encode("utf-8") if isinstance(body, str) else bytes(body)
     stamp = str(int(time.time()) if timestamp is None else timestamp)
-    key = standard_key(secret) if scheme == "standard" else secret.encode("utf-8")
+    key: bytes | None
+    if scheme == "standard":
+        key = standard_key(secret)
+    elif scheme in ("standard-v2a", "discord"):
+        key = _seed(scheme, secret)
+    else:
+        key = secret.encode("utf-8")
     if not secret or key is None:
         raise ConfigurationError("secret no se puede usar con este esquema")
 
@@ -73,6 +121,22 @@ def signed_request(
             ("webhook-id", identifier),
             ("webhook-timestamp", stamp),
             ("webhook-signature", f"v1,{signature}"),
+        ]
+    elif scheme == "standard-v2a":
+        if not endpoint_id or "." in endpoint_id:
+            raise ConfigurationError("endpoint_id no puede estar vacío ni contener un punto")
+        identifier = id or f"msg_{uuid.uuid4().hex}"
+        content = hashlib.sha256(f"{endpoint_id}.{identifier}.{stamp}.".encode() + raw).digest()
+        signature = base64.b64encode(_sign_ed25519(key, content)).decode("ascii")
+        headers = [
+            ("webhook-id", identifier),
+            ("webhook-timestamp", stamp),
+            ("webhook-signature", f"v2a,{signature}"),
+        ]
+    elif scheme == "discord":
+        headers = [
+            ("x-signature-ed25519", _sign_ed25519(key, stamp.encode() + raw).hex()),
+            ("x-signature-timestamp", stamp),
         ]
     elif scheme == "stripe":
         headers = [("stripe-signature", f"t={stamp},v1={in_hex(f'{stamp}.'.encode() + raw)}")]

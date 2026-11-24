@@ -435,6 +435,31 @@ Un mensaje tiene `id`, `timestamp` (segundos) y `payload` (bytes).
 - Las cabeceras que agrega quien integra NO DEBEN reemplazar ni duplicar las de la firma, la del
   tipo de contenido ni `user-agent`. Los nombres se comparan sin distinguir mayúsculas.
 
+### 7.1. Firma asimétrica
+
+Quien emite PUEDE firmar con la variante asimétrica del formato, `v2a` (sección 5.10): firma con
+una clave privada y quien recibe verifica con la pública, sin secreto compartido.
+
+- El mensaje lleva además el identificador del destino, `endpoint_id`: el mismo que queda en el
+  registro. Quien emite se lo comunica a quien recibe junto con la clave pública.
+- `endpoint_id` NO DEBE estar vacío ni contener `.`. Si no, no se firma: `invalid_endpoint`.
+- Clave privada: el prefijo `whsk_` es obligatorio; el resto es base64 y, decodificado, son los 32
+  bytes de la semilla Ed25519. Con las mismas reglas de forma que la clave pública de la sección
+  5.10. Sin claves, o con alguna inutilizable, no se firma: `unconfigured`.
+- La clave pública que le corresponde es `whpk_` seguido del base64 de sus 32 bytes.
+- Firma: `v2a,` seguido del base64 de la firma Ed25519 de
+  `SHA-256(<endpoint_id>.<id>.<timestamp>.<payload>)`.
+- Con más de una clave se envía una firma por clave, separadas por un espacio y en el orden de
+  la lista.
+- Las comprobaciones van en este orden: `invalid_id`, `invalid_timestamp`, `invalid_endpoint`,
+  `unconfigured`.
+- Una clave privada NO DEBE aparecer en un resultado, un error ni un log, y NO DEBE mostrársele
+  a quien recibe.
+
+Para migrar de una firma a la otra, un mismo mensaje PUEDE llevar las dos: las firmas de cada
+variante van en la misma cabecera `webhook-signature`, separadas por un espacio. Cada receptor
+mira sólo las de su variante.
+
 ## 8. Emitir: entregar
 
 ### 8.1. Política de URLs de destino

@@ -33,7 +33,19 @@ from omniwebhook.domain.incoming_request import Field, IncomingRequest
 from omniwebhook.domain.verification import Verified
 from omniwebhook.testing import signed_request
 
-SCHEMES = ("standard", "stripe", "slack", "shopify", "tiktok", "mercadopago", "github", "creem", "hmac-body")
+SCHEMES = (
+    "standard",
+    "standard-v2a",
+    "discord",
+    "stripe",
+    "slack",
+    "shopify",
+    "tiktok",
+    "mercadopago",
+    "github",
+    "creem",
+    "hmac-body",
+)
 
 EPILOG = "Es una herramienta de desarrollo: send no aplica la política de URLs de destino."
 
@@ -92,12 +104,21 @@ def _parser() -> _Parser:
         "verify": "Verifica un pedido guardado. Termina con 0 si el resultado es ok, y con 1 si no.",
         "send": "Firma un cuerpo y lo manda por POST a una URL. Termina con 0 si responde 2xx.",
     }
+    keygen = "Genera un par de claves para la firma asimétrica y lo muestra en JSON."
+    commands.add_parser("keygen", help=keygen, description=keygen, exit_on_error=False)
     for name, text in helps.items():
         command = commands.add_parser(name, help=text, description=text, epilog=EPILOG, exit_on_error=False)
         command.add_argument("--scheme", required=True, help=", ".join(SCHEMES))
         command.add_argument(
-            "--secret-env", required=True, metavar="VAR", help="la variable de entorno que tiene el secreto"
+            "--secret-env",
+            required=True,
+            metavar="VAR",
+            help=(
+                "la variable de entorno que tiene el secreto; en standard-v2a y discord, la clave "
+                "privada para sign y send, y la pública para verify"
+            ),
         )
+        command.add_argument("--endpoint-id", help="standard-v2a: el identificador del destino")
         command.add_argument("--header", help="hmac-body: la cabecera que trae la firma")
         command.add_argument("--prefix", help="hmac-body: un texto fijo antes de la firma")
         command.add_argument("--encoding", help="hmac-body: hex o base64")
@@ -161,6 +182,7 @@ def _signed(options: argparse.Namespace, io: CliIo) -> IncomingRequest:
         timestamp=_integer(options.timestamp, "timestamp"),
         id=options.id,
         data_id=options.data_id,
+        endpoint_id=options.endpoint_id,
         **_hmac_body(options),
     )
 
@@ -174,6 +196,8 @@ def _verifier(options: argparse.Namespace, io: CliIo) -> Verifier:
     match options.scheme:
         case "standard":
             return standard_scheme(signer=native_signer, **timed)
+        case "standard-v2a" | "discord":
+            return _public_key_verifier(options, secrets, tolerance)
         case "stripe":
             return stripe_scheme(**timed)
         case "slack":
@@ -194,6 +218,45 @@ def _verifier(options: argparse.Namespace, io: CliIo) -> Verifier:
             return hmac_body_scheme(secrets=secrets, **_hmac_body(options))
         case _:
             raise UsageError(f"esquema desconocido: {options.scheme}")
+
+
+def _ed25519(build: Callable[[], Any]) -> Any:
+    """Corre algo que necesita `omniwebhook[ed25519]` y explica qué falta si no está."""
+    try:
+        return build()
+    except ImportError as error:
+        raise UsageError("falta la librería de Ed25519: instalá omniwebhook[ed25519]") from error
+
+
+def _public_key_verifier(options: argparse.Namespace, keys: list[str], tolerance: int | None) -> Verifier:
+    timed: dict[str, Any] = {"public_keys": keys}
+    if tolerance is not None:
+        timed["tolerance_seconds"] = tolerance
+
+    def build() -> Verifier:
+        if options.scheme == "discord":
+            from omniwebhook.adapters.schemes.discord import discord_scheme
+
+            return discord_scheme(**timed)
+        from omniwebhook.adapters.schemes.standard.public_key import standard_public_key_scheme
+
+        if options.endpoint_id is None:
+            raise UsageError("falta --endpoint-id")
+        return standard_public_key_scheme(endpoint_id=options.endpoint_id, **timed)
+
+    verifier: Verifier = _ed25519(build)
+    return verifier
+
+
+def _keygen() -> str:
+    def build() -> str:
+        from omniwebhook.adapters.schemes.standard.key_signer import generate_standard_key_pair
+
+        pair = generate_standard_key_pair()
+        return json.dumps({"secretKey": pair.secret_key, "publicKey": pair.public_key}, indent=2)
+
+    shown: str = _ed25519(build)
+    return shown
 
 
 def _pairs(value: object, name: str) -> list[Field]:
@@ -257,6 +320,11 @@ def run_cli(argv: Sequence[str], io: CliIo | None = None) -> int:
         except argparse.ArgumentError as error:
             raise UsageError(str(error)) from error
 
+        if options.command == "keygen":
+            # La clave privada sale por la salida estándar porque se la pidió: guardala en un
+            # gestor de secretos y compartí sólo la pública.
+            io.out(_keygen())
+            return 0
         if options.command == "sign":
             io.out(_shown(_signed(options, io)))
             return 0

@@ -1,0 +1,341 @@
+{
+ "spec": "0",
+ "id": "firmar/standard-v2a",
+ "kind": "sign",
+ "cases": [
+  {
+   "name": "una clave",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_2aXk",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+    },
+    "public_keys": [
+     "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+    ]
+   }
+  },
+  {
+   "name": "dos claves: una firma por clave, en orden",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo=",
+    "whsk_SRlC4GdcrQLMw+l881QtuRk0fssg7h5hpTm8PGDOhdk="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_2aXk",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA== v2a,ANPPDM4UKMneI6iIO8aEaXjm4AILK/WmtmaQ9Gxcp64xKgM6X68didMW6z1Pshh8HWvZaVvg9Y/heLPM2rikCA=="
+    },
+    "public_keys": [
+     "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4=",
+     "whpk_k95HqXDzW6GjwgvssVA1V5o3x7irdn4epu6TrlOTZsc="
+    ]
+   }
+  },
+  {
+   "name": "la clave de ejemplo del formato",
+   "secrets": [
+    "whsk_4uKPjji/dhB8w6GW3YYDnIMYvXcdHrvH6lidTr4Z+EY="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_2aXk",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v2a,+in9Iw9XT3/X+lVaj7moPbZtnWoKShrKnN/uzMqSHzm/KFWKO4Hr58KoMf+3n8EggDzcGRJIf/iI1UwIFZFUDg=="
+    },
+    "public_keys": [
+     "whpk_uWKK13PfwqyOgrqT0OrWKcS2uVD7e89+oUKnkoPjx7w="
+    ]
+   }
+  },
+  {
+   "name": "cuerpo vacío",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_vacio",
+   "timestamp": 1700000000,
+   "payload": "",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_vacio",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v2a,jWtj021PSdAj6JbRqYWN8PbJaequs/IP2QS7BgaqIWtHTwOgBdrR30QzxC0jdmzOGgtGm3pWemQTPGxFnp4UCA=="
+    },
+    "public_keys": [
+     "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+    ]
+   }
+  },
+  {
+   "name": "cuerpo con caracteres fuera de ASCII",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_ñ",
+   "timestamp": 1700000000,
+   "payload": "{\"saludo\":\"¡Hola! 👋\"}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_ñ",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v2a,xYjLqpSPwX/lbHpy6XCNvKiQxolJBLpe3zbuWJoV8HEPSmN7TzwdPE3i4ICXnFxLHwOEJBB+YrfGJmfDy2diBQ=="
+    },
+    "public_keys": [
+     "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+    ]
+   }
+  },
+  {
+   "name": "época cero",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_0",
+   "timestamp": 0,
+   "payload": "{}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_0",
+     "webhook-timestamp": "0",
+     "webhook-signature": "v2a,Eqd15nUztiKoihDu7xOsHiRBHqzAycYXlYUyLnDqe8xouWz7RxoCd73Udc6BgJ6J/hxLf0xbgszU/0fzYcpRDw=="
+    },
+    "public_keys": [
+     "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+    ]
+   }
+  },
+  {
+   "name": "otro destino da otra firma",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_2",
+   "expected": {
+    "headers": {
+     "webhook-id": "msg_2aXk",
+     "webhook-timestamp": "1700000000",
+     "webhook-signature": "v2a,MdfEdQV9M4G5JI6lMgKhVS4wuhCqywVTLglhsHqg+f7sgOZoJVnJb9IlRbhjW1FnKU99i0nAmlyt1+f8tEZ0Aw=="
+    },
+    "public_keys": [
+     "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+    ]
+   }
+  },
+  {
+   "name": "identificador vacío",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "invalid_id"
+   }
+  },
+  {
+   "name": "identificador con punto",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg.1",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "invalid_id"
+   }
+  },
+  {
+   "name": "marca de tiempo negativa",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": -1,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "invalid_timestamp"
+   }
+  },
+  {
+   "name": "sin destino",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": null,
+   "expected": {
+    "error": "invalid_endpoint"
+   }
+  },
+  {
+   "name": "destino vacío",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "",
+   "expected": {
+    "error": "invalid_endpoint"
+   }
+  },
+  {
+   "name": "destino con punto",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep.1",
+   "expected": {
+    "error": "invalid_endpoint"
+   }
+  },
+  {
+   "name": "el identificador se comprueba antes que el destino",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep.1",
+   "expected": {
+    "error": "invalid_id"
+   }
+  },
+  {
+   "name": "el destino se comprueba antes que las claves",
+   "secrets": [],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep.1",
+   "expected": {
+    "error": "invalid_endpoint"
+   }
+  },
+  {
+   "name": "sin claves",
+   "secrets": [],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave vacía",
+   "secrets": [
+    "whsk_8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo=",
+    ""
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave sin el prefijo",
+   "secrets": [
+    "8rym+WTMomEA6ySnWUNy5Bf3a6X1ts2xGbWyOV7QxAo="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave pública no sirve para firmar",
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "un secreto simétrico no sirve para firmar",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave que no es base64",
+   "secrets": [
+    "whsk_***"
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave de otro largo",
+   "secrets": [
+    "whsk_eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA=="
+   ],
+   "id": "msg_2aXk",
+   "timestamp": 1700000000,
+   "payload": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}",
+   "endpoint_id": "ep_sintetico_1",
+   "expected": {
+    "error": "unconfigured"
+   }
+  }
+ ]
+}

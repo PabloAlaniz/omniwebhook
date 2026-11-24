@@ -40,7 +40,13 @@ import {
   summarizeFailures,
   tiktokScheme,
 } from '../dist/index.js';
-import { standardPublicKeyScheme, standardScheme, standardSigner } from '../dist/standard.js';
+import {
+  standardKeySigner,
+  standardPublicKeyOf,
+  standardPublicKeyScheme,
+  standardScheme,
+  standardSigner,
+} from '../dist/standard.js';
 
 const bytes = (base64) => new Uint8Array(Buffer.from(base64, 'base64'));
 const defined = (entries) => Object.fromEntries(entries.filter(([, value]) => value !== undefined));
@@ -129,6 +135,16 @@ const commands = {
   },
   async sign({ secrets, id, timestamp, payload }) {
     return standardSigner({ secrets }).sign({ id, timestamp, payload: bytes(payload) });
+  },
+  async sign_key({ secret_keys, id, timestamp, payload, endpoint_id }) {
+    const signed = await standardKeySigner({ secretKeys: secret_keys }).sign({
+      id,
+      timestamp,
+      payload: bytes(payload),
+      endpointId: endpoint_id,
+    });
+    const public_keys = await Promise.all(secret_keys.map(standardPublicKeyOf));
+    return { ...signed, public_keys };
   },
   // Lo que firmó el otro paquete, verificado con la librería de referencia del formato.
   async reference_verify({ secret, headers, body }) {

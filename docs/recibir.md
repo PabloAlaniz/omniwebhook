@@ -537,6 +537,9 @@ stripe_scheme(secrets=[secreto]).verify(firmado)  # ok
 stripe_scheme(secrets=[secreto]).verify(tampered(firmado))  # invalid
 ```
 
+Los esquemas de clave pública reciben la clave privada en `secret`: `whsk_…` y `endpointId`
+(`endpoint_id`) en `standard-v2a`, y la semilla en hexadecimal en `discord`.
+
 Para probar que un evento repetido no se procesa dos veces, mandá el mismo pedido firmado dos
 veces. Sirve para todos los esquemas incluidos; con `hmac-body` recibe la misma configuración que
 el esquema.
@@ -563,7 +566,8 @@ omniwebhook verify --scheme stripe --secret-env FIRMA --request pedido.json
 El secreto se lee de una variable de entorno y nunca va como argumento, para que no quede en el
 historial de la terminal. `--timestamp` firma con otra hora, para provocar un `stale`; `--body -` y
 `--request -` leen de la entrada estándar. Sirve para los esquemas de secreto compartido; los de
-clave pública no se pueden firmar desde acá.
+clave pública se firman con la clave privada en la variable de entorno y se verifican con la
+pública; `standard-v2a` pide además `--endpoint-id`. `omniwebhook keygen` genera un par nuevo.
 
 Es una herramienta de desarrollo: `send` manda a la URL que le digas, sin la política de URLs de
 destino que aplica la emisión.

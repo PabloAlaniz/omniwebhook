@@ -2,13 +2,25 @@
  * Ayudas para probar una integración: arman el pedido que mandaría cada emisor, firmado
  * con el secreto que se indique. Viven en una entrada aparte porque no son para producción.
  */
-import { concat, hmacSha256, toBase64, toHex, utf8 } from './adapters/crypto/web-crypto';
+import {
+  concat,
+  fromHex,
+  fromStrictBase64,
+  hmacSha256,
+  sha256,
+  signEd25519,
+  toBase64,
+  toHex,
+  utf8,
+} from './adapters/crypto/web-crypto';
 import { standardKey } from './adapters/schemes/standard/secret';
 import { ConfigurationError } from './domain/errors';
 import type { Field, IncomingRequest } from './domain/incoming-request';
 
 export type SignedScheme =
   | 'standard'
+  | 'standard-v2a'
+  | 'discord'
   | 'stripe'
   | 'slack'
   | 'shopify'
@@ -19,8 +31,14 @@ export type SignedScheme =
   | 'hmac-body';
 
 export interface SignedRequestOptions {
-  /** El secreto con el que firma el emisor: el mismo que recibe el esquema. */
+  /**
+   * El secreto con el que firma el emisor: el mismo que recibe el esquema. En los esquemas de
+   * clave pública es la clave privada: `whsk_…` en `standard-v2a` y la semilla en hexadecimal
+   * en `discord`.
+   */
   readonly secret: string;
+  /** Sólo `standard-v2a`: el identificador del destino, que es parte de lo que se firma. */
+  readonly endpointId?: string;
   /** El cuerpo crudo. Un texto se codifica en UTF-8. */
   readonly body: string | Uint8Array;
   /** La marca de tiempo firmada, en segundos. Por defecto, ahora. Para probar `stale`, una vieja. */
@@ -51,7 +69,7 @@ export async function signedRequest(
 ): Promise<IncomingRequest> {
   const body = typeof options.body === 'string' ? utf8(options.body) : options.body;
   const timestamp = String(options.timestamp ?? Math.floor(Date.now() / 1000));
-  const key = scheme === 'standard' ? standardKey(options.secret) : utf8(options.secret);
+  const key = keyOf(scheme, options.secret);
   if (key === null || options.secret === '') {
     throw new ConfigurationError('secret no se puede usar con este esquema');
   }
@@ -73,6 +91,26 @@ export async function signedRequest(
       ];
       break;
     }
+    case 'standard-v2a': {
+      const { endpointId } = options;
+      if (endpointId === undefined || endpointId === '' || endpointId.includes('.')) {
+        throw new ConfigurationError('endpointId no puede estar vacío ni contener un punto');
+      }
+      const id = options.id ?? `msg_${crypto.randomUUID().replaceAll('-', '')}`;
+      const content = await sha256(concat(utf8(`${endpointId}.${id}.${timestamp}.`), body));
+      headers = [
+        ['webhook-id', id],
+        ['webhook-timestamp', timestamp],
+        ['webhook-signature', `v2a,${toBase64(await signEd25519(key, content))}`],
+      ];
+      break;
+    }
+    case 'discord':
+      headers = [
+        ['x-signature-ed25519', toHex(await signEd25519(key, concat(utf8(timestamp), body)))],
+        ['x-signature-timestamp', timestamp],
+      ];
+      break;
     case 'stripe':
       headers = [
         ['stripe-signature', `t=${timestamp},v1=${await hex(utf8(`${timestamp}.`), body)}`],
@@ -133,6 +171,21 @@ export async function signedRequest(
       throw new ConfigurationError(`esquema desconocido: ${String(scheme)}`);
   }
   return { headers, query, body };
+}
+
+const SEED_BYTES = 32;
+
+/** La clave con la que firma cada esquema, o `null` si el secreto no tiene la forma que espera. */
+function keyOf(scheme: SignedScheme, secret: string): Uint8Array | null {
+  if (scheme === 'standard') return standardKey(secret);
+  if (scheme !== 'standard-v2a' && scheme !== 'discord') return utf8(secret);
+  const seed =
+    scheme === 'discord'
+      ? fromHex(secret)
+      : secret.startsWith('whsk_')
+        ? fromStrictBase64(secret.slice('whsk_'.length))
+        : null;
+  return seed !== null && seed.byteLength === SEED_BYTES ? seed : null;
 }
 
 /**

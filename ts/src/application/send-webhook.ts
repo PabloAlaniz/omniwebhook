@@ -144,7 +144,12 @@ export class SendWebhook {
   private async attempt({ endpoint, message }: Delivery, at: number): Promise<Attempted> {
     const { signer, transport, resolver } = this.deps;
 
-    const signing = await signer.sign({ id: message.id, timestamp: at, payload: message.payload });
+    const signing = await signer.sign({
+      id: message.id,
+      timestamp: at,
+      payload: message.payload,
+      endpointId: endpoint.id,
+    });
     if (signing.outcome !== 'signed') {
       throw new ConfigurationError(`no se puede firmar el mensaje: ${signing.outcome}`);
     }

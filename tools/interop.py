@@ -146,6 +146,47 @@ def cross_signing(agents: list[Agent], report: Report, rng: random.Random, round
                 report.expect(f"{pair} con la librería de referencia", got, {"valid": True})
 
 
+def cross_key_signing(agents: list[Agent], report: Report, rng: random.Random, rounds: int) -> None:
+    """Lo mismo con la firma asimétrica: uno firma con la clave privada y el otro verifica con la pública."""
+    payloads = [*PAYLOADS, *(rng.randbytes(rng.randrange(1, 4096)) for _ in range(rounds))]
+    for index, payload in enumerate(payloads):
+        now = int(time.time())
+        identifier = f"msg_{index}_{rng.getrandbits(64):x}"
+        endpoint = f"ep_{rng.getrandbits(32):x}"
+        # Claves sintéticas, nuevas en cada corrida.
+        keys = ["whsk_" + base64.b64encode(rng.randbytes(32)).decode() for _ in range(1 + index % 2)]
+        data = {
+            "secret_keys": keys,
+            "id": identifier,
+            "timestamp": now,
+            "payload": b64(payload),
+            "endpoint_id": endpoint,
+        }
+        # Ed25519 es determinista: los dos paquetes tienen que dar la misma firma y las mismas claves.
+        signed = both(agents, report, f"firma asimétrica del mensaje {index}", "sign_key", data)
+        report.expect(f"se firma el mensaje {index} con clave privada", signed.get("outcome"), "signed")
+        if signed.get("outcome") != "signed":
+            continue
+        request = {"headers": list(signed["headers"].items()), "query": [], "body": b64(payload)}
+        for verifier in agents:
+            what = f"{verifier.name} verifica con la clave pública el mensaje {index}"
+            base = {
+                "scheme": "standard-v2a",
+                "secrets": signed["public_keys"][-1:],
+                "now": now,
+                "request": request,
+            }
+            got = verifier.ask("verify", **base, options={"endpoint_id": endpoint})
+            report.expect(
+                what, got, {"outcome": "ok", "event_key": f"standard:{identifier}", "timestamp": now}
+            )
+            got = verifier.ask("verify", **base, options={"endpoint_id": endpoint + "x"})
+            report.expect(f"{what}, para otro destino", got, {"outcome": "invalid"})
+            altered = {**base, "request": {**request, "body": b64(payload + b"x")}}
+            got = verifier.ask("verify", **altered, options={"endpoint_id": endpoint})
+            report.expect(f"{what}, con el cuerpo alterado", got, {"outcome": "invalid"})
+
+
 # --- 2. Ante el mismo pedido, la misma respuesta ---------------------------------
 
 ODD = [" ", "\t", " ", "　", "\x0b", "\x1f", "﻿", " ", ",", "=", ";", "é", "İ", "ß"]
@@ -710,6 +751,7 @@ def main() -> int:
     rng = random.Random(arguments.seed)  # noqa: S311
     try:
         cross_signing(agents, report, rng, arguments.rounds)
+        cross_key_signing(agents, report, rng, arguments.rounds)
         differential_verify(agents, report, rng, arguments.rounds)
         differential_domain(agents, report, rng, arguments.rounds)
         with tempfile.TemporaryDirectory() as folder:

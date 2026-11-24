@@ -456,6 +456,45 @@ así que podés pasar del secreto viejo al nuevo sin coordinar el momento exacto
 standardSigner({ secrets: [nuevo, anterior] });
 ```
 
+## Firmar con clave privada
+
+Con un secreto compartido, quien recibe podría firmar igual que vos. Con la variante asimétrica
+del formato, firmás con una clave privada y quien recibe verifica con la pública: si se le
+filtra, nadie puede hacerse pasar por vos.
+
+```ts
+import { generateStandardKeyPair, standardKeySigner } from 'omniwebhook/standard';
+
+const par = await generateStandardKeyPair(); // { secretKey: 'whsk_…', publicKey: 'whpk_…' }
+const firmante = standardKeySigner({ secretKeys: [par.secretKey] });
+```
+
+```python
+from omniwebhook.standard import generate_standard_key_pair, standard_key_signer
+
+par = generate_standard_key_pair()
+firmante = standard_key_signer(secret_keys=[par.secret_key])
+```
+
+Se usa como cualquier firmante, en `signer`. En Python necesita `omniwebhook[ed25519]`. La clave
+privada va a tu gestor de secretos; a quien recibe le das la pública y el identificador de su
+destino, que es parte de lo que se firma. Por eso ese identificador no puede llevar puntos, y
+cambiarlo invalida las verificaciones de quien recibe.
+
+Para rotar, pasá la clave nueva y la anterior: sale una firma por cada una. Para migrar desde el
+secreto compartido sin coordinar el momento con cada receptor, mandá las dos firmas juntas:
+
+```ts
+import { combinedSigner, standardKeySigner, standardSigner } from 'omniwebhook/standard';
+
+const lasDos = combinedSigner([
+  standardSigner({ secrets: [secreto] }),
+  standardKeySigner({ secretKeys: [nuevo] }),
+]);
+```
+
+`combined_signer` en Python. Cada receptor mira sólo la firma de su variante.
+
 ## Cabeceras propias
 
 Podés agregar cabeceras a cada envío con `headers`. No pueden reemplazar las de la firma, la del
