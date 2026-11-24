@@ -332,6 +332,25 @@ o menor.
 
 El cuerpo de la respuesta NO DEBE decir cuál de las comprobaciones falló.
 
+### 6.4. Observar
+
+Quien integra PUEDE registrar un observador de la recepción. Después de cada pedido, cualquiera
+sea el resultado, el observador recibe:
+
+| Dato | Contenido |
+|---|---|
+| `outcome` | El resultado (secciones 4 y 6.2) |
+| `event_key` | La clave del evento, o nulo si el pedido no llegó a verificarse |
+| `duration_ms` | Cuánto llevó la recepción completa, incluido el procesamiento |
+
+- El observador NO DEBE recibir el cuerpo, las cabeceras ni ningún secreto.
+- El observador no cambia el resultado. Si falla, su error se descarta: una falla al medir no
+  puede hacer que un webhook se rechace ni que se procese dos veces.
+- Se lo llama una sola vez por pedido, después de completar o liberar la reserva.
+
+Para la emisión no hace falta un puerto aparte: el registro de entregas (sección 8.4) ya recibe
+cada intento con su clase, su estado HTTP y su duración.
+
 ## 7. Emitir: firmar
 
 Un mensaje tiene `id`, `timestamp` (segundos) y `payload` (bytes).

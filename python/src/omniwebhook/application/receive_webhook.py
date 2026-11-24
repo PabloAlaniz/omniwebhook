@@ -3,6 +3,7 @@
 Si el procesamiento falla, la reserva se libera para que el reintento del emisor funcione.
 """
 
+import contextlib
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 
@@ -12,11 +13,14 @@ from omniwebhook.application.ports import (
     Clock,
     CompleteRequest,
     IdempotencyStore,
+    ReceptionObservation,
+    ReceptionObserver,
     ReleaseRequest,
+    Timer,
     TokenGenerator,
     Verifier,
 )
-from omniwebhook.domain.errors import positive_integer
+from omniwebhook.domain.errors import ConfigurationError, positive_integer
 from omniwebhook.domain.incoming_request import IncomingRequest
 from omniwebhook.domain.reception import DEFAULT_MAX_BODY_BYTES, ReceptionOutcome
 from omniwebhook.domain.reservation import DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS
@@ -87,6 +91,8 @@ class _Receiving:
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
         max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
         event_key: EventKeyOverride | None = None,
+        observer: ReceptionObserver | None = None,
+        timer: Timer | None = None,
     ) -> None:
         self._verifier = verifier
         self._clock = clock
@@ -95,6 +101,28 @@ class _Receiving:
         self._retention_seconds = positive_integer("retention_seconds", retention_seconds)
         self._max_body_bytes = positive_integer("max_body_bytes", max_body_bytes)
         self._event_key = event_key
+        if observer is not None and timer is None:
+            raise ConfigurationError("observer necesita timer para medir la duración")
+        self._observer = observer
+        self._timer = timer
+
+    def _started(self) -> int | None:
+        """Cuándo empezó la recepción; `None` si nadie la observa."""
+        return None if self._observer is None or self._timer is None else self._timer.now_ms()
+
+    def _observed(self, started_ms: int | None, reception: Reception) -> Reception:
+        if started_ms is None or self._observer is None or self._timer is None:
+            return reception
+        # Una falla al medir no cambia el resultado de la recepción.
+        with contextlib.suppress(Exception):
+            self._observer.on_reception(
+                ReceptionObservation(
+                    outcome=reception.outcome,
+                    event_key=reception.event_key,
+                    duration_ms=self._timer.now_ms() - started_ms,
+                )
+            )
+        return reception
 
     def _verify(self, request: IncomingRequest) -> _Reservation | Reception:
         # Antes que la firma: un pedido sin autenticar no elige cuánto trabajo cuesta rechazarlo.
@@ -125,6 +153,8 @@ class ReceiveWebhook(_Receiving):
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
         max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
         event_key: EventKeyOverride | None = None,
+        observer: ReceptionObserver | None = None,
+        timer: Timer | None = None,
     ) -> None:
         super().__init__(
             verifier=verifier,
@@ -134,10 +164,16 @@ class ReceiveWebhook(_Receiving):
             retention_seconds=retention_seconds,
             max_body_bytes=max_body_bytes,
             event_key=event_key,
+            observer=observer,
+            timer=timer,
         )
         self._store = store
 
     def execute(self, request: IncomingRequest, handler: EventHandler) -> Reception:
+        started_ms = self._started()
+        return self._observed(started_ms, self._receive(request, handler))
+
+    def _receive(self, request: IncomingRequest, handler: EventHandler) -> Reception:
         reservation = self._verify(request)
         if isinstance(reservation, Reception):
             return reservation
@@ -174,6 +210,8 @@ class AsyncReceiveWebhook(_Receiving):
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
         max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
         event_key: EventKeyOverride | None = None,
+        observer: ReceptionObserver | None = None,
+        timer: Timer | None = None,
     ) -> None:
         super().__init__(
             verifier=verifier,
@@ -183,10 +221,16 @@ class AsyncReceiveWebhook(_Receiving):
             retention_seconds=retention_seconds,
             max_body_bytes=max_body_bytes,
             event_key=event_key,
+            observer=observer,
+            timer=timer,
         )
         self._store = store
 
     async def execute(self, request: IncomingRequest, handler: AsyncEventHandler) -> Reception:
+        started_ms = self._started()
+        return self._observed(started_ms, await self._receive(request, handler))
+
+    async def _receive(self, request: IncomingRequest, handler: AsyncEventHandler) -> Reception:
         reservation = self._verify(request)
         if isinstance(reservation, Reception):
             return reservation

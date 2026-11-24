@@ -163,4 +163,83 @@ describe('ReceiveWebhook', () => {
   ])('rechaza un %s inválido al construirse', (_name, overrides) => {
     expect(() => build(overrides)).toThrow(/entero mayor que cero/);
   });
+
+  describe('con un observador', () => {
+    function observed(overrides: Parameters<typeof build>[0] = {}) {
+      const onReception = vi.fn();
+      let ms = 0;
+      const timer = { nowMs: () => (ms += 25) };
+      return { onReception, ...build({ observer: { onReception }, timer, ...overrides }) };
+    }
+
+    it('informa el resultado, la clave y la duración, una vez por pedido', async () => {
+      const { receive, onReception } = observed();
+
+      await receive.execute(request, () => {});
+      await receive.execute(request, () => {});
+
+      expect(onReception.mock.calls).toEqual([
+        [{ outcome: 'ok', eventKey: 'prueba:1', durationMs: 25 }],
+        [{ outcome: 'duplicate', eventKey: 'prueba:1', durationMs: 25 }],
+      ]);
+    });
+
+    it('informa un rechazo sin clave de evento', async () => {
+      const { receive, onReception } = observed({
+        verifier: { verify: async () => ({ outcome: 'invalid' }) },
+      });
+
+      await receive.execute(request, () => {});
+
+      expect(onReception).toHaveBeenCalledWith({
+        outcome: 'invalid',
+        eventKey: null,
+        durationMs: 25,
+      });
+    });
+
+    it('lo llama después de liberar la reserva cuando el procesamiento falla', async () => {
+      const { receive, store, onReception } = observed();
+      let libre: string | undefined;
+      onReception.mockImplementation(() => {
+        libre = 'pendiente';
+      });
+
+      await receive.execute(request, () => {
+        throw new Error('falló');
+      });
+      libre = await store.claim({ key: 'prueba:1', token: 'otro', now: 1, leaseSeconds: 1 });
+
+      expect(onReception).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'failed' }));
+      expect(libre).toBe('claimed');
+    });
+
+    it('si el observador lanza, el resultado no cambia', async () => {
+      const { receive, onReception } = observed();
+      onReception.mockImplementation(() => {
+        throw new Error('falló la telemetría');
+      });
+
+      expect(await receive.execute(request, () => {})).toEqual({
+        outcome: 'ok',
+        eventKey: 'prueba:1',
+      });
+    });
+
+    it('no recibe el cuerpo, las cabeceras ni nada más que los tres datos', async () => {
+      const { receive, onReception } = observed();
+
+      await receive.execute({ ...request, headers: [['x-firma', 'secreta']] }, () => {});
+
+      expect(Object.keys(onReception.mock.calls[0]?.[0] ?? {}).sort()).toEqual([
+        'durationMs',
+        'eventKey',
+        'outcome',
+      ]);
+    });
+
+    it('sin cronómetro es un error de configuración', () => {
+      expect(() => build({ observer: { onReception: () => {} } })).toThrow(/timer/);
+    });
+  });
 });

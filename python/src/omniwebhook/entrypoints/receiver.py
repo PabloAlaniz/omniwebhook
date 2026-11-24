@@ -1,11 +1,13 @@
 """Arma el caso de uso de recepción con el reloj del sistema y tokens aleatorios por defecto."""
 
-from omniwebhook.adapters.clock import system_clock
+from omniwebhook.adapters.clock import MonotonicTimer, system_clock
 from omniwebhook.adapters.tokens import random_tokens
 from omniwebhook.application.ports import (
     AsyncIdempotencyStore,
     Clock,
     IdempotencyStore,
+    ReceptionObserver,
+    Timer,
     TokenGenerator,
     Verifier,
 )
@@ -24,6 +26,8 @@ def create_receiver(
     retention_seconds: int = DEFAULT_RETENTION_SECONDS,
     max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
     event_key: EventKeyOverride | None = None,
+    observer: ReceptionObserver | None = None,
+    timer: Timer | None = None,
 ) -> ReceiveWebhook:
     return ReceiveWebhook(
         verifier=verifier,
@@ -34,6 +38,8 @@ def create_receiver(
         retention_seconds=retention_seconds,
         max_body_bytes=max_body_bytes,
         event_key=event_key,
+        observer=observer,
+        timer=timer or MonotonicTimer(),
     )
 
 
@@ -47,6 +53,8 @@ def create_async_receiver(
     retention_seconds: int = DEFAULT_RETENTION_SECONDS,
     max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
     event_key: EventKeyOverride | None = None,
+    observer: ReceptionObserver | None = None,
+    timer: Timer | None = None,
 ) -> AsyncReceiveWebhook:
     return AsyncReceiveWebhook(
         verifier=verifier,
@@ -57,4 +65,6 @@ def create_async_receiver(
         retention_seconds=retention_seconds,
         max_body_bytes=max_body_bytes,
         event_key=event_key,
+        observer=observer,
+        timer=timer or MonotonicTimer(),
     )

@@ -1,9 +1,11 @@
 import { systemClock } from '../adapters/clock/system-clock';
 import { randomTokens } from '../adapters/tokens/random-tokens';
-import type { Clock, TokenGenerator } from '../application/ports';
+import type { Clock, Timer, TokenGenerator } from '../application/ports';
 import { ReceiveWebhook, type ReceiveWebhookDependencies } from '../application/receive-webhook';
 
-export interface ReceiverOptions extends Omit<ReceiveWebhookDependencies, 'clock' | 'tokens'> {
+export interface ReceiverOptions
+  extends Omit<ReceiveWebhookDependencies, 'clock' | 'tokens' | 'timer'> {
+  readonly timer?: Timer;
   readonly clock?: Clock;
   readonly tokens?: TokenGenerator;
 }
@@ -14,5 +16,6 @@ export function createReceiver(options: ReceiverOptions): ReceiveWebhook {
     ...options,
     clock: options.clock ?? systemClock,
     tokens: options.tokens ?? randomTokens,
+    timer: options.timer ?? { nowMs: () => Date.now() },
   });
 }
