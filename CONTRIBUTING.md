@@ -96,6 +96,13 @@ manda un evento firmado, el mismo evento repetido y uno con otro secreto.
 pnpm check:examples
 ```
 
+## Traducciones del README
+
+El README está en español, que es el original, y traducido al inglés, al chino simplificado y al
+portugués de Brasil (`README.en.md`, `README.zh-CN.md`, `README.pt-BR.md`). Un cambio en el
+README en español tiene que llegar a los otros tres en el mismo pull request. Los bloques de
+código son los mismos en todos y pasan por `pnpm check:docs`.
+
 ## Vectores de conformidad
 
 Los archivos de `spec/vectors/` los genera `tools/gen_vectors.py`; no se editan a mano.

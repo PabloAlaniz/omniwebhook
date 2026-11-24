@@ -208,6 +208,10 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 
 - **En curso. Documentación en inglés** además de la de español. Hecho: el README, con sus
   ejemplos pasando por el comprobador. Pendiente: las guías y la especificación.
+- **Hecho. README en chino simplificado y en portugués de Brasil.** Son traducciones, con el
+  original en español como referencia, y sus ejemplos pasan por el comprobador. Las guías y la
+  especificación no se traducen a estos idiomas. **Pendiente:** que las revise alguien que hable
+  cada idioma.
 - **Postergado. Sitio de documentación** generado desde el repositorio, con referencia de la API extraída de
   los tipos.
 - **Pendiente. Guía para implementar la especificación en otro lenguaje**, con los vectores publicados como

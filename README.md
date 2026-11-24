@@ -3,7 +3,7 @@
 [![CI](https://github.com/PabloAlaniz/omniwebhook/actions/workflows/ci.yml/badge.svg)](https://github.com/PabloAlaniz/omniwebhook/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/PabloAlaniz/omniwebhook/badge)](https://scorecard.dev/viewer/?uri=github.com/PabloAlaniz/omniwebhook)
 
-[English](README.en.md) · Español
+[English](README.en.md) · Español · [简体中文](README.zh-CN.md) · [Português (Brasil)](README.pt-BR.md)
 
 Webhooks firmados que se emiten y se reciben igual en cualquier stack.
 
