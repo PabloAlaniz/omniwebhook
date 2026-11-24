@@ -24,6 +24,8 @@ DOCUMENTS = [
     "README.pt-BR.md",
     "ts/README.md",
     "python/README.md",
+    "ts/README.en.md",
+    "python/README.en.md",
     "docs/recibir.md",
     "docs/emitir.md",
     "docs/telemetria.md",

@@ -102,8 +102,10 @@ El español es el original. Hay traducciones de:
 
 - **El README**, al inglés, al chino simplificado y al portugués de Brasil (`README.en.md`,
   `README.zh-CN.md`, `README.pt-BR.md`).
-- **Las guías y la especificación**, al inglés: `docs/en/` y `spec/SPEC.en.md`, con los mismos
-  nombres de archivo que los originales.
+- **Todo lo demás**, al inglés: las guías, las decisiones de arquitectura, la hoja de ruta y los
+  criterios en `docs/en/`, con los mismos nombres de archivo que los originales; la
+  especificación en `spec/SPEC.en.md`; y este archivo, el de seguridad, el código de conducta y
+  los README de los paquetes y de los ejemplos, con el sufijo `.en.md` al lado del original.
 
 Un cambio en un original tiene que llegar a sus traducciones en el mismo pull request. No hace
 falta acordarse: la integración continua falla si una traducción deja de tener los mismos

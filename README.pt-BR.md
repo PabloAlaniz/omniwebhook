@@ -12,7 +12,7 @@ Webhooks assinados, enviados e recebidos do mesmo jeito em qualquer stack.
 
 > **Sobre esta tradução.** Esta página é uma tradução; em caso de divergência, vale o
 > [original em espanhol](README.md). Os guias e a especificação também têm tradução
-> para o inglês, e os links abaixo levam a ela; o restante da documentação está em espanhol.
+> para o inglês, assim como o restante da documentação, e os links abaixo levam a ela.
 
 Quase todo produto acaba recebendo webhooks de um provedor de pagamentos e enviando os seus. E quase
 sempre isso é escrito de novo: uma verificação de assinatura por provedor, uma tabela para não
@@ -171,26 +171,25 @@ pip install "omniwebhook[standard]"       # com a biblioteca de referência do S
 ```
 
 Os demais extras de Python (`httpx`, `starlette`, `django`, `postgres`, `firestore`, `ed25519`,
-`otel`) estão descritos no [README do pacote](python/README.md).
+`otel`) estão descritos no [README do pacote](python/README.en.md) (em inglês).
 
 ## Documentação
 
-Os documentos abaixo estão em inglês; os exemplos, as decisões de arquitetura, a publicação, o
-roadmap e os critérios da 1.0 estão em espanhol.
+Os documentos abaixo estão em inglês; os originais em espanhol ficam nas mesmas pastas.
 
 | | |
 |---|---|
 | [Guia para receber](docs/en/recibir.md) | Esquemas, armazenamentos, chaves de evento e respostas |
 | [Guia para enviar](docs/en/emitir.md) | Assinatura, política de URLs, retentativas, caixa de saída e saúde dos destinos |
 | [Telemetria](docs/en/telemetria.md) | Métricas e traces com OpenTelemetry |
-| [Exemplos](examples/README.md) | Receptores mínimos e uma caixa de saída, testados na integração contínua |
+| [Exemplos](examples/README.en.md) | Receptores mínimos e uma caixa de saída, testados na integração contínua |
 | [Como adicionar um esquema de assinatura](docs/en/agregar-un-esquema.md) | Da especificação ao adaptador |
 | [Especificação](spec/SPEC.en.md) | O comportamento que todos os pacotes compartilham |
-| [Decisões de arquitetura](docs/adr/README.md) | Por que foi feito assim |
-| [Como uma versão é publicada](docs/publicar.md) | O fluxo de versões e a publicação confiável |
+| [Decisões de arquitetura](docs/en/adr/README.md) | Por que foi feito assim |
+| [Como uma versão é publicada](docs/en/publicar.md) | O fluxo de versões e a publicação confiável |
 | [Compatibilidade](docs/en/compatibilidad.md) | O que é estável, quais ambientes são suportados e como uma mudança é avisada |
-| [Roadmap](docs/roadmap.md) | O que está feito e o que falta |
-| [Critérios da 1.0](docs/criterios-1.0.md) | O que precisa acontecer para congelar a API |
+| [Roadmap](docs/en/roadmap.md) | O que está feito e o que falta |
+| [Critérios da 1.0](docs/en/criterios-1.0.md) | O que precisa acontecer para congelar a API |
 
 ## Estrutura do repositório
 
@@ -205,8 +204,8 @@ roadmap e os critérios da 1.0 estão em espanhol.
 
 ## Contribuir
 
-Veja o [CONTRIBUTING.md](CONTRIBUTING.md) e o [código de conduta](CODE_OF_CONDUCT.md), ambos em
-espanhol. Para reportar um problema de segurança, veja o [SECURITY.md](SECURITY.md).
+Veja o [CONTRIBUTING](CONTRIBUTING.en.md) e o [código de conduta](CODE_OF_CONDUCT.en.md), ambos em
+inglês. Para reportar um problema de segurança, veja o [SECURITY](SECURITY.en.md).
 
 ## Licença
 

@@ -51,7 +51,7 @@ There is no date. It is published when everything under "Has to be there" is tic
 
 ### The documentation
 
-- [x] In English, in addition to Spanish: the README, the guides and the specification.
+- [x] In English, in addition to Spanish: all the documentation in the repository.
 - [ ] The specification in English, read in full against the original by a second person.
 - [ ] The translations of the README into Simplified Chinese and Brazilian Portuguese, reviewed by
   someone who speaks the language.

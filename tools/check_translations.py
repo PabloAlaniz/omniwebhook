@@ -45,6 +45,20 @@ PAIRS = [
     Pair("docs/telemetria.md", "docs/en/telemetria.md"),
     Pair("docs/compatibilidad.md", "docs/en/compatibilidad.md"),
     Pair("docs/agregar-un-esquema.md", "docs/en/agregar-un-esquema.md"),
+    Pair("docs/roadmap.md", "docs/en/roadmap.md"),
+    Pair("docs/criterios-1.0.md", "docs/en/criterios-1.0.md"),
+    Pair("docs/publicar.md", "docs/en/publicar.md"),
+    Pair("CONTRIBUTING.md", "CONTRIBUTING.en.md"),
+    Pair("SECURITY.md", "SECURITY.en.md"),
+    Pair("CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT.en.md"),
+    Pair("examples/README.md", "examples/README.en.md"),
+    Pair("ts/README.md", "ts/README.en.md"),
+    Pair("python/README.md", "python/README.en.md"),
+    # Las decisiones de arquitectura: una por archivo, así una nueva no queda sin traducir.
+    *(
+        Pair(f"docs/adr/{file.name}", f"docs/en/adr/{file.name}")
+        for file in sorted((ROOT / "docs" / "adr").glob("*.md"))
+    ),
 ]
 
 
