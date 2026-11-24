@@ -1,8 +1,16 @@
+import {
+  checkHealthPolicy,
+  type EndpointHealth,
+  endpointHealth,
+  type FailureSummary,
+  type HealthPolicy,
+} from '../domain/endpoint-health';
 import { positiveInteger } from '../domain/errors';
 import type {
   AttemptRecord,
   Clock,
   EndpointDirectory,
+  EndpointFailureSource,
   Outbox,
   OutboxEntry,
   OutboxState,
@@ -34,6 +42,22 @@ export interface DispatchDueDependencies {
    * entera: el límite por el tiempo de espera de un intento. Por defecto, 300.
    */
   readonly leaseSeconds?: number;
+  /**
+   * Con esto, después de cada intento que no se entregó se calcula la salud del destino, y los
+   * que haya que deshabilitar salen en el resultado de la tanda. `failures` es el registro de
+   * entregas que usa `sender`.
+   */
+  readonly health?: {
+    readonly failures: EndpointFailureSource;
+    readonly policy?: HealthPolicy;
+  };
+}
+
+/** Un destino que conviene deshabilitar. El paquete no lo hace: avisa. */
+export interface DisabledEndpoint {
+  readonly endpointId: string;
+  readonly health: Extract<EndpointHealth, { status: 'disabled' }>;
+  readonly summary: FailureSummary;
 }
 
 /** Cómo terminó una entrega de la tanda. */
@@ -57,6 +81,8 @@ export interface DispatchFailure {
 export interface DispatchResult {
   readonly dispatched: readonly Dispatched[];
   readonly failures: readonly DispatchFailure[];
+  /** Los destinos que quedaron para deshabilitar, una vez cada uno. Vacío sin `health`. */
+  readonly disabled: readonly DisabledEndpoint[];
 }
 
 /**
@@ -74,6 +100,7 @@ export class DispatchDue {
       'leaseSeconds',
       deps.leaseSeconds ?? DEFAULT_DISPATCH_LEASE_SECONDS,
     );
+    checkHealthPolicy(deps.health?.policy ?? {});
   }
 
   async execute(): Promise<DispatchResult> {
@@ -88,19 +115,38 @@ export class DispatchDue {
 
     const dispatched: Dispatched[] = [];
     const failures: DispatchFailure[] = [];
+    const disabled = new Map<string, DisabledEndpoint>();
     for (const entry of entries) {
       const { messageId, endpointId } = entry;
       try {
-        dispatched.push(await this.dispatch(entry, token));
+        dispatched.push(await this.dispatch(entry, token, disabled));
       } catch (error) {
         // No se cierra: la entrada vuelve a salir cuando venza la toma.
         failures.push({ messageId, endpointId, error });
       }
     }
-    return { dispatched, failures };
+    return { dispatched, failures, disabled: [...disabled.values()] };
   }
 
-  private async dispatch(entry: OutboxEntry, token: string): Promise<Dispatched> {
+  /** Anota el destino si, después de este intento, quedó para deshabilitar. */
+  private async assess(
+    endpointId: string,
+    since: number,
+    disabled: Map<string, DisabledEndpoint>,
+  ): Promise<void> {
+    const { health, clock } = this.deps;
+    if (health === undefined || disabled.has(endpointId)) return;
+    const summary = await health.failures.failuresOf(endpointId, since);
+    const verdict = endpointHealth(summary, clock.now(), health.policy);
+    if (verdict.status === 'disabled')
+      disabled.set(endpointId, { endpointId, health: verdict, summary });
+  }
+
+  private async dispatch(
+    entry: OutboxEntry,
+    token: string,
+    disabled: Map<string, DisabledEndpoint>,
+  ): Promise<Dispatched> {
     const { outbox, endpoints, sender } = this.deps;
     const { messageId, endpointId, attempt } = entry;
     const pair = { messageId, endpointId, token };
@@ -124,6 +170,10 @@ export class DispatchDue {
         ? { ...pair, state: 'pending', nextAt: record.nextAt }
         : { ...pair, state: record.state as Exclude<OutboxState, 'pending'> },
     );
+    // Después de cerrar: si esto falla, la entrega ya quedó como corresponde.
+    if (record.deliveryClass !== 'delivered') {
+      await this.assess(endpointId, endpoint.enabledAt ?? 0, disabled);
+    }
     return { messageId, endpointId, attempt, state: record.state, settled };
   }
 }

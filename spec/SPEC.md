@@ -634,7 +634,7 @@ disponible y su estado. El par `(id del mensaje, destino)` es único.
 El estado es `pending` o uno final: `delivered`, `rejected`, `blocked`, `gone`, `exhausted`
 (los de la sección 8.4) o `cancelled`, para una entrega que se descartó sin intentarla.
 
-Tiene tres operaciones. Todas DEBEN ser atómicas.
+Tiene cuatro operaciones. Todas DEBEN ser atómicas.
 
 - `enqueue(message_id, endpoint_id, payload, now)` devuelve si se encoló. Crea la entrada como
   `pending`, con el intento `1` y disponible desde `now`. Si el par ya existe, en cualquier
@@ -649,6 +649,12 @@ Tiene tres operaciones. Todas DEBEN ser atómicas.
   si la entrada está `pending` y la tomó ese mismo `token`, aunque el plazo haya vencido. Con
   `state = pending`, el número de intento sube en uno, la entrada queda disponible desde
   `next_at` y se libera la toma. Con un estado final, queda en ese estado.
+
+- `requeue(endpoint_id, from, to, now)` devuelve cuántas entradas reenvió. Alcanza a las de ese
+  destino que se cerraron sin entregar (cualquier estado final menos `delivered`) y cuyo
+  momento de disponibilidad está entre `from` y `to`, los dos incluidos. Cada una vuelve a
+  `pending`, con el intento `1` y disponible desde `now`. El `id` del mensaje no cambia: es el
+  reenvío de la sección 8.4.
 
 Las reglas de la toma son las de la reserva de la sección 6.1: quien se demoró puede cerrar si
 nadie tomó la entrada, y quien perdió su toma no pisa a quien la tomó después.
@@ -674,6 +680,42 @@ Dados una bandeja, un directorio de destinos y quien hace el intento (sección 8
 
 Si el intento no llega a hacerse por un error de quien integra (sección 7), la entrada no se
 cierra: vuelve a salir al vencer la toma, y el error se informa en el resultado de la tanda.
+
+#### La salud de un destino
+
+La salud de un destino se calcula del registro de entregas (sección 8.4); no es un dato que se
+guarde aparte.
+
+El **resumen de fallos** de un destino desde un momento `since` mira sus intentos con `at` mayor
+o igual que `since`, en el orden en que se registraron, y de ellos sólo los posteriores al
+último con clase `delivered`:
+
+| Dato | Contenido |
+|---|---|
+| `failures` | Cuántos son |
+| `failing_since` | El menor `at` entre ellos; nulo si no hay ninguno |
+| `gone` | Si alguno tiene clase `gone` |
+
+`since` es `0` para un destino que nunca se deshabilitó, y el momento en que se lo rehabilitó
+para uno que sí: así lo que pasó antes no lo vuelve a deshabilitar.
+
+Con ese resumen, la hora actual y dos parámetros, `window_seconds` (por defecto `432000`, cinco
+días) y `min_failures` (por defecto `5`), los dos enteros mayores que cero:
+
+| Condición, en este orden | Estado | Motivo |
+|---|---|---|
+| `gone` | `disabled` | `gone` |
+| `failures >= min_failures` y `ahora - failing_since >= window_seconds` | `disabled` | `failing` |
+| `failures > 0` | `failing` | ninguno |
+| Ninguna | `healthy` | ninguno |
+
+Hacen falta las dos cosas, cantidad y tiempo: muchos fallos en un rato son una caída que se
+recupera, y un fallo aislado hace una semana no dice nada.
+
+Al despachar una tanda, después de un intento que no se entregó, se calcula la salud del destino.
+Si da `disabled`, el resultado de la tanda lo informa. El paquete no deshabilita nada por su
+cuenta: guardar ese estado, dejar de resolver el destino y avisarle a su dueño es de quien
+integra. Mientras el directorio lo siga resolviendo, se le sigue entregando.
 
 #### La tabla de PostgreSQL
 

@@ -70,6 +70,7 @@ describe('DispatchDue', () => {
         { messageId: 'msg_1', endpointId: 'ep_1', attempt: 1, state: 'delivered', settled: true },
       ],
       failures: [],
+      disabled: [],
     });
     expect(outbox.stateOf('msg_1', 'ep_1')).toBe('delivered');
     expect((await dispatcher.execute()).dispatched).toEqual([]);
@@ -78,7 +79,7 @@ describe('DispatchDue', () => {
   it('sin nada pendiente no hace nada', async () => {
     const { dispatcher, execute } = await build();
 
-    expect(await dispatcher.execute()).toEqual({ dispatched: [], failures: [] });
+    expect(await dispatcher.execute()).toEqual({ dispatched: [], failures: [], disabled: [] });
     expect(execute).not.toHaveBeenCalled();
   });
 
@@ -194,6 +195,136 @@ describe('DispatchDue', () => {
     execute.mockResolvedValueOnce(record({ state: 'pending', nextAt: null }));
 
     expect((await dispatcher.execute()).failures).toHaveLength(1);
+  });
+
+  describe('con la salud de los destinos', () => {
+    const DAY = 86_400;
+    const failing = (failures: number, since: number) => ({
+      failures,
+      failingSince: since,
+      gone: false,
+    });
+
+    it('un destino que lleva caído toda la ventana sale para deshabilitar, una vez por tanda', async () => {
+      const failuresOf = vi.fn(async () => failing(8, NOW - 6 * DAY));
+      const { dispatcher, execute, enqueue } = await build({
+        health: { failures: { failuresOf } },
+      });
+      await enqueue('msg_1');
+      await enqueue('msg_2');
+      execute.mockResolvedValue(
+        record({ deliveryClass: 'retryable', state: 'pending', status: 503, nextAt: NOW + 5 }),
+      );
+
+      const result = await dispatcher.execute();
+
+      expect(result.disabled).toEqual([
+        {
+          endpointId: 'ep_1',
+          health: { status: 'disabled', reason: 'failing' },
+          summary: failing(8, NOW - 6 * DAY),
+        },
+      ]);
+      expect(failuresOf).toHaveBeenCalledTimes(1);
+      expect(failuresOf).toHaveBeenCalledWith('ep_1', 0);
+      // El paquete avisa pero no deshabilita: las dos entregas se intentaron igual.
+      expect(result.dispatched).toHaveLength(2);
+    });
+
+    it('cuenta desde que se rehabilitó el destino', async () => {
+      const failuresOf = vi.fn(async () => failing(1, NOW));
+      const { dispatcher, execute, enqueue } = await build({
+        health: { failures: { failuresOf } },
+        endpoints: {
+          resolve: async () => ({ url: 'https://hooks.ejemplo.test/x', enabledAt: 500 }),
+        },
+      });
+      await enqueue('msg_1');
+      execute.mockResolvedValueOnce(record({ deliveryClass: 'rejected', state: 'rejected' }));
+
+      expect((await dispatcher.execute()).disabled).toEqual([]);
+      expect(failuresOf).toHaveBeenCalledWith('ep_1', 500);
+    });
+
+    it('una entrega que salió bien no consulta la salud', async () => {
+      const failuresOf = vi.fn();
+      const { dispatcher, enqueue } = await build({ health: { failures: { failuresOf } } });
+      await enqueue('msg_1');
+
+      await dispatcher.execute();
+
+      expect(failuresOf).not.toHaveBeenCalled();
+    });
+
+    it('un 410 lo deja para deshabilitar enseguida, con la política propia o sin ella', async () => {
+      const { dispatcher, execute, enqueue } = await build({
+        health: {
+          failures: { failuresOf: async () => ({ failures: 1, failingSince: NOW, gone: true }) },
+          policy: { windowSeconds: 60, minFailures: 100 },
+        },
+      });
+      await enqueue('msg_1');
+      execute.mockResolvedValueOnce(record({ deliveryClass: 'gone', state: 'gone', status: 410 }));
+
+      expect((await dispatcher.execute()).disabled).toMatchObject([
+        { endpointId: 'ep_1', health: { status: 'disabled', reason: 'gone' } },
+      ]);
+    });
+
+    it('si no se puede consultar la salud, la entrega ya quedó cerrada y el error se informa', async () => {
+      const { dispatcher, outbox, execute, enqueue } = await build({
+        health: {
+          failures: {
+            failuresOf: async () => {
+              throw new Error('sin base de datos');
+            },
+          },
+        },
+      });
+      await enqueue('msg_1');
+      execute.mockResolvedValueOnce(record({ deliveryClass: 'rejected', state: 'rejected' }));
+
+      const result = await dispatcher.execute();
+
+      expect(result.failures).toHaveLength(1);
+      expect(outbox.stateOf('msg_1', 'ep_1')).toBe('rejected');
+    });
+
+    it('rechaza una política inválida al construirse', async () => {
+      await expect(
+        build({ health: { failures: { failuresOf: vi.fn() }, policy: { minFailures: 0 } } }),
+      ).rejects.toThrow(/minFailures/);
+    });
+
+    it('con el registro en memoria: de sano a deshabilitado a medida que pasan los días', async () => {
+      const ledger = new MemoryDeliveryLedger();
+      const { dispatcher, execute, enqueue, advance } = await build({
+        health: { failures: ledger, policy: { windowSeconds: 3 * DAY, minFailures: 3 } },
+      });
+      execute.mockImplementation(async (delivery) => {
+        const failed = record({
+          messageId: delivery.message.id,
+          at: NOW,
+          deliveryClass: 'rejected',
+          state: 'rejected',
+          status: 400,
+        });
+        await ledger.record({
+          ...failed,
+          at: (await ledger.failuresOf('ep_1', 0)).failures * DAY + NOW,
+        });
+        return failed;
+      });
+
+      const disabled: number[] = [];
+      for (const day of [0, 1, 2, 3]) {
+        await enqueue(`msg_${day}`);
+        disabled.push((await dispatcher.execute()).disabled.length);
+        advance(DAY);
+      }
+
+      expect(disabled).toEqual([0, 0, 0, 1]);
+    });
   });
 
   it.each([

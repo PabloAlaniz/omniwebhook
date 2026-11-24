@@ -25,6 +25,7 @@
         "sign",
         "store",
         "outbox",
+        "endpoint-health",
         "receive",
         "response",
         "address",

@@ -1,5 +1,6 @@
 import type { DeliveryClass, DeliveryState } from '../domain/delivery';
 import type { DestinationProblem } from '../domain/destination';
+import type { FailureSummary } from '../domain/endpoint-health';
 import type { IncomingRequest } from '../domain/incoming-request';
 import type { OutgoingMessage, Signing } from '../domain/message';
 import type { ReceptionOutcome } from '../domain/reception';
@@ -189,11 +190,31 @@ export interface Outbox {
   claim(request: OutboxClaimRequest): Promise<readonly OutboxEntry[]>;
   /** Devuelve si se aplicó: sólo si la entrada sigue pendiente y la tomó ese mismo token. */
   settle(request: SettleRequest): Promise<boolean>;
+  /** Vuelve a poner como pendiente lo que se cerró sin entregar. Devuelve cuántas entradas eran. */
+  requeue(request: RequeueRequest): Promise<number>;
+}
+
+export interface RequeueRequest {
+  readonly endpointId: string;
+  /** El rango del momento de disponibilidad de las entradas, con los dos bordes incluidos. */
+  readonly from: number;
+  readonly to: number;
+  readonly now: number;
+}
+
+/** De dónde sale el resumen de fallos de un destino: lo cumplen los registros de entregas. */
+export interface EndpointFailureSource {
+  failuresOf(endpointId: string, since: number): Promise<FailureSummary>;
 }
 
 /** Lo que hace falta saber de un destino para entregarle. */
 export interface ResolvedEndpoint {
   readonly url: string;
+  /**
+   * Desde cuándo cuenta la salud del destino, en segundos. Al rehabilitar uno que se había
+   * deshabilitado, va el momento de la rehabilitación: así lo anterior no lo vuelve a tumbar.
+   */
+  readonly enabledAt?: number;
 }
 
 /** Dónde quien integra guarda sus destinos. La bandeja sólo conoce el identificador. */

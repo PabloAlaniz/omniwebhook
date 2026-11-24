@@ -9,6 +9,7 @@ from typing import Any, Final, cast
 
 from omniwebhook.adapters.stores.postgres import AsyncSqlClient, Row, SqlClient, _checked_table
 from omniwebhook.application.ports import AttemptRecord
+from omniwebhook.domain.endpoint_health import FailureSummary
 
 DEFAULT_LEDGER_TABLE: Final = "omniwebhook_attempts"
 
@@ -42,6 +43,31 @@ CREATE INDEX IF NOT EXISTS {bare}_message_idx ON {name} (message_id, endpoint_id
 CREATE INDEX IF NOT EXISTS {bare}_endpoint_idx ON {name} (endpoint_id, at)"""
 
 
+def failures_query(table: str, mark: str) -> str:
+    """El resumen de fallos de un destino (sección 8.5), en una sola consulta.
+
+    Los intentos desde `since` posteriores a la última entrega. Recibe el destino y `since`
+    dos veces cada uno.
+    """
+    # El nombre de la tabla ya está comprobado; los valores van como parámetros.
+    return (
+        "SELECT COUNT(*), MIN(at), "  # noqa: S608
+        "COALESCE(MAX(CASE WHEN delivery_class = 'gone' THEN 1 ELSE 0 END), 0) "
+        f"FROM {table} WHERE endpoint_id = {mark} AND at >= {mark} "
+        f"AND id > (SELECT COALESCE(MAX(id), 0) FROM {table} "
+        f"WHERE endpoint_id = {mark} AND at >= {mark} AND delivery_class = 'delivered')"
+    )
+
+
+def failure_summary(rows: Sequence[Sequence[object]]) -> FailureSummary:
+    failures, failing_since, gone = rows[0]
+    return FailureSummary(
+        failures=int(str(failures)),
+        failing_since=None if failing_since is None else int(str(failing_since)),
+        gone=int(str(gone)) == 1,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class _Statements:
     """Las sentencias de cada operación. El nombre de la tabla ya está comprobado."""
@@ -61,6 +87,10 @@ class _Statements:
             f"SELECT {_COLUMNS} FROM {self.table} "  # noqa: S608
             "WHERE message_id = %s AND endpoint_id = %s ORDER BY id"
         )
+
+    @property
+    def failures(self) -> str:
+        return failures_query(self.table, "%s")
 
     @property
     def purge(self) -> str:
@@ -110,6 +140,12 @@ class PostgresDeliveryLedger:
         """Los intentos de un mensaje hacia un destino, en el orden en que se registraron."""
         return [_record(row) for row in self._client.query(self._sql.attempts_of, (message_id, endpoint_id))]
 
+    def failures_of(self, endpoint_id: str, since: int) -> FailureSummary:
+        """El resumen de fallos de un destino desde `since` (sección 8.5)."""
+        return failure_summary(
+            self._client.query(self._sql.failures, (endpoint_id, since, endpoint_id, since))
+        )
+
     def purge_before(self, at: int) -> int:
         """Borra los intentos que empezaron antes de `at` y devuelve cuántos eran."""
         return len(self._client.query(self._sql.purge, (at,)))
@@ -127,6 +163,10 @@ class AsyncPostgresDeliveryLedger:
         """Los intentos de un mensaje hacia un destino, en el orden en que se registraron."""
         rows = await self._client.query(self._sql.attempts_of, (message_id, endpoint_id))
         return [_record(row) for row in rows]
+
+    async def failures_of(self, endpoint_id: str, since: int) -> FailureSummary:
+        params = (endpoint_id, since, endpoint_id, since)
+        return failure_summary(await self._client.query(self._sql.failures, params))
 
     async def purge_before(self, at: int) -> int:
         """Borra los intentos que empezaron antes de `at` y devuelve cuántos eran."""

@@ -4,6 +4,7 @@ import type {
   OutboxClaimRequest,
   OutboxEntry,
   OutboxState,
+  RequeueRequest,
   SettleRequest,
 } from '../../application/ports';
 
@@ -73,6 +74,25 @@ export class MemoryOutbox implements Outbox {
     row.token = null;
     row.leaseExpiresAt = null;
     return true;
+  }
+
+  async requeue({ endpointId, from, to, now }: RequeueRequest): Promise<number> {
+    const again = this.rows.filter(
+      (row) =>
+        row.endpointId === endpointId &&
+        row.state !== 'pending' &&
+        row.state !== 'delivered' &&
+        row.availableAt >= from &&
+        row.availableAt <= to,
+    );
+    for (const row of again) {
+      row.state = 'pending';
+      row.attempt = 1;
+      row.availableAt = now;
+      row.token = null;
+      row.leaseExpiresAt = null;
+    }
+    return again.length;
   }
 
   /** El estado de una entrada, para comprobarlo en tests. */

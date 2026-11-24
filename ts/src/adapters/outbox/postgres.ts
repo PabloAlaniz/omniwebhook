@@ -3,6 +3,7 @@ import type {
   Outbox,
   OutboxClaimRequest,
   OutboxEntry,
+  RequeueRequest,
   SettleRequest,
 } from '../../application/ports';
 import { checkedTable, type SqlClient } from '../stores/postgres';
@@ -114,6 +115,18 @@ export class PostgresOutbox implements Outbox {
             [messageId, endpointId, token, request.state],
           );
     return result.rows.length > 0;
+  }
+
+  async requeue({ endpointId, from, to, now }: RequeueRequest): Promise<number> {
+    const result = await this.client.query(
+      `UPDATE ${this.table}
+       SET state = 'pending', attempt = 1, available_at = $4, token = NULL, lease_expires_at = NULL
+       WHERE endpoint_id = $1 AND state NOT IN ('pending', 'delivered')
+         AND available_at BETWEEN $2 AND $3
+       RETURNING seq`,
+      [endpointId, from, to, now],
+    );
+    return result.rows.length;
   }
 
   /** Borra las entradas cerradas que estaban disponibles desde antes de `at`. Devuelve cuántas eran. */

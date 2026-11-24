@@ -1144,6 +1144,684 @@
    ]
   },
   {
+   "name": "reenviar vuelve a poner como pendiente lo que se cerró sin entregar, desde el intento 1",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "pending",
+     "next_at": 1700000005,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000005,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 2
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-2",
+     "state": "exhausted",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000100,
+     "now": 1700001000,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-3",
+     "now": 1700000999,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "claim",
+     "token": "d-3",
+     "now": 1700001000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar alcanza a lo cerrado como rejected",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "rejected",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000000,
+     "now": 1700000010,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar alcanza a lo cerrado como blocked",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "blocked",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000000,
+     "now": 1700000010,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar alcanza a lo cerrado como gone",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "gone",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000000,
+     "now": 1700000010,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar alcanza a lo cerrado como exhausted",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "exhausted",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000000,
+     "now": 1700000010,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar alcanza a lo cerrado como cancelled",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "cancelled",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000000,
+     "now": 1700000010,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar no toca lo entregado ni lo que sigue pendiente",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_ok",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_ok\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_pendiente",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_pendiente\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 1,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_ok",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_ok\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_ok",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1699999900,
+     "to": 1700000100,
+     "now": 1700000010,
+     "expected": 0
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_pendiente",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_pendiente\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar sólo alcanza al destino indicado",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_2",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_2",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "gone",
+     "expected": true
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_2",
+     "token": "d-1",
+     "state": "gone",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_2",
+     "from": 1700000000,
+     "to": 1700000000,
+     "now": 1700000010,
+     "expected": 1
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_2",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar respeta el rango, con los dos bordes incluidos",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_antes",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_antes\"}",
+     "now": 1699999999,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_desde",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_desde\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_hasta",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_hasta\"}",
+     "now": 1700000010,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_despues",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_despues\"}",
+     "now": 1700000011,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000020,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_antes",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_antes\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_desde",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_desde\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_hasta",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_hasta\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_despues",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_despues\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_antes",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "rejected",
+     "expected": true
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_desde",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "rejected",
+     "expected": true
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_hasta",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "rejected",
+     "expected": true
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_despues",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "rejected",
+     "expected": true
+    },
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000010,
+     "now": 1700000030,
+     "expected": 2
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000030,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_desde",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_desde\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_hasta",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_hasta\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "reenviar sin nada que reenviar no hace nada",
+   "steps": [
+    {
+     "op": "requeue",
+     "endpoint_id": "ep_1",
+     "from": 1700000000,
+     "to": 1700000010,
+     "now": 1700000030,
+     "expected": 0
+    }
+   ]
+  },
+  {
    "name": "el payload sale byte a byte como se encoló",
    "steps": [
     {

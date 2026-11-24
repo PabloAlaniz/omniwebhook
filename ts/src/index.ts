@@ -76,6 +76,7 @@ export {
   type AttemptSender,
   DEFAULT_DISPATCH_LEASE_SECONDS,
   DEFAULT_DISPATCH_LIMIT,
+  type DisabledEndpoint,
   DispatchDue,
   type DispatchDueDependencies,
   type Dispatched,
@@ -90,6 +91,7 @@ export type {
   DeliveryLedger,
   DnsResolver,
   EndpointDirectory,
+  EndpointFailureSource,
   EnqueueRequest,
   HttpTransport,
   IdempotencyStore,
@@ -104,6 +106,7 @@ export type {
   ReceptionObservation,
   ReceptionObserver,
   ReleaseRequest,
+  RequeueRequest,
   ResolvedEndpoint,
   SettleRequest,
   Timer,
@@ -144,6 +147,15 @@ export {
   type InspectedDestination,
   inspectDestination,
 } from './domain/destination';
+export {
+  DEFAULT_HEALTH_MIN_FAILURES,
+  DEFAULT_HEALTH_WINDOW_SECONDS,
+  type EndpointHealth,
+  endpointHealth,
+  type FailureSummary,
+  type HealthPolicy,
+  summarizeFailures,
+} from './domain/endpoint-health';
 export { ConfigurationError } from './domain/errors';
 export { DEFAULT_TOLERANCE_SECONDS } from './domain/freshness';
 export type { Field, IncomingRequest } from './domain/incoming-request';

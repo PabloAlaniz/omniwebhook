@@ -1,6 +1,14 @@
-import type { AttemptRecord, DeliveryLedger } from '../../application/ports';
+import type { AttemptRecord, DeliveryLedger, EndpointFailureSource } from '../../application/ports';
+import type { FailureSummary } from '../../domain/endpoint-health';
 import { checkedSqliteTable, type SqliteClient } from '../stores/sqlite';
-import { attemptParams, LEDGER_COLUMNS, type LedgerRow, toAttemptRecord } from './rows';
+import {
+  attemptParams,
+  failuresQuery,
+  LEDGER_COLUMNS,
+  type LedgerRow,
+  toAttemptRecord,
+  toFailureSummary,
+} from './rows';
 
 export interface SqliteLedgerOptions {
   /** La tabla de intentos. Por defecto, `omniwebhook_attempts`. */
@@ -36,7 +44,7 @@ CREATE INDEX IF NOT EXISTS ${name}_endpoint_idx ON ${name} (endpoint_id, at)`;
  * Registro de entregas sobre SQLite: D1, `node:sqlite`, `better-sqlite3`, libSQL… Cada
  * intento es una fila; la tabla tiene la misma forma que la del paquete de Python.
  */
-export class SqliteDeliveryLedger implements DeliveryLedger {
+export class SqliteDeliveryLedger implements DeliveryLedger, EndpointFailureSource {
   private readonly table: string;
 
   constructor(
@@ -60,6 +68,17 @@ export class SqliteDeliveryLedger implements DeliveryLedger {
       [messageId, endpointId],
     );
     return rows.map((row) => toAttemptRecord(row as LedgerRow));
+  }
+
+  /** El resumen de fallos de un destino desde `since` (sección 8.5). */
+  async failuresOf(endpointId: string, since: number): Promise<FailureSummary> {
+    const rows = await this.client.all(failuresQuery(this.table, ['?', '?'], ['?', '?']), [
+      endpointId,
+      since,
+      endpointId,
+      since,
+    ]);
+    return toFailureSummary(rows[0]);
   }
 
   /** Borra los intentos que empezaron antes de `at` y devuelve cuántos eran. */

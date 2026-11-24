@@ -10,13 +10,18 @@ from omniwebhook import (
     AttemptRecord,
     ConfigurationError,
     Delivery,
+    DisabledEndpoint,
     DispatchDue,
     Dispatched,
     DispatchResult,
+    EndpointHealth,
     EnqueueRequest,
+    FailureSummary,
+    HealthPolicy,
     MemoryDeliveryLedger,
     MemoryOutbox,
     OutboxClaimRequest,
+    RequeueRequest,
     ResolvedEndpoint,
     SettleRequest,
     TransportRequest,
@@ -122,6 +127,9 @@ class Banco:
 
             async def settle(self, request: SettleRequest) -> bool:
                 return banco.bandeja.settle(request)
+
+            async def requeue(self, request: RequeueRequest) -> int:
+                return banco.bandeja.requeue(request)
 
         class DestinosAsincronicos:
             async def resolve(self, endpoint_id: str) -> ResolvedEndpoint | None:
@@ -330,3 +338,121 @@ async def test_create_async_dispatcher_usa_el_reloj_y_los_tokens_por_defecto() -
 
     assert [d.state for d in resultado.dispatched] == ["cancelled"]
     assert bandeja.state_of("msg_1", "ep_1") == "cancelled"
+
+
+DIA = 86_400
+
+
+class Fallos:
+    """Un registro de entregas que responde siempre el mismo resumen."""
+
+    def __init__(self, resumen: FailureSummary | Exception) -> None:
+        self.resumen = resumen
+        self.consultas: list[tuple[str, int]] = []
+
+    def failures_of(self, endpoint_id: str, since: int) -> FailureSummary:
+        self.consultas.append((endpoint_id, since))
+        if isinstance(self.resumen, Exception):
+            raise self.resumen
+        return self.resumen
+
+
+def _con_salud(fallos: Fallos, **opciones: Any) -> Banco:
+    return Banco(asincronico=False, opciones={"health": fallos, **opciones})
+
+
+def test_un_destino_caido_toda_la_ventana_sale_para_deshabilitar_una_vez_por_tanda() -> None:
+    resumen = FailureSummary(failures=8, failing_since=AHORA - 6 * DIA)
+    fallos = Fallos(resumen)
+    banco = _con_salud(fallos)
+    banco.encolar("msg_1")
+    banco.encolar("msg_2")
+    reintentable = {"delivery_class": "retryable", "state": "pending", "status": 503, "next_at": AHORA + 5}
+    banco.respuestas = [reintentable, reintentable]
+
+    resultado = banco.despachar()
+
+    assert resultado.disabled == (
+        DisabledEndpoint(endpoint_id="ep_1", health=EndpointHealth("disabled", "failing"), summary=resumen),
+    )
+    assert fallos.consultas == [("ep_1", 0)]
+    # El paquete avisa pero no deshabilita: las dos entregas se intentaron igual.
+    assert len(resultado.dispatched) == 2
+
+
+def test_una_entrega_que_salio_bien_no_consulta_la_salud() -> None:
+    fallos = Fallos(FailureSummary())
+    banco = _con_salud(fallos)
+    banco.encolar("msg_1")
+
+    assert banco.despachar().disabled == ()
+    assert fallos.consultas == []
+
+
+def test_un_410_lo_deja_para_deshabilitar_enseguida() -> None:
+    banco = _con_salud(
+        Fallos(FailureSummary(failures=1, failing_since=AHORA, gone=True)),
+        health_policy=HealthPolicy(window_seconds=60, min_failures=100),
+    )
+    banco.encolar("msg_1")
+    banco.respuestas = [{"delivery_class": "gone", "state": "gone", "status": 410}]
+
+    assert [(d.endpoint_id, d.health.reason) for d in banco.despachar().disabled] == [("ep_1", "gone")]
+
+
+def test_si_no_se_puede_consultar_la_salud_la_entrega_ya_quedo_cerrada() -> None:
+    banco = _con_salud(Fallos(RuntimeError("sin base de datos")))
+    banco.encolar("msg_1")
+    banco.respuestas = [{"delivery_class": "rejected", "state": "rejected"}]
+
+    resultado = banco.despachar()
+
+    assert len(resultado.failures) == 1
+    assert banco.bandeja.state_of("msg_1", "ep_1") == "rejected"
+
+
+async def test_la_salud_en_la_variante_asincronica_cuenta_desde_la_rehabilitacion() -> None:
+    bandeja = AsyncMemoryOutbox()
+    consultas: list[tuple[str, int]] = []
+
+    class Destinos:
+        async def resolve(self, endpoint_id: str) -> ResolvedEndpoint | None:
+            return ResolvedEndpoint("https://hooks.ejemplo.test/x", enabled_at=500)
+
+    class Envio:
+        async def execute(self, delivery: Delivery) -> AttemptRecord:
+            return _intento(delivery, delivery_class="rejected", state="rejected", status=400)
+
+    class FallosAsincronicos:
+        async def failures_of(self, endpoint_id: str, since: int) -> FailureSummary:
+            consultas.append((endpoint_id, since))
+            return FailureSummary(failures=9, failing_since=AHORA - 9 * DIA)
+
+    await bandeja.enqueue(EnqueueRequest(message_id="msg_1", endpoint_id="ep_1", payload=CUERPO, now=AHORA))
+    despacho = create_async_dispatcher(
+        outbox=bandeja,
+        endpoints=Destinos(),
+        sender=Envio(),
+        health=FallosAsincronicos(),
+        clock=type("Reloj", (), {"now": lambda _self: AHORA})(),
+    )
+
+    resultado = await despacho.execute()
+
+    assert [d.endpoint_id for d in resultado.disabled] == ["ep_1"]
+    assert consultas == [("ep_1", 500)]
+
+
+def test_reenviar_lo_que_fallo_mientras_el_destino_estuvo_caido() -> None:
+    banco = Banco(asincronico=False)
+    banco.encolar("msg_1")
+    banco.respuestas = [{"delivery_class": "rejected", "state": "rejected", "status": 500}]
+    banco.despachar()
+
+    reenviadas = banco.bandeja.requeue(
+        RequeueRequest(endpoint_id="ep_1", since=AHORA, until=AHORA, now=AHORA + 10)
+    )
+    banco.ahora += 10
+
+    assert reenviadas == 1
+    assert [(d.attempt, d.state) for d in banco.despachar().dispatched] == [(1, "delivered")]

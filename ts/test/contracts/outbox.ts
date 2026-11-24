@@ -25,6 +25,14 @@ type OutboxStep =
       }>;
     }
   | {
+      readonly op: 'requeue';
+      readonly endpoint_id: string;
+      readonly from: number;
+      readonly to: number;
+      readonly now: number;
+      readonly expected: number;
+    }
+  | {
       readonly op: 'settle';
       readonly message_id: string;
       readonly endpoint_id: string;
@@ -65,6 +73,14 @@ export async function playOutboxSteps(outbox: Outbox, steps: readonly OutboxStep
         attempt: entry.attempt,
       }));
       expect(seen, etiqueta).toEqual(step.expected);
+    } else if (step.op === 'requeue') {
+      const requeued = await outbox.requeue({
+        endpointId: step.endpoint_id,
+        from: step.from,
+        to: step.to,
+        now: step.now,
+      });
+      expect(requeued, etiqueta).toBe(step.expected);
     } else {
       const pair = { messageId: step.message_id, endpointId: step.endpoint_id, token: step.token };
       const applied = await outbox.settle(

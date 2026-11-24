@@ -6,6 +6,7 @@ import {
   PostgresDeliveryLedger,
   postgresLedgerSchema,
 } from '../../src/index';
+import { expectedSummary, healthCases, recordOf } from '../support/health';
 
 const url = process.env.OMNIWEBHOOK_PG_URL;
 if (url === undefined) {
@@ -103,4 +104,18 @@ describe('PostgresDeliveryLedger', () => {
       expect(() => postgresLedgerSchema(table)).toThrow(ConfigurationError);
     },
   );
+});
+
+describe('PostgresDeliveryLedger: resumen de fallos de un destino', () => {
+  it.each(healthCases.map((c) => [c.name, c] as const))('%s', async (_name, c) => {
+    await pool.query(`TRUNCATE ${TABLE} RESTART IDENTITY`);
+    const ledger = new PostgresDeliveryLedger(pool, { table: TABLE });
+    for (const [index, attempt] of c.attempts.entries()) {
+      // Otro destino en el medio, que no tiene que contar.
+      await ledger.record(recordOf('ep_otro', index, { at: attempt.at, delivery_class: 'gone' }));
+      await ledger.record(recordOf('ep_1', index, attempt));
+    }
+
+    expect(await ledger.failuresOf('ep_1', c.since)).toEqual(expectedSummary(c));
+  });
 });

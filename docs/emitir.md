@@ -140,6 +140,75 @@ servicio puede encolar en un lenguaje y otro despachar en el otro. En Python est
 `AsyncPostgresOutbox` y `create_async_dispatcher`. Hay un
 [ejemplo completo](../examples/python-outbox/app.py).
 
+## Destinos caídos
+
+Un destino que lleva días sin responder sigue consumiendo intentos. Con `health`, el despacho
+calcula la salud de cada destino después de un intento que falló y te dice cuáles conviene
+deshabilitar:
+
+```ts
+import { createDispatcher, PostgresOutbox } from 'omniwebhook';
+
+const despachoConSalud = createDispatcher({
+  outbox: new PostgresOutbox(pool),
+  endpoints: { resolve: async (id) => db.destinoHabilitado(id) },
+  sender: send,
+  health: { failures: ledger }, // el mismo registro de entregas que usa send
+});
+
+const resultado = await despachoConSalud.execute();
+for (const { endpointId, health } of resultado.disabled) {
+  await db.deshabilitar(endpointId, health.reason); // 'failing' o 'gone'
+}
+```
+
+```python
+from omniwebhook.postgres import PostgresOutbox, PsycopgClient
+
+despacho_con_salud = create_dispatcher(
+    outbox=PostgresOutbox(PsycopgClient(pool.connection)), endpoints=destinos, sender=send, health=ledger
+)
+for caido in despacho_con_salud.execute().disabled:
+    db.deshabilitar(caido.endpoint_id, caido.health.reason)
+```
+
+Un destino sale para deshabilitar en dos casos: respondió 410, o falló al menos 5 veces seguidas
+y lleva 5 días sin una sola entrega. Hacen falta las dos cosas: muchos fallos en un rato son una
+caída que se recupera. Se cambian con `policy: { windowSeconds, minFailures }`
+(`health_policy=HealthPolicy(...)`).
+
+**El paquete avisa, no deshabilita.** Guardar ese estado y avisarle al dueño del destino es
+tuyo. Mientras `resolve` siga devolviendo el destino, se le sigue entregando; cuando devuelva
+`null` (`None`), sus entregas pendientes se cancelan.
+
+**Para rehabilitarlo**, hacé que `resolve` devuelva `enabledAt` (`enabled_at`) con el momento de
+la rehabilitación: la salud cuenta desde ahí, y lo que falló antes no lo vuelve a tumbar. Lo que
+se canceló o falló mientras estuvo caído se reenvía por rango de tiempo:
+
+```ts
+import { PostgresOutbox } from 'omniwebhook';
+
+const reenviadas = await new PostgresOutbox(pool).requeue({
+  endpointId: 'ep_42',
+  from: 1_700_000_000, // desde cuándo estuvo caído
+  to: 1_700_400_000,
+  now: Math.floor(Date.now() / 1000),
+});
+```
+
+```python
+from omniwebhook.postgres import PostgresOutbox, PsycopgClient
+
+reenviadas = PostgresOutbox(PsycopgClient(pool.connection)).requeue(
+    RequeueRequest(endpoint_id="ep_42", since=1_700_000_000, until=1_700_400_000, now=ahora)
+)
+```
+
+Vuelven a salir desde el intento 1 y con el mismo identificador de mensaje. Lo ya entregado no se
+reenvía. Si no usás la bandeja, `endpointHealth` y `summarizeFailures` (`endpoint_health`,
+`summarize_failures`) son funciones sueltas, y los registros de entregas tienen `failuresOf`
+(`failures_of`).
+
 ## En qué estado queda la entrega
 
 | Estado | Cuándo | Qué hacer |
