@@ -8,7 +8,7 @@ import base64
 import json
 import sqlite3
 import sys
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -22,10 +22,12 @@ from omniwebhook import (
     CompleteRequest,
     ConfigurationError,
     EnqueueRequest,
+    HealthPolicy,
     IncomingRequest,
     OutboxClaimRequest,
     OutgoingMessage,
     ReleaseRequest,
+    RequeueRequest,
     RetryPolicy,
     SettleRequest,
     Signed,
@@ -34,6 +36,7 @@ from omniwebhook import (
     allowed_networks,
     classify_delivery,
     creem_scheme,
+    endpoint_health,
     evaluate_destination,
     github_scheme,
     hmac_body_scheme,
@@ -45,6 +48,7 @@ from omniwebhook import (
     shopify_scheme,
     slack_scheme,
     stripe_scheme,
+    summarize_failures,
     tiktok_scheme,
 )
 from omniwebhook.discord import discord_scheme
@@ -187,6 +191,16 @@ class Agent:
     def classify(self, status: int | None, failure: Any) -> Json:
         return {"class": classify_delivery(AttemptOutcome(status=status, failure=failure))}
 
+    def health(self, attempts: list[Json], since: int, now: int, policy: Json | None = None) -> Json:
+        @dataclass(frozen=True)
+        class Attempt:
+            at: int
+            delivery_class: str
+
+        summary = summarize_failures([Attempt(**attempt) for attempt in attempts], since)
+        health = endpoint_health(summary, now, HealthPolicy(**policy) if policy else None)
+        return {"summary": asdict(summary), "health": asdict(health)}
+
     def status(self, outcome: Any) -> Json:
         return {"status": http_status_for(outcome)}
 
@@ -274,6 +288,11 @@ class Agent:
                     for entry in self._outbox.claim(OutboxClaimRequest(**step))
                 ]
             }
+        if op == "requeue":
+            request = RequeueRequest(
+                endpoint_id=step["endpoint_id"], since=step["from"], until=step["to"], now=step["now"]
+            )
+            return {"result": self._outbox.requeue(request)}
         return {"result": self._outbox.settle(SettleRequest(**step))}
 
     def outbox_close(self, table: str, drop: bool) -> Json:

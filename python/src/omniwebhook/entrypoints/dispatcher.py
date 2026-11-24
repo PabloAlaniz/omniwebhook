@@ -12,12 +12,15 @@ from omniwebhook.application.dispatch_due import (
 )
 from omniwebhook.application.ports import (
     AsyncEndpointDirectory,
+    AsyncEndpointFailureSource,
     AsyncOutbox,
     Clock,
     EndpointDirectory,
+    EndpointFailureSource,
     Outbox,
     TokenGenerator,
 )
+from omniwebhook.domain.endpoint_health import HealthPolicy
 
 
 def create_dispatcher(
@@ -29,6 +32,8 @@ def create_dispatcher(
     tokens: TokenGenerator | None = None,
     limit: int = DEFAULT_DISPATCH_LIMIT,
     lease_seconds: int = DEFAULT_DISPATCH_LEASE_SECONDS,
+    health: EndpointFailureSource | None = None,
+    health_policy: HealthPolicy | None = None,
 ) -> DispatchDue:
     return DispatchDue(
         outbox=outbox,
@@ -38,6 +43,8 @@ def create_dispatcher(
         tokens=tokens or random_tokens,
         limit=limit,
         lease_seconds=lease_seconds,
+        health=health,
+        health_policy=health_policy,
     )
 
 
@@ -50,6 +57,8 @@ def create_async_dispatcher(
     tokens: TokenGenerator | None = None,
     limit: int = DEFAULT_DISPATCH_LIMIT,
     lease_seconds: int = DEFAULT_DISPATCH_LEASE_SECONDS,
+    health: AsyncEndpointFailureSource | None = None,
+    health_policy: HealthPolicy | None = None,
 ) -> AsyncDispatchDue:
     return AsyncDispatchDue(
         outbox=outbox,
@@ -59,4 +68,6 @@ def create_async_dispatcher(
         tokens=tokens or random_tokens,
         limit=limit,
         lease_seconds=lease_seconds,
+        health=health,
+        health_policy=health_policy,
     )

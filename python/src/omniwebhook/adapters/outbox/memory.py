@@ -8,6 +8,7 @@ from omniwebhook.application.ports import (
     OutboxClaimRequest,
     OutboxEntry,
     OutboxState,
+    RequeueRequest,
     SettleRequest,
 )
 from omniwebhook.domain.errors import ConfigurationError
@@ -83,6 +84,20 @@ class MemoryOutbox:
             row.token, row.lease_expires_at = None, None
             return True
 
+    def requeue(self, request: RequeueRequest) -> int:
+        with self._lock:
+            again = [
+                row
+                for row in self._rows.values()
+                if row.endpoint_id == request.endpoint_id
+                and row.state not in ("pending", "delivered")
+                and request.since <= row.available_at <= request.until
+            ]
+            for row in again:
+                row.state, row.attempt, row.available_at = "pending", 1, request.now
+                row.token, row.lease_expires_at = None, None
+            return len(again)
+
     def state_of(self, message_id: str, endpoint_id: str) -> OutboxState | None:
         """El estado de una entrada, para comprobarlo en tests."""
         row = self._rows.get((message_id, endpoint_id))
@@ -103,6 +118,9 @@ class AsyncMemoryOutbox:
 
     async def settle(self, request: SettleRequest) -> bool:
         return self._outbox.settle(request)
+
+    async def requeue(self, request: RequeueRequest) -> int:
+        return self._outbox.requeue(request)
 
     def state_of(self, message_id: str, endpoint_id: str) -> OutboxState | None:
         return self._outbox.state_of(message_id, endpoint_id)

@@ -8,13 +8,14 @@ from omniwebhook import (
     Outbox,
     OutboxClaimRequest,
     OutboxEntry,
+    RequeueRequest,
     SettleRequest,
 )
 from tests.support.vectors import Caso, casos
 
 CASOS_DE_BANDEJA = casos("entregar/bandeja")
 
-Pedido = EnqueueRequest | OutboxClaimRequest | SettleRequest
+Pedido = EnqueueRequest | OutboxClaimRequest | SettleRequest | RequeueRequest
 
 
 def _pedido(paso: Caso) -> Pedido:
@@ -28,6 +29,10 @@ def _pedido(paso: Caso) -> Pedido:
     if paso["op"] == "claim":
         return OutboxClaimRequest(
             token=paso["token"], now=paso["now"], limit=paso["limit"], lease_seconds=paso["lease_seconds"]
+        )
+    if paso["op"] == "requeue":
+        return RequeueRequest(
+            endpoint_id=paso["endpoint_id"], since=paso["from"], until=paso["to"], now=paso["now"]
         )
     return SettleRequest(
         message_id=paso["message_id"],
@@ -59,6 +64,8 @@ def reproducir_bandeja(bandeja: Outbox, pasos: Sequence[Caso]) -> None:
             resultado = bandeja.enqueue(pedido)
         elif isinstance(pedido, OutboxClaimRequest):
             resultado = _vistas(bandeja.claim(pedido))
+        elif isinstance(pedido, RequeueRequest):
+            resultado = bandeja.requeue(pedido)
         else:
             resultado = bandeja.settle(pedido)
         assert resultado == paso["expected"], f"paso {numero} ({paso['op']})"
@@ -72,6 +79,8 @@ async def reproducir_bandeja_async(bandeja: AsyncOutbox, pasos: Sequence[Caso]) 
             resultado = await bandeja.enqueue(pedido)
         elif isinstance(pedido, OutboxClaimRequest):
             resultado = _vistas(await bandeja.claim(pedido))
+        elif isinstance(pedido, RequeueRequest):
+            resultado = await bandeja.requeue(pedido)
         else:
             resultado = await bandeja.settle(pedido)
         assert resultado == paso["expected"], f"paso {numero} ({paso['op']})"

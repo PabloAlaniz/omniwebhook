@@ -14,7 +14,13 @@ from typing import Any, Final, Protocol
 
 from omniwebhook.adapters.outbox.memory import checked_settle
 from omniwebhook.adapters.stores.postgres import AsyncSqlClient, Row, SqlClient, _checked_table
-from omniwebhook.application.ports import EnqueueRequest, OutboxClaimRequest, OutboxEntry, SettleRequest
+from omniwebhook.application.ports import (
+    EnqueueRequest,
+    OutboxClaimRequest,
+    OutboxEntry,
+    RequeueRequest,
+    SettleRequest,
+)
 
 DEFAULT_OUTBOX_TABLE: Final = "omniwebhook_outbox"
 
@@ -80,6 +86,15 @@ class _Statements:
         return f"UPDATE {self.table} SET state = %s, token = NULL, lease_expires_at = NULL {self._mine}"  # noqa: S608
 
     @property
+    def requeue(self) -> str:
+        return (
+            f"UPDATE {self.table} SET state = 'pending', attempt = 1, available_at = %s, "  # noqa: S608
+            "token = NULL, lease_expires_at = NULL "
+            "WHERE endpoint_id = %s AND state NOT IN ('pending', 'delivered') "
+            "AND available_at BETWEEN %s AND %s RETURNING seq"
+        )
+
+    @property
     def purge(self) -> str:
         return f"DELETE FROM {self.table} WHERE state <> 'pending' AND available_at < %s RETURNING seq"  # noqa: S608
 
@@ -90,6 +105,10 @@ def _enqueue_params(request: EnqueueRequest) -> Sequence[object]:
 
 def _claim_params(request: OutboxClaimRequest) -> Sequence[object]:
     return (request.token, request.now + request.lease_seconds, request.now, request.now, request.limit)
+
+
+def _requeue_params(request: RequeueRequest) -> Sequence[object]:
+    return (request.now, request.endpoint_id, request.since, request.until)
 
 
 def _entries(rows: Sequence[Row]) -> list[OutboxEntry]:
@@ -130,6 +149,9 @@ class PostgresOutbox:
     def settle(self, request: SettleRequest) -> bool:
         return bool(self._client.query(*_settle(self._statements, request)))
 
+    def requeue(self, request: RequeueRequest) -> int:
+        return len(self._client.query(self._statements.requeue, _requeue_params(request)))
+
     def purge_settled_before(self, at: int) -> int:
         """Borra las entradas cerradas que estaban disponibles desde antes de `at`. Devuelve cuántas eran."""
         return len(self._client.query(self._statements.purge, (at,)))
@@ -150,6 +172,9 @@ class AsyncPostgresOutbox:
 
     async def settle(self, request: SettleRequest) -> bool:
         return bool(await self._client.query(*_settle(self._statements, request)))
+
+    async def requeue(self, request: RequeueRequest) -> int:
+        return len(await self._client.query(self._statements.requeue, _requeue_params(request)))
 
     async def purge_settled_before(self, at: int) -> int:
         return len(await self._client.query(self._statements.purge, (at,)))

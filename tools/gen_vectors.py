@@ -1623,6 +1623,17 @@ class Tray:
                 {key: row[key] for key in ("message_id", "endpoint_id", "payload", "attempt")}
                 for row in taken
             ]
+        if step["op"] == "requeue":
+            again = [
+                row
+                for row in self.rows
+                if row["endpoint_id"] == step["endpoint_id"]
+                and row["state"] not in ("pending", "delivered")
+                and step["from"] <= row["available_at"] <= step["to"]
+            ]
+            for row in again:
+                row.update(state="pending", attempt=1, available_at=step["now"], token=None, lease=None)
+            return len(again)
         row = self.find(step)
         if row is None or row["state"] != "pending" or row["token"] != step["token"]:
             return False
@@ -1655,6 +1666,9 @@ def entregar_bandeja() -> Vector:
         step = {"op": "settle", "message_id": message, "endpoint_id": endpoint}
         step |= {"token": token, "state": state}
         return step if next_at is None else {**step, "next_at": next_at}
+
+    def again(since: int, until: int, now: int, endpoint: str = "ep_1") -> dict[str, Any]:
+        return {"op": "requeue", "endpoint_id": endpoint, "from": since, "to": until, "now": now}
 
     def case(name: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
         tray = Tray()
@@ -1824,6 +1838,73 @@ def entregar_bandeja() -> Vector:
             ],
         ),
         case(
+            "reenviar vuelve a poner como pendiente lo que se cerró sin entregar, desde el intento 1",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t),
+                settle("msg_1", "d-1", "pending", next_at=t + 5),
+                take("d-2", t + 5),
+                settle("msg_1", "d-2", "exhausted"),
+                again(t, t + 100, t + 1000),
+                take("d-3", t + 999),
+                take("d-3", t + 1000),
+            ],
+        ),
+        *[
+            case(
+                f"reenviar alcanza a lo cerrado como {state}",
+                [
+                    enqueue("msg_1", t),
+                    take("d-1", t),
+                    settle("msg_1", "d-1", state),
+                    again(t, t, t + 10),
+                    take("d-2", t + 10),
+                ],
+            )
+            for state in OUTBOX_FINAL
+            if state != "delivered"
+        ],
+        case(
+            "reenviar no toca lo entregado ni lo que sigue pendiente",
+            [
+                enqueue("msg_ok", t),
+                enqueue("msg_pendiente", t),
+                take("d-1", t, limit=1),
+                settle("msg_ok", "d-1", "delivered"),
+                again(t - 100, t + 100, t + 10),
+                take("d-2", t + 10),
+            ],
+        ),
+        case(
+            "reenviar sólo alcanza al destino indicado",
+            [
+                enqueue("msg_1", t, "ep_1"),
+                enqueue("msg_1", t, "ep_2"),
+                take("d-1", t),
+                settle("msg_1", "d-1", "gone", endpoint="ep_1"),
+                settle("msg_1", "d-1", "gone", endpoint="ep_2"),
+                again(t, t, t + 10, endpoint="ep_2"),
+                take("d-2", t + 10),
+            ],
+        ),
+        case(
+            "reenviar respeta el rango, con los dos bordes incluidos",
+            [
+                enqueue("msg_antes", t - 1),
+                enqueue("msg_desde", t),
+                enqueue("msg_hasta", t + 10),
+                enqueue("msg_despues", t + 11),
+                take("d-1", t + 20),
+                settle("msg_antes", "d-1", "rejected"),
+                settle("msg_desde", "d-1", "rejected"),
+                settle("msg_hasta", "d-1", "rejected"),
+                settle("msg_despues", "d-1", "rejected"),
+                again(t, t + 10, t + 30),
+                take("d-2", t + 30),
+            ],
+        ),
+        case("reenviar sin nada que reenviar no hace nada", [again(t, t + 10, t + 30)]),
+        case(
             "el payload sale byte a byte como se encoló",
             [
                 enqueue("msg_1", t, payload='{"ñ":"\u00e9","espacios":  1}\n'),
@@ -1832,6 +1913,134 @@ def entregar_bandeja() -> Vector:
         ),
     ]
     return {"spec": SPEC, "id": "entregar/bandeja", "kind": "outbox", "cases": cases}
+
+
+# --- salud de los destinos ---------------------------------------------------------
+
+HEALTH_WINDOW = 432_000
+HEALTH_MIN_FAILURES = 5
+
+
+def entregar_salud() -> Vector:
+    t = NOW
+    day = 86_400
+
+    def tries(*pairs: tuple[int, str]) -> list[dict[str, Any]]:
+        return [{"at": at, "delivery_class": kind} for at, kind in pairs]
+
+    def case(
+        name: str,
+        want: str,
+        attempts: list[dict[str, Any]],
+        now: int = t,
+        since: int = 0,
+        policy: dict[str, int] | None = None,
+    ) -> dict[str, Any]:
+        counted = [attempt for attempt in attempts if attempt["at"] >= since]
+        ok = [index for index, attempt in enumerate(counted) if attempt["delivery_class"] == "delivered"]
+        failed = counted[ok[-1] + 1 :] if ok else counted
+        summary = {
+            "failures": len(failed),
+            "failing_since": min((attempt["at"] for attempt in failed), default=None),
+            "gone": any(attempt["delivery_class"] == "gone" for attempt in failed),
+        }
+        window = (policy or {}).get("window_seconds", HEALTH_WINDOW)
+        minimum = (policy or {}).get("min_failures", HEALTH_MIN_FAILURES)
+        if summary["gone"]:
+            health = {"status": "disabled", "reason": "gone"}
+        elif summary["failures"] >= minimum and now - summary["failing_since"] >= window:
+            health = {"status": "disabled", "reason": "failing"}
+        elif summary["failures"]:
+            health = {"status": "failing", "reason": None}
+        else:
+            health = {"status": "healthy", "reason": None}
+        assert health["status"] == want, (name, health, want)
+        made = {"name": name, "attempts": attempts, "since": since, "now": now}
+        if policy:
+            made["policy"] = policy
+        return {**made, "expected": {"summary": summary, "health": health}}
+
+    long_run = tries(*[(t - 6 * day + index * day, "retryable") for index in range(5)])
+    burst = tries(*[(t - 60 + index, "retryable") for index in range(50)])
+    own = {"window_seconds": 100, "min_failures": 2}
+    cases = [
+        case("sin intentos", "healthy", []),
+        case("el último intento se entregó", "healthy", tries((t - 10, "retryable"), (t - 5, "delivered"))),
+        case("un fallo reciente", "failing", tries((t - 10, "delivered"), (t - 5, "retryable"))),
+        case("muchos fallos en poco tiempo no alcanzan", "failing", burst),
+        case(
+            "pocos fallos durante mucho tiempo no alcanzan",
+            "failing",
+            tries((t - 10 * day, "retryable"), (t - 1, "rejected")),
+        ),
+        case("suficientes fallos durante toda la ventana", "disabled", long_run),
+        case(
+            "un segundo antes de cumplir la ventana", "failing", long_run, now=t - 6 * day + HEALTH_WINDOW - 1
+        ),
+        case("justo al cumplir la ventana", "disabled", long_run, now=t - 6 * day + HEALTH_WINDOW),
+        case(
+            "una entrega en el medio corta la racha",
+            "failing",
+            [*long_run[:3], *tries((t - 3 * day + 5, "delivered")), *long_run[3:]],
+        ),
+        case("una entrega al final la deja sana", "healthy", [*long_run, *tries((t - 1, "delivered"))]),
+        case(
+            "los rechazos y los bloqueos también cuentan",
+            "disabled",
+            tries(
+                (t - 6 * day, "rejected"),
+                (t - 5 * day, "blocked"),
+                (t - 4 * day, "retryable"),
+                (t - 3 * day, "rejected"),
+                (t - 2 * day, "blocked"),
+            ),
+        ),
+        case("un 410 lo deshabilita enseguida", "disabled", tries((t - 5, "delivered"), (t - 1, "gone"))),
+        case(
+            "un 410 anterior a la última entrega no cuenta",
+            "healthy",
+            tries((t - 5, "gone"), (t - 1, "delivered")),
+        ),
+        case("un 410 pesa más que la racha", "disabled", [*long_run, *tries((t - 1, "gone"))]),
+        case("lo anterior a la rehabilitación no cuenta", "healthy", long_run, since=t - day),
+        case(
+            "después de rehabilitar, un fallo nuevo empieza de cero",
+            "failing",
+            [*long_run, *tries((t - 10, "retryable"))],
+            since=t - 100,
+        ),
+        case(
+            "un 410 anterior a la rehabilitación no cuenta",
+            "failing",
+            tries((t - 500, "gone"), (t - 10, "retryable")),
+            since=t - 100,
+        ),
+        case(
+            "el borde de la rehabilitación está incluido",
+            "failing",
+            tries((t - 100, "retryable")),
+            since=t - 100,
+        ),
+        case(
+            "el momento desde el que falla es el menor, no el primero registrado",
+            "disabled",
+            tries(
+                (t - 2 * day, "retryable"),
+                (t - 6 * day, "retryable"),
+                (t - day, "retryable"),
+                (t - 3 * day, "retryable"),
+                (t - 4 * day, "retryable"),
+            ),
+        ),
+        case(
+            "ventana y mínimo propios",
+            "disabled",
+            tries((t - 120, "retryable"), (t - 60, "retryable")),
+            policy=own,
+        ),
+        case("ventana propia sin alcanzar el mínimo", "failing", tries((t - 120, "retryable")), policy=own),
+    ]
+    return {"spec": SPEC, "id": "entregar/salud", "kind": "endpoint-health", "cases": cases}
 
 
 # --- recibir -------------------------------------------------------------------
@@ -2712,6 +2921,7 @@ ALL: list[Callable[[], Vector]] = [
     entregar_clasificacion,
     entregar_reintentos,
     entregar_bandeja,
+    entregar_salud,
 ]
 
 

@@ -1,0 +1,872 @@
+{
+ "spec": "0",
+ "id": "entregar/salud",
+ "kind": "endpoint-health",
+ "cases": [
+  {
+   "name": "sin intentos",
+   "attempts": [],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 0,
+     "failing_since": null,
+     "gone": false
+    },
+    "health": {
+     "status": "healthy",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "el último intento se entregó",
+   "attempts": [
+    {
+     "at": 1699999990,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999995,
+     "delivery_class": "delivered"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 0,
+     "failing_since": null,
+     "gone": false
+    },
+    "health": {
+     "status": "healthy",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "un fallo reciente",
+   "attempts": [
+    {
+     "at": 1699999990,
+     "delivery_class": "delivered"
+    },
+    {
+     "at": 1699999995,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 1,
+     "failing_since": 1699999995,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "muchos fallos en poco tiempo no alcanzan",
+   "attempts": [
+    {
+     "at": 1699999940,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999941,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999942,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999943,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999944,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999945,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999946,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999947,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999948,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999949,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999950,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999951,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999952,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999953,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999954,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999955,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999956,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999957,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999958,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999959,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999960,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999961,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999962,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999963,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999964,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999965,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999966,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999967,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999968,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999969,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999970,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999971,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999972,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999973,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999974,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999975,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999976,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999977,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999978,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999979,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999980,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999981,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999982,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999983,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999984,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999985,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999986,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999987,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999988,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999989,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 50,
+     "failing_since": 1699999940,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "pocos fallos durante mucho tiempo no alcanzan",
+   "attempts": [
+    {
+     "at": 1699136000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999999,
+     "delivery_class": "rejected"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 2,
+     "failing_since": 1699136000,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "suficientes fallos durante toda la ventana",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 5,
+     "failing_since": 1699481600,
+     "gone": false
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "failing"
+    }
+   }
+  },
+  {
+   "name": "un segundo antes de cumplir la ventana",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1699913599,
+   "expected": {
+    "summary": {
+     "failures": 5,
+     "failing_since": 1699481600,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "justo al cumplir la ventana",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1699913600,
+   "expected": {
+    "summary": {
+     "failures": 5,
+     "failing_since": 1699481600,
+     "gone": false
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "failing"
+    }
+   }
+  },
+  {
+   "name": "una entrega en el medio corta la racha",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740805,
+     "delivery_class": "delivered"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 2,
+     "failing_since": 1699740800,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "una entrega al final la deja sana",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999999,
+     "delivery_class": "delivered"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 0,
+     "failing_since": null,
+     "gone": false
+    },
+    "health": {
+     "status": "healthy",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "los rechazos y los bloqueos también cuentan",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "rejected"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "blocked"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "rejected"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "blocked"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 5,
+     "failing_since": 1699481600,
+     "gone": false
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "failing"
+    }
+   }
+  },
+  {
+   "name": "un 410 lo deshabilita enseguida",
+   "attempts": [
+    {
+     "at": 1699999995,
+     "delivery_class": "delivered"
+    },
+    {
+     "at": 1699999999,
+     "delivery_class": "gone"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 1,
+     "failing_since": 1699999999,
+     "gone": true
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "gone"
+    }
+   }
+  },
+  {
+   "name": "un 410 anterior a la última entrega no cuenta",
+   "attempts": [
+    {
+     "at": 1699999995,
+     "delivery_class": "gone"
+    },
+    {
+     "at": 1699999999,
+     "delivery_class": "delivered"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 0,
+     "failing_since": null,
+     "gone": false
+    },
+    "health": {
+     "status": "healthy",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "un 410 pesa más que la racha",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999999,
+     "delivery_class": "gone"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 6,
+     "failing_since": 1699481600,
+     "gone": true
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "gone"
+    }
+   }
+  },
+  {
+   "name": "lo anterior a la rehabilitación no cuenta",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 1699913600,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 0,
+     "failing_since": null,
+     "gone": false
+    },
+    "health": {
+     "status": "healthy",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "después de rehabilitar, un fallo nuevo empieza de cero",
+   "attempts": [
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699568000,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999990,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 1699999900,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 1,
+     "failing_since": 1699999990,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "un 410 anterior a la rehabilitación no cuenta",
+   "attempts": [
+    {
+     "at": 1699999500,
+     "delivery_class": "gone"
+    },
+    {
+     "at": 1699999990,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 1699999900,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 1,
+     "failing_since": 1699999990,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "el borde de la rehabilitación está incluido",
+   "attempts": [
+    {
+     "at": 1699999900,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 1699999900,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 1,
+     "failing_since": 1699999900,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  },
+  {
+   "name": "el momento desde el que falla es el menor, no el primero registrado",
+   "attempts": [
+    {
+     "at": 1699827200,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699481600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699913600,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699740800,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699654400,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "expected": {
+    "summary": {
+     "failures": 5,
+     "failing_since": 1699481600,
+     "gone": false
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "failing"
+    }
+   }
+  },
+  {
+   "name": "ventana y mínimo propios",
+   "attempts": [
+    {
+     "at": 1699999880,
+     "delivery_class": "retryable"
+    },
+    {
+     "at": 1699999940,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "policy": {
+    "window_seconds": 100,
+    "min_failures": 2
+   },
+   "expected": {
+    "summary": {
+     "failures": 2,
+     "failing_since": 1699999880,
+     "gone": false
+    },
+    "health": {
+     "status": "disabled",
+     "reason": "failing"
+    }
+   }
+  },
+  {
+   "name": "ventana propia sin alcanzar el mínimo",
+   "attempts": [
+    {
+     "at": 1699999880,
+     "delivery_class": "retryable"
+    }
+   ],
+   "since": 0,
+   "now": 1700000000,
+   "policy": {
+    "window_seconds": 100,
+    "min_failures": 2
+   },
+   "expected": {
+    "summary": {
+     "failures": 1,
+     "failing_since": 1699999880,
+     "gone": false
+    },
+    "health": {
+     "status": "failing",
+     "reason": null
+    }
+   }
+  }
+ ]
+}

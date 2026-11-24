@@ -10,6 +10,7 @@ from typing import Literal, Protocol
 
 from omniwebhook.domain.delivery import DeliveryClass, DeliveryState
 from omniwebhook.domain.destination import DestinationProblem
+from omniwebhook.domain.endpoint_health import FailureSummary
 from omniwebhook.domain.incoming_request import IncomingRequest
 from omniwebhook.domain.message import OutgoingMessage, Signing
 from omniwebhook.domain.reception import ReceptionOutcome
@@ -241,6 +242,27 @@ class SettleRequest:
     """Desde cuándo vuelve a estar disponible. Obligatorio con `state="pending"`."""
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RequeueRequest:
+    endpoint_id: str
+    since: int
+    """El rango del momento de disponibilidad de las entradas, con los dos bordes incluidos."""
+    until: int
+    now: int
+
+
+class EndpointFailureSource(Protocol):
+    """De dónde sale el resumen de fallos de un destino: lo cumplen los registros de entregas."""
+
+    def failures_of(self, endpoint_id: str, since: int) -> FailureSummary: ...
+
+
+class AsyncEndpointFailureSource(Protocol):
+    """La variante asincrónica de `EndpointFailureSource`."""
+
+    async def failures_of(self, endpoint_id: str, since: int) -> FailureSummary: ...
+
+
 class Outbox(Protocol):
     """La bandeja de salida (sección 8.5). Las tres operaciones tienen que ser atómicas."""
 
@@ -256,6 +278,10 @@ class Outbox(Protocol):
         """Devuelve si se aplicó: sólo si la entrada sigue pendiente y la tomó ese mismo token."""
         ...
 
+    def requeue(self, request: RequeueRequest) -> int:
+        """Vuelve a poner como pendiente lo que se cerró sin entregar. Devuelve cuántas entradas eran."""
+        ...
+
 
 class AsyncOutbox(Protocol):
     """La variante asincrónica de `Outbox`."""
@@ -266,12 +292,20 @@ class AsyncOutbox(Protocol):
 
     async def settle(self, request: SettleRequest) -> bool: ...
 
+    async def requeue(self, request: RequeueRequest) -> int: ...
+
 
 @dataclass(frozen=True, slots=True)
 class ResolvedEndpoint:
     """Lo que hace falta saber de un destino para entregarle."""
 
     url: str
+    enabled_at: int = 0
+    """Desde cuándo cuenta la salud del destino, en segundos.
+
+    Al rehabilitar uno que se había deshabilitado, va el momento de la rehabilitación: así lo
+    anterior no lo vuelve a tumbar.
+    """
 
 
 class EndpointDirectory(Protocol):

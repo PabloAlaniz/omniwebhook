@@ -7,9 +7,16 @@ Sólo hay variante sincrónica, como el almacén de reservas sobre SQLite.
 from dataclasses import dataclass
 from typing import Final
 
-from omniwebhook.adapters.ledger.postgres import _COLUMNS, _params, _record
+from omniwebhook.adapters.ledger.postgres import (
+    _COLUMNS,
+    _params,
+    _record,
+    failure_summary,
+    failures_query,
+)
 from omniwebhook.adapters.stores.sqlite import SqliteClient, _checked_sqlite_table
 from omniwebhook.application.ports import AttemptRecord
+from omniwebhook.domain.endpoint_health import FailureSummary
 
 DEFAULT_LEDGER_TABLE: Final = "omniwebhook_attempts"
 
@@ -59,6 +66,10 @@ class _Statements:
         )
 
     @property
+    def failures(self) -> str:
+        return failures_query(self.table, "?")
+
+    @property
     def purge(self) -> str:
         return f"DELETE FROM {self.table} WHERE at < ? RETURNING id"  # noqa: S608
 
@@ -74,6 +85,12 @@ class SqliteDeliveryLedger:
     def attempts_of(self, message_id: str, endpoint_id: str) -> list[AttemptRecord]:
         """Los intentos de un mensaje hacia un destino, en el orden en que se registraron."""
         return [_record(row) for row in self._client.query(self._sql.attempts_of, (message_id, endpoint_id))]
+
+    def failures_of(self, endpoint_id: str, since: int) -> FailureSummary:
+        """El resumen de fallos de un destino desde `since` (sección 8.5)."""
+        return failure_summary(
+            self._client.query(self._sql.failures, (endpoint_id, since, endpoint_id, since))
+        )
 
     def purge_before(self, at: int) -> int:
         """Borra los intentos que empezaron antes de `at` y devuelve cuántos eran."""

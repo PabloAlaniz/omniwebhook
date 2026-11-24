@@ -11,10 +11,12 @@ from typing import Final, Protocol
 
 from omniwebhook.application.ports import (
     AsyncEndpointDirectory,
+    AsyncEndpointFailureSource,
     AsyncOutbox,
     AttemptRecord,
     Clock,
     EndpointDirectory,
+    EndpointFailureSource,
     Outbox,
     OutboxClaimRequest,
     OutboxEntry,
@@ -24,6 +26,7 @@ from omniwebhook.application.ports import (
     TokenGenerator,
 )
 from omniwebhook.application.send_webhook import Delivery, Endpoint
+from omniwebhook.domain.endpoint_health import EndpointHealth, FailureSummary, HealthPolicy, endpoint_health
 from omniwebhook.domain.errors import positive_integer
 
 DEFAULT_DISPATCH_LIMIT: Final = 10
@@ -64,20 +67,51 @@ class DispatchFailure:
     error: Exception
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DisabledEndpoint:
+    """Un destino que conviene deshabilitar. El paquete no lo hace: avisa."""
+
+    endpoint_id: str
+    health: EndpointHealth
+    summary: FailureSummary
+
+
 @dataclass(frozen=True, slots=True)
 class DispatchResult:
     dispatched: Sequence[Dispatched] = field(default_factory=tuple)
     failures: Sequence[DispatchFailure] = field(default_factory=tuple)
+    disabled: Sequence[DisabledEndpoint] = field(default_factory=tuple)
+    """Los destinos que quedaron para deshabilitar, una vez cada uno. Vacío sin `health`."""
 
 
 class _Dispatching:
     """Lo que comparten las dos variantes: todo menos la entrada/salida."""
 
-    def __init__(self, *, clock: Clock, tokens: TokenGenerator, limit: int, lease_seconds: int) -> None:
+    def __init__(
+        self,
+        *,
+        clock: Clock,
+        tokens: TokenGenerator,
+        limit: int,
+        lease_seconds: int,
+        health_policy: HealthPolicy | None,
+    ) -> None:
         self._clock = clock
         self._tokens = tokens
         self._limit = positive_integer("limit", limit)
         self._lease_seconds = positive_integer("lease_seconds", lease_seconds)
+        self._health_policy = health_policy or HealthPolicy()
+
+    @staticmethod
+    def _assessable(entry: OutboxEntry, record: AttemptRecord, disabled: dict[str, DisabledEndpoint]) -> bool:
+        """Si hay que mirar la salud del destino: el intento falló y todavía no se lo anotó."""
+        return record.delivery_class != "delivered" and entry.endpoint_id not in disabled
+
+    def _note(self, endpoint_id: str, summary: FailureSummary, disabled: dict[str, DisabledEndpoint]) -> None:
+        """Anota el destino si, después de este intento, quedó para deshabilitar."""
+        health = endpoint_health(summary, self._clock.now(), self._health_policy)
+        if health.status == "disabled":
+            disabled[endpoint_id] = DisabledEndpoint(endpoint_id=endpoint_id, health=health, summary=summary)
 
     def _claim(self, token: str) -> OutboxClaimRequest:
         return OutboxClaimRequest(
@@ -139,30 +173,41 @@ class DispatchDue(_Dispatching):
         tokens: TokenGenerator,
         limit: int = DEFAULT_DISPATCH_LIMIT,
         lease_seconds: int = DEFAULT_DISPATCH_LEASE_SECONDS,
+        health: EndpointFailureSource | None = None,
+        health_policy: HealthPolicy | None = None,
     ) -> None:
-        super().__init__(clock=clock, tokens=tokens, limit=limit, lease_seconds=lease_seconds)
+        super().__init__(
+            clock=clock, tokens=tokens, limit=limit, lease_seconds=lease_seconds, health_policy=health_policy
+        )
         self._outbox = outbox
         self._endpoints = endpoints
         self._sender = sender
+        self._health = health
 
     def execute(self) -> DispatchResult:
         token = self._tokens.next()
         dispatched: list[Dispatched] = []
         failures: list[DispatchFailure] = []
+        disabled: dict[str, DisabledEndpoint] = {}
         for entry in self._outbox.claim(self._claim(token)):
             try:
-                dispatched.append(self._dispatch(entry, token))
+                dispatched.append(self._dispatch(entry, token, disabled))
             except Exception as error:
                 # No se cierra: la entrada vuelve a salir cuando venza la toma.
                 failures.append(self._failed(entry, error))
-        return DispatchResult(tuple(dispatched), tuple(failures))
+        return DispatchResult(tuple(dispatched), tuple(failures), tuple(disabled.values()))
 
-    def _dispatch(self, entry: OutboxEntry, token: str) -> Dispatched:
+    def _dispatch(self, entry: OutboxEntry, token: str, disabled: dict[str, DisabledEndpoint]) -> Dispatched:
         endpoint = self._endpoints.resolve(entry.endpoint_id)
         if endpoint is None:
             return self._done(entry, "cancelled", self._outbox.settle(self._cancel(entry, token)))
         record = self._sender.execute(self._delivery(entry, endpoint))
-        return self._done(entry, record.state, self._outbox.settle(self._close(entry, token, record)))
+        settled = self._outbox.settle(self._close(entry, token, record))
+        # Después de cerrar: si esto falla, la entrega ya quedó como corresponde.
+        if self._health is not None and self._assessable(entry, record, disabled):
+            summary = self._health.failures_of(entry.endpoint_id, endpoint.enabled_at)
+            self._note(entry.endpoint_id, summary, disabled)
+        return self._done(entry, record.state, settled)
 
 
 class AsyncDispatchDue(_Dispatching):
@@ -178,26 +223,38 @@ class AsyncDispatchDue(_Dispatching):
         tokens: TokenGenerator,
         limit: int = DEFAULT_DISPATCH_LIMIT,
         lease_seconds: int = DEFAULT_DISPATCH_LEASE_SECONDS,
+        health: AsyncEndpointFailureSource | None = None,
+        health_policy: HealthPolicy | None = None,
     ) -> None:
-        super().__init__(clock=clock, tokens=tokens, limit=limit, lease_seconds=lease_seconds)
+        super().__init__(
+            clock=clock, tokens=tokens, limit=limit, lease_seconds=lease_seconds, health_policy=health_policy
+        )
         self._outbox = outbox
         self._endpoints = endpoints
         self._sender = sender
+        self._health = health
 
     async def execute(self) -> DispatchResult:
         token = self._tokens.next()
         dispatched: list[Dispatched] = []
         failures: list[DispatchFailure] = []
+        disabled: dict[str, DisabledEndpoint] = {}
         for entry in await self._outbox.claim(self._claim(token)):
             try:
-                dispatched.append(await self._dispatch(entry, token))
+                dispatched.append(await self._dispatch(entry, token, disabled))
             except Exception as error:
                 failures.append(self._failed(entry, error))
-        return DispatchResult(tuple(dispatched), tuple(failures))
+        return DispatchResult(tuple(dispatched), tuple(failures), tuple(disabled.values()))
 
-    async def _dispatch(self, entry: OutboxEntry, token: str) -> Dispatched:
+    async def _dispatch(
+        self, entry: OutboxEntry, token: str, disabled: dict[str, DisabledEndpoint]
+    ) -> Dispatched:
         endpoint = await self._endpoints.resolve(entry.endpoint_id)
         if endpoint is None:
             return self._done(entry, "cancelled", await self._outbox.settle(self._cancel(entry, token)))
         record = await self._sender.execute(self._delivery(entry, endpoint))
-        return self._done(entry, record.state, await self._outbox.settle(self._close(entry, token, record)))
+        settled = await self._outbox.settle(self._close(entry, token, record))
+        if self._health is not None and self._assessable(entry, record, disabled):
+            summary = await self._health.failures_of(entry.endpoint_id, endpoint.enabled_at)
+            self._note(entry.endpoint_id, summary, disabled)
+        return self._done(entry, record.state, settled)

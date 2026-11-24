@@ -15,6 +15,8 @@ from omniwebhook.postgres import (
     PsycopgClient,
     postgres_ledger_schema,
 )
+from tests.support.salud import CASOS_DE_SALUD, intentos_mezclados, resumen_esperado
+from tests.support.vectors import Caso, nombre
 
 pytestmark = pytest.mark.integration
 TABLA = "omniwebhook_attempts_test_py"
@@ -122,3 +124,26 @@ def test_con_esquema_los_indices_van_sin_esquema_en_el_nombre() -> None:
 
     assert "CREATE TABLE IF NOT EXISTS public.intentos" in sql
     assert "intentos_message_idx ON public.intentos" in sql
+
+
+@pytest.mark.parametrize("caso", CASOS_DE_SALUD, ids=nombre)
+def test_el_resumen_de_fallos_de_un_destino(pool: ConnectionPool, caso: Caso) -> None:
+    with pool.connection() as conexion:
+        conexion.execute(f"TRUNCATE {TABLA} RESTART IDENTITY")
+    registro = PostgresDeliveryLedger(PsycopgClient(pool.connection), table=TABLA)
+    for registrado in intentos_mezclados(caso):
+        registro.record(registrado)
+
+    assert registro.failures_of("ep_1", caso["since"]) == resumen_esperado(caso)
+
+
+async def test_el_resumen_de_fallos_asincronico(pool: ConnectionPool) -> None:
+    caso = next(caso for caso in CASOS_DE_SALUD if caso["name"] == "un 410 pesa más que la racha")
+    with pool.connection() as conexion:
+        conexion.execute(f"TRUNCATE {TABLA} RESTART IDENTITY")
+    async with AsyncConnectionPool(_url(), min_size=1, max_size=2) as abierto:
+        registro = AsyncPostgresDeliveryLedger(AsyncPsycopgClient(abierto.connection), table=TABLA)
+        for registrado in intentos_mezclados(caso):
+            await registro.record(registrado)
+
+        assert await registro.failures_of("ep_1", caso["since"]) == resumen_esperado(caso)

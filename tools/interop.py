@@ -506,6 +506,28 @@ def differential_domain(agents: list[Agent], report: Report, rng: random.Random,
     for case in cases("recibir/respuesta-http"):
         both(agents, report, f"estado HTTP de {case['outcome']}", "status", {"outcome": case["outcome"]})
 
+    for case in cases("entregar/salud"):
+        data = {key: case[key] for key in ("attempts", "since", "now", "policy") if key in case}
+        got = both(agents, report, f"salud: {case['name']}", "health", data)
+        report.expect(f"salud: {case['name']}", got, case["expected"])
+    classes = ["delivered", "retryable", "rejected", "blocked", "gone"]
+    for number in range(rounds * 20):
+        start = 1_700_000_000 - rng.randrange(0, 10 * 86_400)
+        attempts = [
+            {"at": start + rng.randrange(0, 8 * 86_400), "delivery_class": rng.choice(classes)}
+            for _ in range(rng.randrange(0, 12))
+        ]
+        data = {
+            "attempts": attempts,
+            "since": rng.choice([0, start, start + 86_400]),
+            "now": 1_700_000_000,
+            "policy": {
+                "window_seconds": rng.choice([60, 86_400, 432_000]),
+                "min_failures": rng.randrange(1, 8),
+            },
+        }
+        both(agents, report, f"salud al azar {number}", "health", data)
+
     now = 1_700_000_000
     retry_after = [
         None,

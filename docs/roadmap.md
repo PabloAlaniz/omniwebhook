@@ -165,17 +165,18 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 - **Hecho. Despacho de una tanda.** `DispatchDue` toma lo pendiente que ya venció, hace un
   intento por entrega y la cierra con el resultado. No trae bucle ni planificador. Ver la
   [decisión 0009](adr/0009-bandeja-de-salida.md). **Pendiente:** bandeja sobre SQLite.
-- **Orden y concurrencia por destino.** Un tope de entregas simultáneas por destino, para no
-  tumbar a un receptor lento.
+- **Pendiente. Orden y concurrencia por destino.** Un tope de entregas simultáneas por destino,
+  para no tumbar a un receptor lento.
 
 ### Salud de los destinos
 
-- **Deshabilitación automática.** La especificación define cuándo un destino se considera caído
-  (fallos consecutivos durante una ventana, o un `gone`) y el despachador deja de intentar. El
-  paquete calcula el estado a partir del registro; avisarle al dueño del destino sigue siendo de
-  quien integra, y queda un punto de extensión para hacerlo.
-- **Rehabilitación y reenvío.** Reactivar un destino y reenviar lo que falló mientras estuvo
-  caído, por rango de tiempo, con el mismo `id` de mensaje.
+- **Hecho. Deshabilitación automática.** La especificación define cuándo un destino se considera
+  caído: un 410, o suficientes fallos seguidos durante toda una ventana. El paquete lo calcula
+  del registro de entregas y lo informa en el resultado de cada tanda; guardar ese estado y
+  avisarle al dueño del destino sigue siendo de quien integra.
+- **Hecho. Rehabilitación y reenvío.** La salud cuenta desde el momento de la rehabilitación, y
+  la bandeja reenvía por rango de tiempo lo que se cerró sin entregar, con el mismo `id` de
+  mensaje.
 
 ### Suscripciones
 

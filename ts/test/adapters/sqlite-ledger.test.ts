@@ -7,6 +7,7 @@ import {
   sqliteClient,
   sqliteLedgerSchema,
 } from '../../src/index';
+import { expectedSummary, healthCases, recordOf } from '../support/health';
 
 const PENDING: AttemptRecord = {
   messageId: 'msg_1',
@@ -81,4 +82,19 @@ describe('SqliteDeliveryLedger', () => {
       expect(() => sqliteLedgerSchema(table)).toThrow(ConfigurationError);
     },
   );
+});
+
+describe('SqliteDeliveryLedger: resumen de fallos de un destino', () => {
+  it.each(healthCases.map((c) => [c.name, c] as const))('%s', async (_name, c) => {
+    const db = new DatabaseSync(':memory:');
+    db.exec(sqliteLedgerSchema());
+    const ledger = new SqliteDeliveryLedger(sqliteClient(db));
+    for (const [index, attempt] of c.attempts.entries()) {
+      // Otro destino en el medio, que no tiene que contar.
+      await ledger.record(recordOf('ep_otro', index, { at: attempt.at, delivery_class: 'gone' }));
+      await ledger.record(recordOf('ep_1', index, attempt));
+    }
+
+    expect(await ledger.failuresOf('ep_1', c.since)).toEqual(expectedSummary(c));
+  });
 });

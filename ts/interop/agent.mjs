@@ -11,6 +11,7 @@ import {
   creemScheme,
   evaluateDestination,
   discordScheme,
+  endpointHealth,
   githubScheme,
   hmacBodyScheme,
   httpStatusFor,
@@ -33,6 +34,7 @@ import {
   shopifyScheme,
   slackScheme,
   stripeScheme,
+  summarizeFailures,
   tiktokScheme,
 } from '../dist/index.js';
 import { standardPublicKeyScheme, standardScheme, standardSigner } from '../dist/standard.js';
@@ -168,6 +170,21 @@ const commands = {
   async classify({ status, failure }) {
     return { class: classifyDelivery(status === null ? { failure } : { status }) };
   },
+  async health({ attempts, since, now, policy }) {
+    const summary = summarizeFailures(
+      attempts.map((a) => ({ at: a.at, deliveryClass: a.delivery_class })),
+      since,
+    );
+    const health = endpointHealth(
+      summary,
+      now,
+      policy ? { windowSeconds: policy.window_seconds, minFailures: policy.min_failures } : {},
+    );
+    return {
+      summary: { failures: summary.failures, failing_since: summary.failingSince, gone: summary.gone },
+      health,
+    };
+  },
   async status({ outcome }) {
     return { status: httpStatusFor(outcome) };
   },
@@ -266,6 +283,16 @@ const commands = {
           payload: new TextDecoder().decode(entry.payload),
           attempt: entry.attempt,
         })),
+      };
+    }
+    if (step.op === 'requeue') {
+      return {
+        result: await outbox.requeue({
+          endpointId: step.endpoint_id,
+          from: step.from,
+          to: step.to,
+          now: step.now,
+        }),
       };
     }
     const pair = { messageId: step.message_id, endpointId: step.endpoint_id, token: step.token };

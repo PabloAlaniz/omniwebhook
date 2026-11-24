@@ -1,6 +1,14 @@
-import type { AttemptRecord, DeliveryLedger } from '../../application/ports';
+import type { AttemptRecord, DeliveryLedger, EndpointFailureSource } from '../../application/ports';
+import type { FailureSummary } from '../../domain/endpoint-health';
 import { checkedTable, type SqlClient } from '../stores/postgres';
-import { attemptParams, LEDGER_COLUMNS as COLUMNS, type LedgerRow, toAttemptRecord } from './rows';
+import {
+  attemptParams,
+  LEDGER_COLUMNS as COLUMNS,
+  failuresQuery,
+  type LedgerRow,
+  toAttemptRecord,
+  toFailureSummary,
+} from './rows';
 
 export interface PostgresLedgerOptions {
   /** La tabla de intentos, con esquema opcional. Por defecto, `omniwebhook_attempts`. */
@@ -42,7 +50,7 @@ CREATE INDEX IF NOT EXISTS ${bare}_endpoint_idx ON ${name} (endpoint_id, at)`;
  * Registro de entregas sobre PostgreSQL. Cada intento es una fila; la tabla es la misma que
  * usa el paquete de Python.
  */
-export class PostgresDeliveryLedger implements DeliveryLedger {
+export class PostgresDeliveryLedger implements DeliveryLedger, EndpointFailureSource {
   private readonly table: string;
 
   constructor(
@@ -66,6 +74,15 @@ export class PostgresDeliveryLedger implements DeliveryLedger {
       [messageId, endpointId],
     );
     return result.rows.map((row) => toAttemptRecord(row as LedgerRow));
+  }
+
+  /** El resumen de fallos de un destino desde `since` (sección 8.5). */
+  async failuresOf(endpointId: string, since: number): Promise<FailureSummary> {
+    const result = await this.client.query(failuresQuery(this.table, ['$1', '$1'], ['$2', '$2']), [
+      endpointId,
+      since,
+    ]);
+    return toFailureSummary(result.rows[0]);
   }
 
   /** Borra los intentos que empezaron antes de `at` y devuelve cuántos eran. */
