@@ -11,6 +11,8 @@ import {
   isBlockedAddress,
   mercadoPagoScheme,
   nextAttempt,
+  shopifyScheme,
+  slackScheme,
   stripeScheme,
   tiktokScheme,
   type Verifier,
@@ -32,6 +34,8 @@ const SCHEMES: ReadonlyArray<readonly [string, Verifier]> = [
   ['mercadopago', mercadoPagoScheme({ secrets: ['secreto-sintetico'], clock })],
   ['github', githubScheme({ secrets: ['secreto-sintetico'] })],
   ['creem', creemScheme({ secrets: ['secreto-sintetico'] })],
+  ['slack', slackScheme({ secrets: ['secreto-sintetico'], clock })],
+  ['shopify', shopifyScheme({ secrets: ['secreto-sintetico'] })],
   ['hmac-body', hmacBodyScheme({ secrets: ['secreto-sintetico'], header: 'x-firma' })],
 ];
 
@@ -46,6 +50,10 @@ const KNOWN_NAMES = [
   'x-request-id',
   'x-hub-signature-256',
   'creem-signature',
+  'x-slack-signature',
+  'x-slack-request-timestamp',
+  'x-shopify-hmac-sha256',
+  'x-shopify-webhook-id',
   'x-firma',
   'data.id',
 ];

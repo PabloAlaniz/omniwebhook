@@ -13,6 +13,8 @@ from omniwebhook import (
     github_scheme,
     hmac_body_scheme,
     mercadopago_scheme,
+    shopify_scheme,
+    slack_scheme,
     stripe_scheme,
     tiktok_scheme,
 )
@@ -51,6 +53,8 @@ ESQUEMAS: dict[str, tuple[str, Fabrica]] = {
     ),
     "github": ("github", lambda c, _reloj: github_scheme(secrets=c["secrets"])),
     "creem": ("creem", lambda c, _reloj: creem_scheme(secrets=c["secrets"])),
+    "shopify": ("shopify", lambda c, _reloj: shopify_scheme(secrets=c["secrets"])),
+    "slack": ("slack", lambda c, reloj: slack_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c))),
     "hmac-body": ("hmac-body", lambda c, _reloj: hmac_body_scheme(secrets=c["secrets"], **c["options"])),
 }
 

@@ -1,0 +1,595 @@
+{
+ "spec": "0",
+ "id": "verificar/slack",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:Ev0SINTETICO1",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo de formulario: la clave es la huella",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=5139c0c95b0ef081b691a1e8b0ae68e5359301142f42797cc080f662ef27e4b1"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "token=sintetico&command=%2Fpedido&trigger_id=1.2.abc"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:sha256:93165f460eca78d7673402b8d329a485cf7091974d153d9c1f97bb8946e67aeb",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo sin event_id: la clave es la huella",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=41b26b8e921f260422fd8585432a7a52ca6e0518625b5b14ff01edf4c01174a0"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"url_verification\",\"challenge\":\"sintetico\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:sha256:636021894be015f155a1ed08f90b716ce831343e6b88b03b463c87563c19141c",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "firma en mayúsculas",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-slack-signature",
+      "v0=20621BF8976672B1AC6C082D20294FED93BD2ADC15409C096155659EB3212C0D"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:Ev0SINTETICO1",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "nombres de cabecera en mayúsculas",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "X-SLACK-SIGNATURE",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "X-SLACK-REQUEST-TIMESTAMP",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:Ev0SINTETICO1",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-dos",
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:Ev0SINTETICO1",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "en el borde de la tolerancia",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=98484a12ba2a039ee70b3c4012f705946125f5b5f68cdbee1eb0a1b0be471fab"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1699999700"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "slack:Ev0SINTETICO1",
+    "timestamp": 1699999700
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "slack",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la firma",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "falta la marca de tiempo",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "firma repetida",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo repetida",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "falta la marca de tiempo y la firma está repetida",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "sin el prefijo de versión",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-slack-signature",
+      "20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "otra versión de firma",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v1=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "el prefijo de versión distingue mayúsculas",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "V0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo con letras",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "ayer"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo demasiado larga",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "111111111111"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otro secreto",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=5db3e92f5532830a2adc86d65fcc866077d4f5aa58b36b6974b2de385a35055f"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}\n"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "marca de tiempo cambiada después de firmar",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=20621bf8976672b1ac6c082d20294fed93bd2adc15409c096155659eb3212c0d"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1699999999"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un segundo después de la tolerancia",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=3e6a08e432a502bf43b676da229271c9d2513922bdd6b1a7569c4b7e3a6b10fd"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1699999699"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "del futuro",
+   "scheme": "slack",
+   "secrets": [
+    "secreto-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-slack-signature",
+      "v0=0eb5a99fe9ae69603fcfea14b13740ac618012e3df93e9fec860e222fe9eff18"
+     ],
+     [
+      "x-slack-request-timestamp",
+      "1700000301"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"event_callback\",\"event_id\":\"Ev0SINTETICO1\",\"event\":{\"type\":\"app_mention\"}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  }
+ ]
+}

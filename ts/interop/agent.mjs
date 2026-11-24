@@ -27,6 +27,8 @@ import {
   sqliteClient,
   sqliteLedgerSchema,
   sqliteStoreSchema,
+  shopifyScheme,
+  slackScheme,
   stripeScheme,
   tiktokScheme,
 } from '../dist/index.js';
@@ -48,6 +50,8 @@ function verifier({ scheme, secrets, now, options = {} }) {
   if (scheme === 'mercadopago') return mercadoPagoScheme(timed);
   if (scheme === 'github') return githubScheme({ secrets });
   if (scheme === 'creem') return creemScheme({ secrets });
+  if (scheme === 'shopify') return shopifyScheme({ secrets });
+  if (scheme === 'slack') return slackScheme(timed);
   if (scheme === 'hmac-body') {
     return hmacBodyScheme(
       defined([

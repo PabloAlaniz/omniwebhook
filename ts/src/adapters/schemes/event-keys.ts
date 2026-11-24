@@ -7,15 +7,15 @@ export async function bodyFingerprint(scheme: string, body: Uint8Array): Promise
 }
 
 /**
- * La clave de un evento cuyo identificador viaja en el campo `id` del cuerpo. Si el
- * cuerpo no es un objeto JSON con un `id` de texto no vacío, se usa la huella.
+ * La clave de un evento cuyo identificador viaja en un campo del cuerpo, `id` si no se indica
+ * otro. Si el cuerpo no es un objeto JSON con ese campo como texto no vacío, se usa la huella.
  */
-export async function jsonIdKey(scheme: string, body: Uint8Array): Promise<string> {
-  const id = jsonId(body);
+export async function jsonIdKey(scheme: string, body: Uint8Array, field = 'id'): Promise<string> {
+  const id = jsonId(body, field);
   return id === null ? bodyFingerprint(scheme, body) : eventKey(scheme, id);
 }
 
-function jsonId(body: Uint8Array): string | null {
+function jsonId(body: Uint8Array, field: string): string | null {
   let data: unknown;
   try {
     // Con `ignoreBOM` la marca de orden de bytes queda en el texto y deja de ser JSON.
@@ -24,6 +24,7 @@ function jsonId(body: Uint8Array): string | null {
     return null;
   }
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return null;
-  const id = (data as Record<string, unknown>).id;
+  if (!Object.hasOwn(data, field)) return null;
+  const id = (data as Record<string, unknown>)[field];
   return typeof id === 'string' && id !== '' ? id : null;
 }

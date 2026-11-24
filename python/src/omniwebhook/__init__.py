@@ -7,6 +7,8 @@ from omniwebhook.adapters.schemes.creem import creem_scheme
 from omniwebhook.adapters.schemes.github import github_scheme
 from omniwebhook.adapters.schemes.hmac_body import hmac_body_scheme
 from omniwebhook.adapters.schemes.mercadopago import mercadopago_scheme
+from omniwebhook.adapters.schemes.shopify import shopify_scheme
+from omniwebhook.adapters.schemes.slack import slack_scheme
 from omniwebhook.adapters.schemes.stripe import stripe_scheme
 from omniwebhook.adapters.schemes.tiktok import tiktok_scheme
 from omniwebhook.adapters.stores.memory import AsyncMemoryIdempotencyStore, MemoryIdempotencyStore
@@ -194,6 +196,8 @@ __all__ = [
     "next_attempt",
     "random_message_id",
     "random_tokens",
+    "shopify_scheme",
+    "slack_scheme",
     "stripe_scheme",
     "system_clock",
     "tiktok_scheme",
