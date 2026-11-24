@@ -5,7 +5,9 @@ from typing import Final, Literal
 
 from omniwebhook.domain.verification import Rejection
 
-ReceptionOutcome = Literal["ok", "duplicate", "in_progress", "failed", "too_large"] | Rejection
+ReceptionOutcome = (
+    Literal["ok", "duplicate", "in_progress", "failed", "too_large", "unprocessable"] | Rejection
+)
 
 DEFAULT_MAX_BODY_BYTES: Final = 1_048_576
 """El tamaño máximo del cuerpo de un pedido, en bytes, si no se indica otro (sección 6.2)."""
@@ -20,6 +22,7 @@ _STATUS: Final[Mapping[str, int]] = {
     "invalid": 401,
     "stale": 401,
     "too_large": 413,
+    "unprocessable": 422,
     "unconfigured": 500,
     "failed": 500,
 }

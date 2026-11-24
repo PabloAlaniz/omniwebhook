@@ -4,8 +4,10 @@ Si el procesamiento falla, la reserva se libera para que el reintento del emisor
 """
 
 import contextlib
+import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
+from typing import Any, NoReturn
 
 from omniwebhook.application.ports import (
     AsyncIdempotencyStore,
@@ -33,6 +35,8 @@ class VerifiedEvent:
     event_key: str
     timestamp: int | None
     request: IncomingRequest
+    payload: Any = None
+    """Lo que devolvió el validador de payload; `None` si no se configuró uno."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,13 +47,33 @@ class Reception:
     event_key: str | None = None
     """La clave del evento; `None` si el pedido no pasó la verificación."""
     error: Exception | None = None
-    """El error del procesamiento, cuando el resultado es `failed`."""
+    """El error del procesamiento, cuando el resultado es `failed`, o el del validador de
+    payload, cuando es `unprocessable`."""
 
 
 EventHandler = Callable[[VerifiedEvent], object]
 AsyncEventHandler = Callable[[VerifiedEvent], Awaitable[object]]
 EventKeyOverride = Callable[[VerifiedEvent], str]
 """Reemplaza la clave del evento por una propia, calculada del pedido ya verificado."""
+PayloadValidator = Callable[[Any], Any]
+"""Valida el payload de un evento ya verificado (sección 6.2).
+
+Recibe el cuerpo interpretado como JSON y devuelve el valor con el que trabaja la función que
+procesa el evento; si el payload no sirve, lanza. Sirve tal cual el validador de cualquier
+librería de modelos, como `Modelo.model_validate`.
+"""
+
+
+def _not_json(constant: str) -> NoReturn:
+    raise ValueError(f"{constant} no es JSON")
+
+
+def _parse_json(body: bytes) -> Any:
+    """Interpreta el cuerpo como JSON estricto en UTF-8. Si no lo es, lanza `ValueError`."""
+    try:
+        return json.loads(body.decode("utf-8"), parse_constant=_not_json)
+    except (ValueError, RecursionError) as error:
+        raise ValueError("el cuerpo no es JSON") from error
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +117,7 @@ class _Receiving:
         event_key: EventKeyOverride | None = None,
         observer: ReceptionObserver | None = None,
         timer: Timer | None = None,
+        payload: PayloadValidator | None = None,
     ) -> None:
         self._verifier = verifier
         self._clock = clock
@@ -105,6 +130,7 @@ class _Receiving:
             raise ConfigurationError("observer necesita timer para medir la duración")
         self._observer = observer
         self._timer = timer
+        self._payload = payload
 
     def _started(self) -> int | None:
         """Cuándo empezó la recepción; `None` si nadie la observa."""
@@ -136,6 +162,14 @@ class _Receiving:
         event = VerifiedEvent(verification.event_key, verification.timestamp, request)
         if self._event_key is not None:
             event = replace(event, event_key=self._event_key(event))
+
+        # Después de verificar, porque un cuerpo sin autenticar no se interpreta; antes de
+        # reservar, porque un payload inválido no tiene nada que escribir en el almacén.
+        if self._payload is not None:
+            try:
+                event = replace(event, payload=self._payload(_parse_json(request.body)))
+            except Exception as error:
+                return Reception(outcome="unprocessable", event_key=event.event_key, error=error)
         return _Reservation(event, self._tokens.next(), self._lease_seconds, self._retention_seconds)
 
 
@@ -155,6 +189,7 @@ class ReceiveWebhook(_Receiving):
         event_key: EventKeyOverride | None = None,
         observer: ReceptionObserver | None = None,
         timer: Timer | None = None,
+        payload: PayloadValidator | None = None,
     ) -> None:
         super().__init__(
             verifier=verifier,
@@ -166,6 +201,7 @@ class ReceiveWebhook(_Receiving):
             event_key=event_key,
             observer=observer,
             timer=timer,
+            payload=payload,
         )
         self._store = store
 
@@ -212,6 +248,7 @@ class AsyncReceiveWebhook(_Receiving):
         event_key: EventKeyOverride | None = None,
         observer: ReceptionObserver | None = None,
         timer: Timer | None = None,
+        payload: PayloadValidator | None = None,
     ) -> None:
         super().__init__(
             verifier=verifier,
@@ -223,6 +260,7 @@ class AsyncReceiveWebhook(_Receiving):
             event_key=event_key,
             observer=observer,
             timer=timer,
+            payload=payload,
         )
         self._store = store
 

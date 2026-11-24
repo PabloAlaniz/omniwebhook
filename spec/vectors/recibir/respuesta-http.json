@@ -79,6 +79,13 @@
    "expected": {
     "status": 413
    }
+  },
+  {
+   "name": "unprocessable",
+   "outcome": "unprocessable",
+   "expected": {
+    "status": 422
+   }
   }
  ]
 }

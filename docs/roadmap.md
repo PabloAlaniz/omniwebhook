@@ -132,10 +132,10 @@ aparte, sin dependencia obligatoria.
 
 ### Lo que pasa después de verificar
 
-- **Pendiente. Validación opcional del payload.** El evento verificado acepta un validador que cumpla la
-  interfaz común de esquemas de cada ecosistema, sin atarse a una librería. Un payload que no
-  valida es un resultado propio, distinto de `failed`, y no libera la reserva: reintentar no lo
-  va a arreglar.
+- **Hecho. Validación opcional del payload.** El receptor acepta un validador: en TypeScript, un
+  esquema con la interfaz común de las librerías de esquemas; en Python, una función que devuelve
+  el valor o lanza. Un payload que no valida es un resultado propio, `unprocessable`. Se valida
+  después de verificar y antes de reservar, así que no escribe en el almacén.
 - **Hecho. Puerto de observación** de la recepción: quien integra recibe cada resultado con su
   duración y la clave del evento, sin secretos ni cuerpos. Es la base de la telemetría del
   sprint 3. Para la emisión no hizo falta: el registro de entregas ya recibe cada intento.

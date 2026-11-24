@@ -80,6 +80,7 @@ lo procesó antes. Todo lo demás termina en un resultado con su estado HTTP sug
 | `in_progress` | 409 | Otro proceso lo está procesando |
 | `missing`, `ambiguous`, `malformed`, `invalid`, `stale` | 401 | No se pudo comprobar el origen |
 | `too_large` | 413 | El cuerpo supera el tamaño máximo |
+| `unprocessable` | 422 | La firma es válida pero el payload no tiene la forma esperada |
 | `unconfigured` | 500 | Falta un secreto utilizable |
 | `failed` | 500 | Falló el procesamiento y la reserva quedó libre |
 

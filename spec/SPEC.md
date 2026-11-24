@@ -349,13 +349,25 @@ Dado un pedido, un esquema, un almacén y una función que procesa el evento:
 1. Si el cuerpo tiene más de `max_body_bytes` bytes, devolver `too_large` y terminar.
 2. Verificar con el esquema. Si el resultado no es `ok`, devolverlo y terminar.
 3. Determinar la clave del evento.
-4. `claim`. Si devuelve `duplicate` o `in_progress`, devolver ese resultado y terminar.
-5. Ejecutar la función que procesa el evento.
-6. Si termina bien: `complete` y devolver `ok`.
-7. Si falla: `release` y devolver `failed` con el error adjunto.
+4. Si hay un validador de payload: interpretar el cuerpo como JSON y pasárselo. Si el cuerpo no
+   es JSON o el validador lo rechaza, devolver `unprocessable` y terminar.
+5. `claim`. Si devuelve `duplicate` o `in_progress`, devolver ese resultado y terminar.
+6. Ejecutar la función que procesa el evento.
+7. Si termina bien: `complete` y devolver `ok`.
+8. Si falla: `release` y devolver `failed` con el error adjunto.
 
-La función que procesa el evento NO DEBE ejecutarse si el paso 2 no dio `ok` o el paso 4 no dio
-`claimed`.
+La función que procesa el evento NO DEBE ejecutarse si el paso 2 no dio `ok`, el paso 4 dio
+`unprocessable` o el paso 5 no dio `claimed`.
+
+El validador de payload es opcional. Recibe el cuerpo ya interpretado y lo acepta, devolviendo el
+valor con el que trabaja la función que procesa el evento, o lo rechaza.
+
+- El payload se valida después de verificar: un cuerpo sin autenticar no se interpreta.
+- Se valida antes de reservar: un payload inválido no escribe en el almacén. No hay nada que
+  liberar, y si el emisor reintenta, el reintento vuelve a dar `unprocessable`.
+- El cuerpo se interpreta como JSON estricto en UTF-8, con las mismas reglas que el campo `id` de
+  la sección 5.2: con una marca de orden de bytes, con `NaN` o `Infinity`, o vacío, no es JSON.
+- `unprocessable` trae la clave del evento y el motivo del rechazo, para registrarlo.
 
 `max_body_bytes` es `1048576` por defecto (1 MiB) y DEBE ser un entero mayor que cero. El tamaño
 se comprueba antes que cualquier otra cosa, incluidos los secretos: calcular una firma sobre un
@@ -374,6 +386,7 @@ o menor.
 | `in_progress` | 409 | Otro proceso lo está procesando: conviene que el emisor reintente |
 | `missing`, `ambiguous`, `malformed`, `invalid`, `stale` | 401 | No se pudo comprobar el origen |
 | `too_large` | 413 | El cuerpo supera el máximo: reintentar no lo va a arreglar |
+| `unprocessable` | 422 | La firma es válida pero el payload no tiene la forma esperada: reintentar no lo va a arreglar |
 | `unconfigured` | 500 | Es un problema del receptor: conviene que el emisor reintente |
 | `failed` | 500 | Falló el procesamiento y la reserva quedó libre |
 

@@ -367,8 +367,10 @@ configuralo igual o más bajo.
 le dice a quien llama cuál de las comprobaciones falló. Si armás la respuesta a mano,
 `httpStatusFor(outcome)` (`http_status_for(outcome)`) da el estado.
 
-Tres casos que conviene entender:
+Cuatro casos que conviene entender:
 
+- **`unprocessable` responde 422.** La firma era válida pero el payload no pasó tu validador.
+  Reintentar no lo arregla; lo que conviene es registrar el motivo.
 - **`too_large` responde 413.** No es un problema de origen sino de tamaño, y reintentar no lo
   arregla: la mayoría de los emisores deja de intentar ante un 4xx.
 - **`duplicate` responde 200.** El evento ya se procesó; un error haría que el emisor siga
@@ -380,6 +382,48 @@ Tres casos que conviene entender:
 const reception = await receive.execute(pedido, procesar);
 if (reception.outcome === 'failed') logger.error(reception.error);
 ```
+
+## Validar el payload
+
+Una firma válida dice quién mandó el evento, no que tenga la forma que tu código espera. Con
+`payload` le pasás un validador, y tu función recibe el payload ya validado en lugar de
+interpretar el cuerpo a mano.
+
+En TypeScript sirve tal cual el esquema de cualquier librería que implemente la interfaz común de
+esquemas (la propiedad `~standard`), y el tipo del payload sale de ahí:
+
+```ts
+const receptorDePedidos = createReceiver({
+  verifier: stripeScheme({ secrets: [secreto] }),
+  store,
+  payload: esquemaDePedido, // un esquema de la librería que uses
+});
+
+await receptorDePedidos.execute(pedido, async (event) => {
+  await registrarPago(event.payload); // ya validado y con su tipo
+});
+```
+
+En Python es cualquier función que reciba el cuerpo interpretado y devuelva el valor validado, o
+lance si no sirve. El validador de una librería de modelos se pasa directo:
+
+```python
+receptor_de_pedidos = create_receiver(
+    verifier=stripe_scheme(secrets=[secreto]),
+    store=store,
+    payload=Pedido.model_validate,
+)
+
+def procesar_pedido(event: VerifiedEvent) -> None:
+    registrar_pago(event.payload)  # una instancia de Pedido
+```
+
+Un cuerpo que no es JSON, o que el validador rechaza, termina en `unprocessable`, con estado 422.
+El resultado trae el motivo: `issues` en TypeScript y `error` en Python.
+
+El validador corre después de verificar la firma, así que un cuerpo sin autenticar nunca se
+interpreta, y antes de reservar el evento, así que un payload inválido no escribe nada en el
+almacén. Si el emisor reintenta, el reintento vuelve a dar `unprocessable`.
 
 ## Medir lo que pasa
 

@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   httpStatusFor,
   MemoryIdempotencyStore,
+  type PayloadSchema,
   ReceiveWebhook,
+  type ReceiveWebhookDependencies,
   type ReceptionOutcome,
   type Verifier,
 } from '../../src/index';
@@ -18,6 +20,7 @@ interface ReceiveCase {
   readonly lease_seconds: number;
   readonly retention_seconds: number;
   readonly max_body_bytes: number;
+  readonly payload: 'none' | 'accepts' | 'rejects';
   readonly handler: 'succeeds' | 'fails';
   readonly before: readonly StoreStep[];
   readonly request: RequestVector;
@@ -49,6 +52,16 @@ describe('vectores de recibir/caso-de-uso', () => {
       leaseSeconds: c.lease_seconds,
       retentionSeconds: c.retention_seconds,
       maxBodyBytes: c.max_body_bytes,
+      ...(c.payload === 'none'
+        ? {}
+        : {
+            payload: {
+              '~standard': {
+                validate: (value: unknown) =>
+                  c.payload === 'accepts' ? { value } : { issues: [{ message: 'rechazado' }] },
+              },
+            },
+          }),
     });
 
     const result = await receive.execute(toRequest(c.request), handler);
@@ -162,6 +175,106 @@ describe('ReceiveWebhook', () => {
     ['retentionSeconds', { retentionSeconds: -1 }],
   ])('rechaza un %s inválido al construirse', (_name, overrides) => {
     expect(() => build(overrides)).toThrow(/entero mayor que cero/);
+  });
+
+  describe('con un validador de payload', () => {
+    interface Pedido {
+      readonly tipo: string;
+    }
+    const esquema: PayloadSchema<Pedido> = {
+      '~standard': {
+        validate: async (value) => {
+          const tipo = (value as { tipo?: unknown } | null)?.tipo;
+          return typeof tipo === 'string'
+            ? { value: { tipo } }
+            : { issues: [{ message: 'falta tipo', path: ['tipo'] }] };
+        },
+      },
+    };
+    const conCuerpo = (texto: string) => ({ ...request, body: new TextEncoder().encode(texto) });
+
+    function validated(overrides: Partial<ReceiveWebhookDependencies<Pedido>> = {}) {
+      const store = new MemoryIdempotencyStore();
+      const receive = new ReceiveWebhook<Pedido>({
+        verifier: verified,
+        store,
+        clock,
+        tokens: { next: () => 't-1' },
+        payload: esquema,
+        ...overrides,
+      });
+      return { receive, store };
+    }
+
+    it('le pasa al procesamiento el payload que devolvió el validador', async () => {
+      const { receive } = validated();
+      const tipos: string[] = [];
+
+      const result = await receive.execute(conCuerpo('{"tipo":"pago","de_mas":1}'), (event) => {
+        tipos.push(event.payload.tipo);
+        expect(event.payload).toEqual({ tipo: 'pago' });
+      });
+
+      expect(result).toEqual({ outcome: 'ok', eventKey: 'prueba:1' });
+      expect(tipos).toEqual(['pago']);
+    });
+
+    it('un payload rechazado devuelve el motivo y no toca el almacén', async () => {
+      const claim = vi.fn();
+      const { receive } = validated({ store: { claim, complete: vi.fn(), release: vi.fn() } });
+      const handler = vi.fn();
+
+      const result = await receive.execute(conCuerpo('{"otro":1}'), handler);
+
+      expect(result).toEqual({
+        outcome: 'unprocessable',
+        eventKey: 'prueba:1',
+        issues: [{ message: 'falta tipo', path: ['tipo'] }],
+      });
+      expect(httpStatusFor(result.outcome)).toBe(422);
+      expect(handler).not.toHaveBeenCalled();
+      expect(claim).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['texto suelto', 'no es json'],
+      ['con marca de orden de bytes', '\ufeff{"tipo":"pago"}'],
+      ['vacío', ''],
+    ])('un cuerpo que no es JSON (%s) no llega al validador', async (_what, texto) => {
+      const validate = vi.fn();
+      const { receive } = validated({ payload: { '~standard': { validate } } });
+
+      const result = await receive.execute(conCuerpo(texto), () => {});
+
+      expect(result).toMatchObject({ outcome: 'unprocessable', eventKey: 'prueba:1' });
+      expect(validate).not.toHaveBeenCalled();
+    });
+
+    it('un pedido que no verifica no llega al validador', async () => {
+      const validate = vi.fn();
+      const { receive } = validated({
+        verifier: { verify: async () => ({ outcome: 'invalid' }) },
+        payload: { '~standard': { validate } },
+      });
+
+      expect(await receive.execute(conCuerpo('{"tipo":"pago"}'), () => {})).toEqual({
+        outcome: 'invalid',
+      });
+      expect(validate).not.toHaveBeenCalled();
+    });
+
+    it('el observador ve el rechazo con la clave del evento', async () => {
+      const onReception = vi.fn();
+      const { receive } = validated({ observer: { onReception }, timer: { nowMs: () => 0 } });
+
+      await receive.execute(conCuerpo('{}'), () => {});
+
+      expect(onReception).toHaveBeenCalledWith({
+        outcome: 'unprocessable',
+        eventKey: 'prueba:1',
+        durationMs: 0,
+      });
+    });
   });
 
   describe('con un observador', () => {
