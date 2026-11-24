@@ -323,6 +323,38 @@ const reception = await receive.execute(pedido, procesar);
 if (reception.outcome === 'failed') logger.error(reception.error);
 ```
 
+## Probar tu integración
+
+`omniwebhook/testing` (`omniwebhook.testing`) arma el pedido que mandaría cada emisor, firmado con
+el secreto que le pases, para que tus tests recorran el camino real en lugar de saltear la
+verificación:
+
+```ts
+import { stripeScheme } from 'omniwebhook';
+import { signedRequest, tampered, toFetchRequest } from 'omniwebhook/testing';
+
+const firmado = await signedRequest('stripe', { secret: secreto, body: '{"id":"evt_1"}' });
+
+await stripeScheme({ secrets: [secreto] }).verify(firmado); // ok
+await stripeScheme({ secrets: [secreto] }).verify(tampered(firmado)); // invalid
+
+const viejo = await signedRequest('stripe', { secret: secreto, body: '{}', timestamp: 1 }); // stale
+const paraLaRuta = toFetchRequest(firmado); // un Request, para llamar a tu ruta
+```
+
+```python
+from omniwebhook.testing import signed_request, tampered
+
+firmado = signed_request("stripe", secret=secreto, body='{"id":"evt_1"}')
+
+stripe_scheme(secrets=[secreto]).verify(firmado)  # ok
+stripe_scheme(secrets=[secreto]).verify(tampered(firmado))  # invalid
+```
+
+Para probar que un evento repetido no se procesa dos veces, mandá el mismo pedido firmado dos
+veces. Sirve para todos los esquemas incluidos; con `hmac-body` recibe la misma configuración que
+el esquema.
+
 ## Sincrónico o asincrónico, en Python
 
 Cada pieza que hace entrada/salida tiene las dos variantes. La asincrónica lleva el prefijo

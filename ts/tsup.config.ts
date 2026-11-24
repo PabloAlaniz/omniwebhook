@@ -5,6 +5,7 @@ export default defineConfig({
     index: 'src/index.ts',
     standard: 'src/standard.ts',
     node: 'src/node.ts',
+    testing: 'src/testing.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,
