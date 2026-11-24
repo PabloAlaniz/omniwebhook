@@ -109,6 +109,34 @@ la repetición es la reserva del evento.
 El esquema del formato estándar vive en una entrada aparte (`omniwebhook/standard` en TypeScript,
 `omniwebhook.standard` en Python) porque es el único que usa una librería externa.
 
+### Varios emisores en la misma URL
+
+Si una misma ruta recibe webhooks de más de un emisor, `routedVerifier` (`routed_verifier`) elige
+el esquema por la cabecera que sólo ese emisor manda:
+
+```ts
+import { githubScheme, routedVerifier, stripeScheme } from 'omniwebhook';
+
+const verifier = routedVerifier([
+  { header: 'stripe-signature', verifier: stripeScheme({ secrets: [secreto] }) },
+  { header: 'x-hub-signature-256', verifier: githubScheme({ secrets: [nuevo] }) },
+]);
+```
+
+```python
+verifier = routed_verifier(
+    [
+        VerifierRoute("stripe-signature", stripe_scheme(secrets=[secreto])),
+        VerifierRoute("x-hub-signature-256", github_scheme(secrets=[nuevo])),
+    ]
+)
+```
+
+Un pedido sin ninguna de esas cabeceras es `missing`, y uno con más de una es `ambiguous`: nunca se
+prueba un esquema después de otro, porque eso le dejaría elegir a quien manda el pedido con qué
+reglas se lo verifica. Las claves de evento no se pisan entre emisores: cada una empieza con el
+nombre de su esquema.
+
 ### Un emisor que no está en la lista
 
 Si firma sólo el cuerpo con HMAC-SHA256 y manda la firma en una cabecera, alcanza con el esquema

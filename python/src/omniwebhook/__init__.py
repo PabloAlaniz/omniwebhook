@@ -7,6 +7,7 @@ from omniwebhook.adapters.schemes.creem import creem_scheme
 from omniwebhook.adapters.schemes.github import github_scheme
 from omniwebhook.adapters.schemes.hmac_body import hmac_body_scheme
 from omniwebhook.adapters.schemes.mercadopago import mercadopago_scheme
+from omniwebhook.adapters.schemes.routed import VerifierRoute, routed_verifier
 from omniwebhook.adapters.schemes.shopify import shopify_scheme
 from omniwebhook.adapters.schemes.slack import slack_scheme
 from omniwebhook.adapters.schemes.stripe import stripe_scheme
@@ -176,6 +177,7 @@ __all__ = [
     "Verified",
     "VerifiedEvent",
     "Verifier",
+    "VerifierRoute",
     "allowed_networks",
     "classify_delivery",
     "create_async_receiver",
@@ -196,6 +198,7 @@ __all__ = [
     "next_attempt",
     "random_message_id",
     "random_tokens",
+    "routed_verifier",
     "shopify_scheme",
     "slack_scheme",
     "stripe_scheme",
