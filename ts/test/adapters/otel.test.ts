@@ -319,7 +319,7 @@ describe('otelTransport', () => {
   });
 
   it('con una URL que la plataforma no interpreta, el tramo no lleva datos del destino', async () => {
-    const { span } = await traced({ failure: 'network' }, 'https://xn--.test/');
+    const { span } = await traced({ failure: 'network' }, 'https://destino con espacio.test/');
 
     expect(span.attributes).not.toHaveProperty('server.address');
   });

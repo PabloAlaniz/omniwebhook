@@ -60,7 +60,9 @@ def _post(url: str, headers: Sequence[Field], body: bytes) -> int:
         with opener.open(request, timeout=20) as response:
             return int(response.status)
     except urllib.error.HTTPError as error:
-        return error.code
+        # El error lleva abierta la respuesta: se cierra acá, no cuando la recoja el recolector.
+        with error:
+            return error.code
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
