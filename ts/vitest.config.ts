@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
-// El núcleo (dominio y casos de uso) no baja del 90 %: es donde viven las reglas.
-const nucleo = { statements: 90, branches: 90, functions: 90, lines: 90 };
+// Ninguna capa baja del 90 %. Lo que queda afuera se prueba contra el servicio de verdad.
+const minimo = { statements: 90, branches: 90, functions: 90, lines: 90 };
 
 export default defineConfig({
   test: {
@@ -14,8 +14,10 @@ export default defineConfig({
       exclude: ['src/adapters/stores/postgres.ts', 'src/adapters/ledger/postgres.ts'],
       reporter: ['text-summary', 'lcov'],
       thresholds: {
-        'src/domain/**': nucleo,
-        'src/application/**': nucleo,
+        'src/domain/**': minimo,
+        'src/application/**': minimo,
+        'src/adapters/**': minimo,
+        'src/entrypoints/**': minimo,
       },
     },
   },
