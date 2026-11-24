@@ -21,6 +21,7 @@
     "kind": {
       "enum": [
         "verify",
+        "route",
         "sign",
         "store",
         "receive",

@@ -16,6 +16,7 @@ export { creemScheme } from './adapters/schemes/creem';
 export { githubScheme } from './adapters/schemes/github';
 export { type HmacBodyOptions, hmacBodyScheme } from './adapters/schemes/hmac-body';
 export { mercadoPagoScheme } from './adapters/schemes/mercadopago';
+export { routedVerifier, type VerifierRoute } from './adapters/schemes/routed';
 export type { SchemeConfig, TimedSchemeConfig } from './adapters/schemes/scheme-verifier';
 export { shopifyScheme } from './adapters/schemes/shopify';
 export { slackScheme } from './adapters/schemes/slack';

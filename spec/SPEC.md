@@ -117,6 +117,24 @@ vacío se ignora.
   `<esquema>:sha256:<SHA-256 del cuerpo crudo en hexadecimal en minúsculas>`.
 - Quien integra PUEDE reemplazar la clave por una propia calculada a partir del pedido verificado.
 
+### 4.7. Varios esquemas en una ruta
+
+Un verificador compuesto atiende en una misma URL a más de un emisor. Recibe una lista de rutas;
+cada ruta es el nombre de una cabecera y un verificador.
+
+- Una ruta coincide con un pedido si su cabecera llega con al menos un valor que no sea vacío
+  (sección 3).
+- Si no coincide ninguna ruta, el resultado es `missing`.
+- Si coincide más de una, el resultado es `ambiguous`. NO DEBE elegirse una, ni siquiera cuando
+  sólo una de las firmas resultaría válida.
+- Si coincide exactamente una, el resultado es el de su verificador, sin cambios.
+
+Un pedido NO DEBE probarse contra un esquema después de otro hasta que alguno lo acepte: eso le
+daría a quien manda el pedido la posibilidad de elegir con qué reglas se lo verifica.
+
+Una lista de rutas vacía, una cabecera vacía o una cabecera repetida entre rutas (sin distinguir
+mayúsculas) es un error de configuración al construirlo, no un resultado.
+
 ## 5. Esquemas
 
 Todos usan HMAC-SHA256. «Cuerpo» es siempre el cuerpo crudo.

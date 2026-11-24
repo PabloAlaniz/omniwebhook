@@ -991,6 +991,107 @@ def verificar_shopify() -> Vector:
     )
 
 
+# --- varios esquemas en una ruta ----------------------------------------------
+
+
+def verificar_varios() -> Vector:
+    routes = [
+        {"header": "stripe-signature", "scheme": "stripe", "secrets": [TXT_SECRET]},
+        {"header": "x-hub-signature-256", "scheme": "github", "secrets": [TXT_OTHER]},
+        {"header": "webhook-signature", "scheme": "standard", "secrets": [STD_SECRET]},
+    ]
+    stripe = [["stripe-signature", stripe_header()]]
+    github = [["x-hub-signature-256", "sha256=" + hexmac(TXT_OTHER, GH_BODY.encode())]]
+
+    def case(name: str, want: str, headers: Pairs, body: str, **extra: Any) -> dict[str, Any]:
+        used = extra.pop("routes", routes)
+        req = request(headers, body)
+        matching = [route for route in used if values(headers, route["header"])]
+        if not matching:
+            expected: dict[str, Any] = {"outcome": "missing"}
+        elif len(matching) > 1:
+            expected = {"outcome": "ambiguous"}
+        else:
+            route = matching[0]
+            expected = check(
+                {
+                    "scheme": route["scheme"],
+                    "secrets": route["secrets"],
+                    "options": route.get("options", {}),
+                    "now": NOW,
+                    "request": req,
+                }
+            )
+        assert expected["outcome"] == want, (name, expected, want)
+        return {"name": name, "routes": used, "now": NOW, "request": req, "expected": expected}
+
+    cases = [
+        case("coincide la primera ruta", "ok", stripe, STRIPE_BODY),
+        case("coincide la segunda ruta", "ok", github, GH_BODY),
+        case("coincide la tercera ruta", "ok", std_headers(), STD_BODY),
+        case(
+            "el nombre de la cabecera no distingue mayúsculas",
+            "ok",
+            [["Stripe-Signature", stripe[0][1]]],
+            STRIPE_BODY,
+        ),
+        case("no coincide ninguna ruta", "missing", [["x-otra-firma", "abc"]], STRIPE_BODY),
+        case("sin cabeceras", "missing", [], STRIPE_BODY),
+        case(
+            "una cabecera vacía no hace coincidir la ruta",
+            "missing",
+            [["stripe-signature", " "]],
+            STRIPE_BODY,
+        ),
+        case("coinciden dos rutas: no se elige ninguna", "ambiguous", [*stripe, *github], STRIPE_BODY),
+        case(
+            "coinciden dos rutas aunque una firma sea válida y la otra no",
+            "ambiguous",
+            [*stripe, ["x-hub-signature-256", "sha256=" + "0" * 64]],
+            STRIPE_BODY,
+        ),
+        case(
+            "el resultado de la ruta pasa tal cual: firma inválida",
+            "invalid",
+            [["stripe-signature", stripe_header(secret=TXT_OTHER)]],
+            STRIPE_BODY,
+        ),
+        case(
+            "el resultado de la ruta pasa tal cual: cabecera repetida",
+            "ambiguous",
+            [*stripe, *stripe],
+            STRIPE_BODY,
+        ),
+        case(
+            "el resultado de la ruta pasa tal cual: pedido viejo",
+            "stale",
+            [["stripe-signature", stripe_header(ts=NOW - 301)]],
+            STRIPE_BODY,
+        ),
+        case(
+            "una firma válida para otra ruta no sirve: cada ruta tiene su secreto",
+            "invalid",
+            [["x-hub-signature-256", "sha256=" + hexmac(TXT_SECRET, GH_BODY.encode())]],
+            GH_BODY,
+        ),
+        case(
+            "una ruta sin secretos no afecta a las demás",
+            "ok",
+            stripe,
+            STRIPE_BODY,
+            routes=[routes[0], {**routes[1], "secrets": []}],
+        ),
+        case(
+            "la ruta que coincide no tiene secretos",
+            "unconfigured",
+            github,
+            GH_BODY,
+            routes=[routes[0], {**routes[1], "secrets": []}],
+        ),
+    ]
+    return {"spec": SPEC, "id": "verificar/varios", "kind": "route", "cases": cases}
+
+
 # --- firmar ------------------------------------------------------------------
 
 
@@ -1954,6 +2055,7 @@ ALL: list[Callable[[], Vector]] = [
     verificar_github,
     verificar_slack,
     verificar_shopify,
+    verificar_varios,
     verificar_creem,
     verificar_hmac_body,
     firmar_standard,

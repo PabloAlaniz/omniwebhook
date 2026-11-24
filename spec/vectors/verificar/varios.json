@@ -1,0 +1,614 @@
+{
+ "spec": "0",
+ "id": "verificar/varios",
+ "kind": "route",
+ "cases": [
+  {
+   "name": "coincide la primera ruta",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "coincide la segunda ruta",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=a1156c000632e3b1df8bae16ee733f323ecdfa5fb208e128f60c5f26cfc69618"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "github:sha256:fe0e7604531e0d90c365a756878c17f6266c65c90f1373f89b740cb192b8e373",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "coincide la tercera ruta",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "el nombre de la cabecera no distingue mayúsculas",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "Stripe-Signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "no coincide ninguna ruta",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-otra-firma",
+      "abc"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "sin cabeceras",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "una cabecera vacía no hace coincidir la ruta",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      " "
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "coinciden dos rutas: no se elige ninguna",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha256=a1156c000632e3b1df8bae16ee733f323ecdfa5fb208e128f60c5f26cfc69618"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "coinciden dos rutas aunque una firma sea válida y la otra no",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ],
+     [
+      "x-hub-signature-256",
+      "sha256=0000000000000000000000000000000000000000000000000000000000000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "el resultado de la ruta pasa tal cual: firma inválida",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=00f4c45cbe05b00ab6517bf9fbdff6286d7c476db8d8855c44f5a9afebfc93e9"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "el resultado de la ruta pasa tal cual: cabecera repetida",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ],
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "el resultado de la ruta pasa tal cual: pedido viejo",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1699999699,v1=5f702e26054a545d7b12f08490c5905fdefa94a6ad1010a47195617949b68f35"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "una firma válida para otra ruta no sirve: cada ruta tiene su secreto",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": [
+      "secreto-sintetico-dos"
+     ]
+    },
+    {
+     "header": "webhook-signature",
+     "scheme": "standard",
+     "secrets": [
+      "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+     ]
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=bd70450ea63ed92986da7e887c0a3b554296478468ff4185de567ec6410a0ece"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "una ruta sin secretos no afecta a las demás",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": []
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "stripe-signature",
+      "t=1700000000,v1=bc333018988e4fc6fe31b886b62515d35585d7e6600d3b9e20527a447f21b240"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"evt_sintetico_001\",\"type\":\"invoice.paid\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "stripe:evt_sintetico_001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "la ruta que coincide no tiene secretos",
+   "routes": [
+    {
+     "header": "stripe-signature",
+     "scheme": "stripe",
+     "secrets": [
+      "secreto-sintetico-uno"
+     ]
+    },
+    {
+     "header": "x-hub-signature-256",
+     "scheme": "github",
+     "secrets": []
+    }
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-hub-signature-256",
+      "sha256=a1156c000632e3b1df8bae16ee733f323ecdfa5fb208e128f60c5f26cfc69618"
+     ]
+    ],
+    "query": [],
+    "body": "{\"action\":\"opened\",\"number\":1}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  }
+ ]
+}
