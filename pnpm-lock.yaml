@@ -8,6 +8,12 @@ importers:
 
   .: {}
 
+  examples/node-http:
+    dependencies:
+      omniwebhook:
+        specifier: workspace:*
+        version: link:../../ts
+
   ts:
     devDependencies:
       '@arethetypeswrong/cli':

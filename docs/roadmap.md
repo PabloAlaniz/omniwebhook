@@ -93,8 +93,10 @@ aparte, sin dependencia obligatoria.
 - **Hecho. TypeScript:** `IncomingMessage` y `ServerResponse` de Node (cubre los frameworks
   montados sobre ellos) y una ayuda para los frameworks que ya entregan el cuerpo como `Buffer`.
 - **Hecho. Python:** WSGI (cubre Flask y cualquier otro) y Django.
-- **Pendiente. Ejemplos ejecutables** en `examples/`, uno por framework y por entorno, que la
-  integración continua levanta y prueba con un pedido firmado.
+- **Hecho. Ejemplos ejecutables** en [`examples/`](../examples/): `node:http`, WSGI, Starlette y
+  Django. La integración continua levanta cada uno y le manda un evento firmado, el mismo
+  repetido y uno con otro secreto. **Pendiente:** uno para la API Fetch dentro de un Worker, que
+  va junto con la prueba de humo en Workers del sprint 1.
 
 ### Esquemas de firma
 

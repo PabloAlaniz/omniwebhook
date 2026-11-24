@@ -14,6 +14,7 @@
     "test:integration": "pnpm --filter omniwebhook test:integration",
     "test:runtime": "pnpm --filter omniwebhook test:runtime",
     "test:interop": "pnpm build && python3 tools/interop.py",
-    "check:docs": "python3 tools/check_docs.py"
+    "check:docs": "python3 tools/check_docs.py",
+    "check:examples": "pnpm build && python3 tools/check_examples.py"
   }
 }

@@ -25,8 +25,8 @@ cd python && uv sync
 pnpm check
 
 # En python/: lo mismo para Python.
-uv run ruff format --check . ../tools
-uv run ruff check . ../tools
+uv run ruff format --check . ../tools ../examples
+uv run ruff check . ../tools ../examples
 uv run mypy
 uv run lint-imports
 uv run pytest
@@ -85,6 +85,15 @@ lenguaje, para que un ejemplo no quede usando una API que ya cambió:
 
 ```bash
 pnpm check:docs
+```
+
+## Ejemplos ejecutables
+
+Los receptores de [`examples/`](examples/) también se prueban: el comprobador levanta cada uno y le
+manda un evento firmado, el mismo evento repetido y uno con otro secreto.
+
+```bash
+pnpm check:examples
 ```
 
 ## Vectores de conformidad
