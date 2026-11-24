@@ -225,6 +225,7 @@ o lo reciban dos procesos a la vez.
 | Memoria | Tests y desarrollo. No sirve con más de un proceso |
 | PostgreSQL | Producción. Cada operación es una sola sentencia |
 | Redis | Producción, cuando no hay base relacional. Cada operación es un script; las entradas se borran solas |
+| Clave-valor | DynamoDB, Workers KV o el que tengas. La garantía depende de si escribe con condición |
 | SQLite | Producción con D1 de Cloudflare, libSQL o un solo servidor. Cada operación es una sola sentencia |
 | Firestore (Python) | Producción. Cada operación es una transacción |
 
@@ -281,6 +282,62 @@ completarla si nadie la tomó; después Redis la borra. Es la única diferencia 
 almacenes, que la conservan sin límite.
 
 Las claves llevan el prefijo `omniwebhook:events:`, que se cambia con `prefix`.
+
+### Clave-valor: DynamoDB, Workers KV o el tuyo
+
+`KeyValueIdempotencyStore` funciona sobre cualquier almacén clave-valor con vencimiento. Lo que
+cambia de uno a otro es el cliente.
+
+```ts
+import { dynamoDbClient, KeyValueIdempotencyStore, workersKvClient } from 'omniwebhook';
+
+// DynamoDB: recibe el cliente de documentos del SDK
+const enDynamo = new KeyValueIdempotencyStore(dynamoDbClient(db, { table: 'webhooks' }));
+
+// Workers KV: recibe el binding
+const enWorkersKv = new KeyValueIdempotencyStore(workersKvClient(env.EVENTOS));
+```
+
+```python
+from omniwebhook.key_value import DynamoDbTableClient, KeyValueIdempotencyStore
+
+en_dynamo = KeyValueIdempotencyStore(DynamoDbTableClient(db))  # el recurso de tabla de boto3
+```
+
+La tabla de DynamoDB tiene una clave de partición de texto, `pk` (se cambia con `keyAttribute`,
+`key_attribute`), y ninguna de ordenamiento. Si activás el vencimiento de la tabla sobre el
+atributo `ttl`, las entradas se borran solas. En Python también están
+`AsyncKeyValueIdempotencyStore` y `AsyncDynamoDbTableClient`.
+
+**La garantía no es la misma en todos**, y el almacén te la dice en `guarantee`:
+
+- `atomic`, con DynamoDB: escribe sólo si nadie cambió la entrada desde que la leyó. Entre
+  pedidos simultáneos por el mismo evento, uno solo lo procesa. Es la garantía de los otros
+  almacenes.
+- `best-effort`, con Workers KV: no tiene escritura condicional. Evita los duplicados que llegan
+  separados en el tiempo, que son los reintentos del emisor, pero dos entregas simultáneas del
+  mismo evento pueden procesarse las dos. Si en un Worker necesitás la garantía completa, usá D1.
+
+Para otro almacén, implementá el cliente: son tres métodos.
+
+```ts
+import type { KeyValueClient } from 'omniwebhook';
+
+const miCliente: KeyValueClient = {
+  conditional: true, // si put y delete respetan onlyIf de forma atómica
+  async get(key) {
+    const fila = await db.leer(key);
+    return fila === null ? null : { value: fila.valor, version: fila.version };
+  },
+  // Escribe sólo si la versión guardada es onlyIf; con null, sólo si la clave no existe.
+  put: (key, value, { ttlSeconds, onlyIf }) => db.escribirSi(key, value, ttlSeconds, onlyIf),
+  delete: (key, { onlyIf }) => db.borrarSi(key, onlyIf),
+};
+```
+
+En Python es lo mismo, con `ttl_seconds` y `only_if`. `MemoryKeyValueClient` es la referencia de
+lo que tiene que cumplir. Como en Redis, una reserva vencida se conserva un día más antes de que
+el almacén la borre.
 
 ### SQLite y D1
 

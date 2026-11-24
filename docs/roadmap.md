@@ -82,7 +82,7 @@ sección en la especificación, vectores y adaptador en los dos paquetes.
 **Objetivo.** Que integrar la recepción sea una línea en el framework que ya se usa, con el emisor
 que ya se tiene, y que probar esa integración no exija escribir la firma a mano.
 
-**Estado: en curso.** Cada ítem dice si está hecho o pendiente.
+**Estado: hecho, salvo lo que cada ítem indica como pendiente.**
 
 ### Adaptadores de entrada
 
@@ -107,9 +107,9 @@ aparte, sin dependencia obligatoria.
   [decisión 0007](adr/0007-firma-asimetrica.md).
 - **Tres de cuatro hechos. Cuatro emisores más**, elegidos por demanda y por cubrir variantes que
   hoy no están. Hechos: marca de tiempo en cabecera separada con prefijo de versión (Slack), HMAC
-  en base64 sobre el cuerpo (Shopify) y clave pública por emisor (Discord). Pendiente: firma
-  sobre la URL más los parámetros, que pide guardar la URL completa en el pedido entrante y usa
-  HMAC-SHA1. Cada uno entra por [el camino de siempre](agregar-un-esquema.md), citando la
+  en base64 sobre el cuerpo (Shopify) y clave pública por emisor (Discord). Postergado, fuera
+  de este sprint: firma sobre la URL más los parámetros, que pide guardar la URL completa en el
+  pedido entrante y usa HMAC-SHA1. Cada uno entra por [el camino de siempre](agregar-un-esquema.md), citando la
   documentación pública del emisor.
 - **Hecho. Varios emisores en una misma ruta.** Un verificador compuesto que elige el esquema por las
   cabeceras presentes y que rechaza como `ambiguous` un pedido que coincide con más de uno.
@@ -118,8 +118,11 @@ aparte, sin dependencia obligatoria.
 
 - **Hecho. Redis.** Cada operación es un script y las entradas se borran solas. Los dos paquetes
   corren los mismos scripts y pasan el contrato de almacén contra un Redis de verdad.
-- **Pendiente. Almacenes clave-valor con vencimiento** (el de Workers y DynamoDB). El de Workers
-  no tiene escritura condicional: hay que documentar qué garantía pierde.
+- **Hecho. Almacén sobre cualquier clave-valor con vencimiento.** Un solo almacén contra un
+  puerto de tres métodos, con clientes para DynamoDB y Workers KV, y uno en memoria como
+  referencia. Dice qué garantía da: completa si el cliente escribe con condición, reducida si
+  no. Ver la [decisión 0008](adr/0008-almacen-clave-valor.md). **Pendiente:** probar los
+  clientes de DynamoDB y de Workers KV contra el servicio; hoy corren contra dobles en memoria.
 
 ### Ayudas para probar
 
