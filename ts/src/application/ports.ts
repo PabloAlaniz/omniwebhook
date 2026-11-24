@@ -143,3 +143,61 @@ export interface AttemptRecord {
 export interface DeliveryLedger {
   record(attempt: AttemptRecord): Promise<void>;
 }
+
+/** El estado de una entrada de la bandeja de salida (sección 8.5). */
+export type OutboxState = DeliveryState | 'cancelled';
+
+export interface EnqueueRequest {
+  readonly messageId: string;
+  readonly endpointId: string;
+  /** El cuerpo, byte a byte como se va a enviar. */
+  readonly payload: Uint8Array;
+  readonly now: number;
+}
+
+export interface OutboxClaimRequest {
+  readonly token: string;
+  readonly now: number;
+  /** Cuántas entradas tomar, como mucho. */
+  readonly limit: number;
+  readonly leaseSeconds: number;
+}
+
+/** Una entrega tomada de la bandeja: lo que hace falta para hacer el intento. */
+export interface OutboxEntry {
+  readonly messageId: string;
+  readonly endpointId: string;
+  readonly payload: Uint8Array;
+  /** El número del intento que toca. El primero es el 1. */
+  readonly attempt: number;
+}
+
+export type SettleRequest = {
+  readonly messageId: string;
+  readonly endpointId: string;
+  readonly token: string;
+} & (
+  | { readonly state: 'pending'; readonly nextAt: number }
+  | { readonly state: Exclude<OutboxState, 'pending'> }
+);
+
+/** La bandeja de salida (sección 8.5). Las tres operaciones tienen que ser atómicas. */
+export interface Outbox {
+  /** Devuelve si se encoló: `false` si ese mensaje ya estaba para ese destino. */
+  enqueue(request: EnqueueRequest): Promise<boolean>;
+  /** Toma lo pendiente que ya venció, en orden, y lo deja tomado por `token`. */
+  claim(request: OutboxClaimRequest): Promise<readonly OutboxEntry[]>;
+  /** Devuelve si se aplicó: sólo si la entrada sigue pendiente y la tomó ese mismo token. */
+  settle(request: SettleRequest): Promise<boolean>;
+}
+
+/** Lo que hace falta saber de un destino para entregarle. */
+export interface ResolvedEndpoint {
+  readonly url: string;
+}
+
+/** Dónde quien integra guarda sus destinos. La bandeja sólo conoce el identificador. */
+export interface EndpointDirectory {
+  /** El destino, o `null` si no existe o está deshabilitado: su entrega se cancela. */
+  resolve(endpointId: string): Promise<ResolvedEndpoint | null>;
+}

@@ -93,6 +93,7 @@ branch = true
 omit = [
     "*/omniwebhook/adapters/stores/postgres.py",
     "*/omniwebhook/adapters/ledger/postgres.py",
+    "*/omniwebhook/adapters/outbox/postgres.py",
     "*/omniwebhook/adapters/stores/firestore.py",
     "*/omniwebhook/postgres.py",
     "*/omniwebhook/firestore.py",

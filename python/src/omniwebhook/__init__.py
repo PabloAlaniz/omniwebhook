@@ -3,6 +3,7 @@
 from omniwebhook.adapters.clock import system_clock
 from omniwebhook.adapters.dns.system import AsyncSystemDnsResolver, SystemDnsResolver
 from omniwebhook.adapters.ledger.memory import AsyncMemoryDeliveryLedger, MemoryDeliveryLedger
+from omniwebhook.adapters.outbox.memory import AsyncMemoryOutbox, MemoryOutbox
 from omniwebhook.adapters.schemes.creem import creem_scheme
 from omniwebhook.adapters.schemes.github import github_scheme
 from omniwebhook.adapters.schemes.hmac_body import hmac_body_scheme
@@ -16,24 +17,45 @@ from omniwebhook.adapters.stores.memory import AsyncMemoryIdempotencyStore, Memo
 from omniwebhook.adapters.tokens import random_message_id, random_tokens
 from omniwebhook.adapters.transport.http_client import HttpClientTransport
 from omniwebhook.adapters.transport.threaded import ThreadedTransport
+from omniwebhook.application.dispatch_due import (
+    DEFAULT_DISPATCH_LEASE_SECONDS,
+    DEFAULT_DISPATCH_LIMIT,
+    AsyncAttemptSender,
+    AsyncDispatchDue,
+    AttemptSender,
+    DispatchDue,
+    Dispatched,
+    DispatchFailure,
+    DispatchResult,
+)
 from omniwebhook.application.ports import (
     AsyncDeliveryLedger,
     AsyncDnsResolver,
+    AsyncEndpointDirectory,
     AsyncHttpTransport,
     AsyncIdempotencyStore,
+    AsyncOutbox,
     AttemptRecord,
     ClaimRequest,
     Clock,
     CompleteRequest,
     DeliveryLedger,
     DnsResolver,
+    EndpointDirectory,
+    EnqueueRequest,
     HttpTransport,
     IdempotencyStore,
     MessageSigner,
+    Outbox,
+    OutboxClaimRequest,
+    OutboxEntry,
+    OutboxState,
     RandomSource,
     ReceptionObservation,
     ReceptionObserver,
     ReleaseRequest,
+    ResolvedEndpoint,
+    SettleRequest,
     Timer,
     TokenGenerator,
     TransportFailure,
@@ -98,6 +120,7 @@ from omniwebhook.domain.retry import (
 from omniwebhook.domain.spec_version import SPEC_VERSION
 from omniwebhook.domain.verification import Rejected, Rejection, Verification, Verified
 from omniwebhook.entrypoints.asgi import incoming_request_from_scope
+from omniwebhook.entrypoints.dispatcher import create_async_dispatcher, create_dispatcher
 from omniwebhook.entrypoints.receiver import create_async_receiver, create_receiver
 from omniwebhook.entrypoints.requests import incoming_request
 from omniwebhook.entrypoints.sender import create_async_sender, create_sender
@@ -105,6 +128,8 @@ from omniwebhook.entrypoints.wsgi import incoming_request_from_environ, wsgi_res
 
 __all__ = [
     "DEFAULT_CONTENT_TYPE",
+    "DEFAULT_DISPATCH_LEASE_SECONDS",
+    "DEFAULT_DISPATCH_LIMIT",
     "DEFAULT_JITTER_RATIO",
     "DEFAULT_LEASE_SECONDS",
     "DEFAULT_MAX_BODY_BYTES",
@@ -118,18 +143,24 @@ __all__ = [
     "SPEC_VERSION",
     "USER_AGENT",
     "AllowedNetworks",
+    "AsyncAttemptSender",
     "AsyncDeliveryLedger",
+    "AsyncDispatchDue",
     "AsyncDnsResolver",
+    "AsyncEndpointDirectory",
     "AsyncEventHandler",
     "AsyncHttpTransport",
     "AsyncIdempotencyStore",
     "AsyncMemoryDeliveryLedger",
     "AsyncMemoryIdempotencyStore",
+    "AsyncMemoryOutbox",
+    "AsyncOutbox",
     "AsyncReceiveWebhook",
     "AsyncSendWebhook",
     "AsyncSystemDnsResolver",
     "AttemptOutcome",
     "AttemptRecord",
+    "AttemptSender",
     "ClaimOutcome",
     "ClaimRequest",
     "Clock",
@@ -142,8 +173,14 @@ __all__ = [
     "DeliveryState",
     "DestinationProblem",
     "DestinationVerdict",
+    "DispatchDue",
+    "DispatchFailure",
+    "DispatchResult",
+    "Dispatched",
     "DnsResolver",
     "Endpoint",
+    "EndpointDirectory",
+    "EnqueueRequest",
     "EventHandler",
     "Field",
     "HttpClientTransport",
@@ -153,9 +190,14 @@ __all__ = [
     "InspectedDestination",
     "MemoryDeliveryLedger",
     "MemoryIdempotencyStore",
+    "MemoryOutbox",
     "MessageSigner",
     "NextAttempt",
     "NotSigned",
+    "Outbox",
+    "OutboxClaimRequest",
+    "OutboxEntry",
+    "OutboxState",
     "OutgoingMessage",
     "PayloadValidator",
     "RandomSource",
@@ -167,8 +209,10 @@ __all__ = [
     "Rejected",
     "Rejection",
     "ReleaseRequest",
+    "ResolvedEndpoint",
     "RetryPolicy",
     "SendWebhook",
+    "SettleRequest",
     "Signed",
     "Signing",
     "SigningProblem",
@@ -186,8 +230,10 @@ __all__ = [
     "VerifierRoute",
     "allowed_networks",
     "classify_delivery",
+    "create_async_dispatcher",
     "create_async_receiver",
     "create_async_sender",
+    "create_dispatcher",
     "create_receiver",
     "create_sender",
     "creem_scheme",

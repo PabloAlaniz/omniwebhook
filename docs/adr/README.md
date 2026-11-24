@@ -14,3 +14,4 @@ anterior.
 | [0006](0006-dns-sobre-https.md) | DNS sobre HTTPS para entornos sin DNS del sistema | Aceptada |
 | [0007](0007-firma-asimetrica.md) | Firma asimétrica: un esquema aparte y una dependencia opcional | Aceptada |
 | [0008](0008-almacen-clave-valor.md) | Un almacén sobre cualquier clave-valor, con la garantía a la vista | Aceptada |
+| [0009](0009-bandeja-de-salida.md) | Una bandeja de salida y el despacho de una tanda, sin planificador | Aceptada |

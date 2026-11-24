@@ -618,8 +618,81 @@ attempt)`. Hay un índice por `(message_id, endpoint_id)` y otro por `(endpoint_
 
 Leer los intentos de un mensaje hacia un destino devuelve las filas en el orden de `id`.
 
-El paquete calcula cuándo corresponde el próximo intento pero no lo ejecuta: programarlo es
-responsabilidad de quien integra.
+El paquete calcula cuándo corresponde el próximo intento pero no lo ejecuta. Quien integra puede
+programarlo con lo que ya use, o apoyarse en la bandeja de salida.
+
+### 8.5. La bandeja de salida
+
+Es un puerto opcional: guarda las entregas pendientes para que no se pierdan si el proceso se
+cae, y las reparte sin que dos procesos entreguen la misma. No es una cola con planificador:
+alguien tiene que pedirle la próxima tanda.
+
+Una entrada es un mensaje para un destino. Guarda el `id` del mensaje, el identificador del
+destino (nunca su URL), el payload en bytes, el número del próximo intento, desde cuándo está
+disponible y su estado. El par `(id del mensaje, destino)` es único.
+
+El estado es `pending` o uno final: `delivered`, `rejected`, `blocked`, `gone`, `exhausted`
+(los de la sección 8.4) o `cancelled`, para una entrega que se descartó sin intentarla.
+
+Tiene tres operaciones. Todas DEBEN ser atómicas.
+
+- `enqueue(message_id, endpoint_id, payload, now)` devuelve si se encoló. Crea la entrada como
+  `pending`, con el intento `1` y disponible desde `now`. Si el par ya existe, en cualquier
+  estado, no cambia nada y devuelve falso.
+- `claim(token, now, limit, lease_seconds)` toma hasta `limit` entradas y las devuelve con su
+  payload y su número de intento. Se pueden tomar las `pending` que estén disponibles (`now`
+  mayor o igual que su momento) y que no estén tomadas, o cuya toma haya vencido (`now` mayor o
+  igual que su vencimiento). Salen ordenadas por el momento desde el que están disponibles y, a
+  igual momento, por el orden en que se encolaron. Cada una queda tomada por `token` hasta
+  `now + lease_seconds`.
+- `settle(message_id, endpoint_id, token, state, next_at)` devuelve si se aplicó. Sólo se aplica
+  si la entrada está `pending` y la tomó ese mismo `token`, aunque el plazo haya vencido. Con
+  `state = pending`, el número de intento sube en uno, la entrada queda disponible desde
+  `next_at` y se libera la toma. Con un estado final, queda en ese estado.
+
+Las reglas de la toma son las de la reserva de la sección 6.1: quien se demoró puede cerrar si
+nadie tomó la entrada, y quien perdió su toma no pisa a quien la tomó después.
+
+Consecuencias que quien integra tiene que conocer:
+
+- **Al menos una vez.** Si el proceso se cae después de entregar y antes de `settle`, la entrada
+  vuelve a salir al vencer la toma, con el mismo `id` de mensaje. Para eso el receptor reserva el
+  evento (sección 6).
+- **Sin orden entre mensajes.** Dos mensajes para un mismo destino pueden llegar en cualquier
+  orden: un reintento demora a uno y no al otro.
+- `lease_seconds` DEBE ser mayor que lo que puede tardar en despacharse una tanda entera.
+
+#### Despachar una tanda
+
+Dados una bandeja, un directorio de destinos y quien hace el intento (sección 8):
+
+1. `claim` con un token nuevo.
+2. Por cada entrada, preguntarle al directorio por el destino. Si no existe o está deshabilitado,
+   `settle` con `cancelled`, sin intentar ni registrar nada.
+3. Si existe, hacer un intento con el número de intento de la entrada.
+4. `settle` con el estado en que quedó la entrega; si es `pending`, con su `next_at`.
+
+Si el intento no llega a hacerse por un error de quien integra (sección 7), la entrada no se
+cierra: vuelve a salir al vencer la toma, y el error se informa en el resultado de la tanda.
+
+#### La tabla de PostgreSQL
+
+Una bandeja sobre PostgreSQL DEBE usar esta tabla, para que lo que encola un paquete lo despache
+el otro. El nombre por defecto es `omniwebhook_outbox`:
+
+| Columna | Tipo | Contenido |
+|---|---|---|
+| `seq` | `bigint`, identidad | El orden en que se encoló |
+| `message_id` | `text` | El `id` del mensaje |
+| `endpoint_id` | `text` | El identificador del destino, nunca su URL |
+| `payload` | `bytea` | El cuerpo, byte a byte como se va a enviar |
+| `attempt` | `integer` | El número del próximo intento |
+| `available_at` | `bigint` | Desde cuándo se puede tomar, en segundos |
+| `state` | `text` | El estado de la entrada |
+| `token` | `text`, nulo | Quién la tiene tomada |
+| `lease_expires_at` | `bigint`, nulo | Hasta cuándo vale la toma |
+
+La clave es `(message_id, endpoint_id)`. Hay un índice por `(state, available_at)`.
 
 ## 9. Vectores de conformidad
 

@@ -11,7 +11,10 @@ sugerido. Cambiar de emisor es cambiar una línea: el esquema.
 | [`python-starlette/`](python-starlette/) | Starlette (igual en FastAPI), asincrónico | `python examples/python-starlette/app.py` |
 | [`python-django/`](python-django/) | Django, en un solo archivo | `python examples/python-django/app.py` |
 
-Cada uno lee dos variables de entorno: `WEBHOOK_SECRET`, el secreto del emisor, y `PORT`.
+Y uno para emitir: [`python-outbox/`](python-outbox/) registra un pedido y encola su webhook en la
+misma transacción, y después despacha una tanda. Necesita un PostgreSQL en `OMNIWEBHOOK_PG_URL`.
+
+Cada receptor lee dos variables de entorno: `WEBHOOK_SECRET`, el secreto del emisor, y `PORT`.
 
 Para probar uno a mano, con la [línea de comandos](../docs/recibir.md#depurar-desde-la-terminal):
 
@@ -28,4 +31,5 @@ Usan el almacén en memoria para no depender de nada. En producción va uno comp
 procesos: PostgreSQL, Redis, SQLite o Firestore.
 
 `python3 tools/check_examples.py` levanta cada ejemplo y le manda un evento firmado, el mismo
-evento repetido y uno con otro secreto. La integración continua lo corre en cada cambio.
+evento repetido y uno con otro secreto. Con `OMNIWEBHOOK_PG_URL`, además corre el de la bandeja de salida contra un receptor
+local. La integración continua lo corre en cada cambio.

@@ -12,6 +12,12 @@ export {
   type SqliteLedgerOptions,
   sqliteLedgerSchema,
 } from './adapters/ledger/sqlite';
+export { MemoryOutbox } from './adapters/outbox/memory';
+export {
+  PostgresOutbox,
+  type PostgresOutboxOptions,
+  postgresOutboxSchema,
+} from './adapters/outbox/postgres';
 export { creemScheme } from './adapters/schemes/creem';
 export { type DiscordSchemeConfig, discordScheme } from './adapters/schemes/discord';
 export { githubScheme } from './adapters/schemes/github';
@@ -66,6 +72,16 @@ export {
 } from './adapters/stores/sqlite';
 export { randomTokens } from './adapters/tokens/random-tokens';
 export { type FetchTransportOptions, fetchTransport } from './adapters/transport/fetch';
+export {
+  type AttemptSender,
+  DEFAULT_DISPATCH_LEASE_SECONDS,
+  DEFAULT_DISPATCH_LIMIT,
+  DispatchDue,
+  type DispatchDueDependencies,
+  type Dispatched,
+  type DispatchFailure,
+  type DispatchResult,
+} from './application/dispatch-due';
 export type {
   AttemptRecord,
   ClaimRequest,
@@ -73,15 +89,23 @@ export type {
   CompleteRequest,
   DeliveryLedger,
   DnsResolver,
+  EndpointDirectory,
+  EnqueueRequest,
   HttpTransport,
   IdempotencyStore,
   MessageSigner,
+  Outbox,
+  OutboxClaimRequest,
+  OutboxEntry,
+  OutboxState,
   PayloadResult,
   PayloadSchema,
   RandomSource,
   ReceptionObservation,
   ReceptionObserver,
   ReleaseRequest,
+  ResolvedEndpoint,
+  SettleRequest,
   Timer,
   TokenGenerator,
   TransportRequest,
@@ -152,6 +176,7 @@ export {
 } from './domain/retry';
 export { SPEC_VERSION } from './domain/spec-version';
 export type { Rejected, Rejection, Verification, Verified } from './domain/verification';
+export { createDispatcher, type DispatcherOptions } from './entrypoints/dispatcher';
 export { createReceiver, type ReceiverOptions } from './entrypoints/receiver';
 export { createSender, type SenderOptions } from './entrypoints/sender';
 export { toIncomingRequest, toResponse } from './entrypoints/web';

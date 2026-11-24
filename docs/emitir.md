@@ -51,6 +51,95 @@ Tres cosas a tener en cuenta:
 - **Cada intento se firma de nuevo** con la hora actual, así que un reintento tardío no llega con
   una marca vieja.
 
+## Sin perder eventos: la bandeja de salida
+
+El ejemplo de arriba tiene un hueco: si el proceso se cae entre el intento y `cola.agendar`, el
+reintento se pierde. Y antes de eso, si el cambio que origina el webhook se guarda pero el envío
+falla, el evento nunca sale. La bandeja de salida cierra los dos.
+
+**Encolar** va en la misma transacción que el cambio del negocio. Si la transacción no se
+confirma, el webhook no existe; si se confirma, no se pierde:
+
+```ts
+import { PostgresOutbox, randomMessageId } from 'omniwebhook';
+
+const conexion = await pool.connect();
+try {
+  await conexion.query('BEGIN');
+  await conexion.query('INSERT INTO pedidos (id) VALUES ($1)', ['pedido-1']);
+  await new PostgresOutbox(conexion).enqueue({
+    messageId: randomMessageId(),
+    endpointId: 'ep_42',
+    payload,
+    now: Math.floor(Date.now() / 1000),
+  });
+  await conexion.query('COMMIT');
+} finally {
+  conexion.release();
+}
+```
+
+```python
+from omniwebhook import EnqueueRequest
+from omniwebhook.postgres import PostgresOutbox, PsycopgConnectionClient
+
+with pool.connection() as conexion:  # confirma al salir, o deshace si algo lanza
+    conexion.execute("INSERT INTO pedidos (id) VALUES (%s)", ("pedido-1",))
+    PostgresOutbox(PsycopgConnectionClient(conexion)).enqueue(
+        EnqueueRequest(message_id=identificador, endpoint_id="ep_42", payload=payload, now=ahora)
+    )
+```
+
+**Despachar** corre aparte. Cada llamada toma una tanda de lo pendiente que ya venció, hace un
+intento por entrega y la cierra con el resultado; lo que hay que reintentar vuelve a salir cuando
+corresponde:
+
+```ts
+import { createDispatcher, PostgresOutbox } from 'omniwebhook';
+
+const despacho = createDispatcher({
+  outbox: new PostgresOutbox(pool),
+  // Tus destinos: la bandeja guarda sólo el identificador, nunca la URL.
+  endpoints: { resolve: async (id) => db.destinoHabilitado(id) }, // { url } o null
+  sender: send, // el createNodeSender de arriba
+});
+
+const tanda = await despacho.execute();
+// tanda.dispatched: lo que se intentó y cómo quedó. tanda.failures: lo que no llegó a intentarse.
+```
+
+```python
+from omniwebhook import create_dispatcher
+from omniwebhook.postgres import PostgresOutbox, PsycopgClient
+
+despacho = create_dispatcher(
+    outbox=PostgresOutbox(PsycopgClient(pool.connection)), endpoints=destinos, sender=send
+)
+tanda = despacho.execute()
+```
+
+No trae planificador: llamalo cada pocos segundos desde un cron, un trabajo de tu cola o un
+bucle. Varios procesos pueden despachar a la vez sin entregar lo mismo dos veces.
+
+Lo que conviene saber:
+
+- **Al menos una vez.** Si el proceso se cae después de entregar y antes de cerrar, el mensaje
+  sale de nuevo, con el mismo identificador. Quien recibe lo reconoce como repetido.
+- **Sin orden.** Dos mensajes para un mismo destino pueden llegar en cualquier orden.
+- **Un destino que no existe o está deshabilitado** (`resolve` devuelve `null`, `None`) cancela
+  la entrega sin intentarla.
+- **Un secreto por destino.** `sender` es cualquier cosa con `execute`: si cada destino tiene su
+  secreto, pasá un objeto que elija el emisor según `delivery.endpoint.id`.
+- **`leaseSeconds` (`lease_seconds`) tiene que durar más que una tanda entera**: el límite por el
+  tiempo de espera de un intento. Los valores por defecto, 10 entregas y 300 segundos, alcanzan.
+- **Encolar dos veces el mismo mensaje para el mismo destino no lo duplica.**
+
+Hay bandeja en memoria (`MemoryOutbox`), para tests, y sobre PostgreSQL. La tabla se crea con
+`postgresOutboxSchema()` (`postgres_outbox_schema()`) y es la misma en los dos paquetes: un
+servicio puede encolar en un lenguaje y otro despachar en el otro. En Python están también
+`AsyncPostgresOutbox` y `create_async_dispatcher`. Hay un
+[ejemplo completo](../examples/python-outbox/app.py).
+
 ## En qué estado queda la entrega
 
 | Estado | Cuándo | Qué hacer |

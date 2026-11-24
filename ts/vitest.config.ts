@@ -15,6 +15,7 @@ export default defineConfig({
         'src/adapters/stores/postgres.ts',
         'src/adapters/stores/redis.ts',
         'src/adapters/ledger/postgres.ts',
+        'src/adapters/outbox/postgres.ts',
       ],
       reporter: ['text-summary', 'lcov'],
       thresholds: {

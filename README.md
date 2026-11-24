@@ -130,7 +130,9 @@ attempt = send.execute(
 ```
 
 Cada llamada es un intento. El paquete dice cuándo corresponde el siguiente, pero no lo programa:
-eso queda del lado de la cola o el planificador que ya uses. Más en la
+eso queda del lado de la cola o el planificador que ya uses. Si no querés perder un evento cuando
+el proceso se cae, la bandeja de salida guarda las entregas pendientes y las reparte entre los
+procesos que despachan. Más en la
 [guía para emitir](docs/emitir.md).
 
 ## Qué trae cada paquete
@@ -141,6 +143,7 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 | Almacén de reservas | Memoria, PostgreSQL, Redis, SQLite (también D1), DynamoDB, Workers KV o cualquier clave-valor | Memoria, PostgreSQL, Redis, SQLite, Firestore, DynamoDB o cualquier clave-valor |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
 | Registro de entregas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite |
+| Bandeja de salida | Memoria, PostgreSQL | Memoria, PostgreSQL |
 | Entrada | API Fetch (`Request` y `Response`), `node:http` y lo que se monta encima | ASGI, Starlette y FastAPI, WSGI, Django, o cualquier framework |
 | Estilo | Asincrónico | Sincrónico y asincrónico |
 | Dependencias obligatorias | Ninguna | Ninguna |

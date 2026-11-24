@@ -21,7 +21,9 @@ import {
   nextAttempt,
   PostgresDeliveryLedger,
   PostgresIdempotencyStore,
+  PostgresOutbox,
   postgresLedgerSchema,
+  postgresOutboxSchema,
   postgresStoreSchema,
   SqliteDeliveryLedger,
   SqliteIdempotencyStore,
@@ -90,6 +92,7 @@ function verifier({ scheme, secrets, now, options = {} }) {
 let database = null;
 let store = null;
 let ledger = null;
+let outbox = null;
 
 // `sqlite:<archivo>` abre un archivo SQLite; cualquier otra URL, un PostgreSQL.
 function openDatabase(url) {
@@ -221,6 +224,60 @@ const commands = {
     return { result: await store.release({ key: step.key, token: step.token }) };
   },
   async store_close({ table, drop }) {
+    if (drop) await database.exec(`DROP TABLE IF EXISTS ${table}`);
+    await database.close();
+    return { closed: true };
+  },
+  async outbox_open({ url, table, create }) {
+    database = openDatabase(url);
+    if (create) {
+      await database.exec(`DROP TABLE IF EXISTS ${table}`);
+      await database.exec(postgresOutboxSchema(table));
+    }
+    outbox = new PostgresOutbox(database.client, { table });
+    return { ready: true };
+  },
+  async outbox_reset({ table }) {
+    await database.exec(`TRUNCATE ${table} RESTART IDENTITY`);
+    return { reset: true };
+  },
+  async outbox_step(step) {
+    if (step.op === 'enqueue') {
+      return {
+        result: await outbox.enqueue({
+          messageId: step.message_id,
+          endpointId: step.endpoint_id,
+          payload: new TextEncoder().encode(step.payload),
+          now: step.now,
+        }),
+      };
+    }
+    if (step.op === 'claim') {
+      const entries = await outbox.claim({
+        token: step.token,
+        now: step.now,
+        limit: step.limit,
+        leaseSeconds: step.lease_seconds,
+      });
+      return {
+        result: entries.map((entry) => ({
+          message_id: entry.messageId,
+          endpoint_id: entry.endpointId,
+          payload: new TextDecoder().decode(entry.payload),
+          attempt: entry.attempt,
+        })),
+      };
+    }
+    const pair = { messageId: step.message_id, endpointId: step.endpoint_id, token: step.token };
+    return {
+      result: await outbox.settle(
+        step.state === 'pending'
+          ? { ...pair, state: 'pending', nextAt: step.next_at }
+          : { ...pair, state: step.state },
+      ),
+    };
+  },
+  async outbox_close({ table, drop }) {
     if (drop) await database.exec(`DROP TABLE IF EXISTS ${table}`);
     await database.close();
     return { closed: true };
