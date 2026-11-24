@@ -168,6 +168,7 @@ Los demás extras de Python (`httpx`, `starlette`, `postgres`, `firestore`) est�
 | | |
 |---|---|
 | [Guía para recibir](docs/recibir.md) | Esquemas, almacenes, claves de evento y respuestas |
+| [Ejemplos](examples/README.md) | Un receptor mínimo en `node:http`, WSGI, Starlette y Django |
 | [Guía para emitir](docs/emitir.md) | Firma, política de URLs, reintentos y registro |
 | [Cómo agregar un esquema de firma](docs/agregar-un-esquema.md) | De la especificación al adaptador |
 | [Especificación](spec/SPEC.md) | El comportamiento que comparten todos los paquetes |
@@ -184,6 +185,7 @@ Los demás extras de Python (`httpx`, `starlette`, `postgres`, `firestore`) est�
 | [`ts/`](ts/) | El paquete de TypeScript (npm) |
 | [`python/`](python/) | El paquete de Python (PyPI) |
 | [`tools/`](tools/) | El generador de vectores y la prueba de interoperabilidad |
+| [`examples/`](examples/) | Un receptor mínimo por entorno, probado en la integración continua |
 | [`docs/`](docs/) | Las guías y las decisiones de arquitectura |
 
 ## Contribuir
