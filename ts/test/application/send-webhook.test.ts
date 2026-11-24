@@ -7,6 +7,7 @@ import {
   type SendWebhookDependencies,
   type TransportRequest,
   type TransportResponse,
+  USER_AGENT,
 } from '../../src/index';
 import { standardScheme, standardSigner } from '../../src/standard';
 
@@ -94,9 +95,14 @@ describe('SendWebhook', () => {
     expect(headers['content-type']).toBe('application/json');
   });
 
-  it('las cabeceras extra no pisan la firma ni el tipo de contenido', async () => {
+  it('las cabeceras extra no pisan la firma, el tipo de contenido ni user-agent', async () => {
     const { execute, post } = build({
-      headers: { 'X-Origen': 'tienda', 'Webhook-Id': 'falso', 'Content-Type': 'text/plain' },
+      headers: {
+        'X-Origen': 'tienda',
+        'Webhook-Id': 'falso',
+        'Content-Type': 'text/plain',
+        'User-Agent': 'otro/1.0',
+      },
       contentType: 'application/cloudevents+json',
     });
 
@@ -107,8 +113,9 @@ describe('SendWebhook', () => {
       'x-origen': 'tienda',
       'webhook-id': 'msg_1',
       'content-type': 'application/cloudevents+json',
+      'user-agent': USER_AGENT,
     });
-    expect(Object.keys(headers)).toHaveLength(5);
+    expect(Object.keys(headers)).toHaveLength(6);
   });
 
   it('un fallo que se puede reintentar deja la entrega pendiente con su próximo intento', async () => {
@@ -281,6 +288,47 @@ describe('SendWebhook', () => {
     expect(ledger.attempts()).toEqual([]);
   });
 
+  it('un payload del tamaño máximo se envía', async () => {
+    const { execute, post } = build({ maxPayloadBytes: PAYLOAD.byteLength });
+
+    expect((await execute()).state).toBe('delivered');
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('un payload más grande que el máximo no se firma, no se envía ni se registra', async () => {
+    const sign = vi.fn();
+    const { execute, post, ledger } = build({
+      maxPayloadBytes: PAYLOAD.byteLength - 1,
+      signer: { sign },
+    });
+
+    await expect(execute()).rejects.toThrow(ConfigurationError);
+    expect(sign).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
+    expect(ledger.attempts()).toEqual([]);
+  });
+
+  it('por defecto el máximo es de 256 KiB', async () => {
+    const { post } = build();
+    const send = (bytes: number) =>
+      new SendWebhook({
+        signer: standardSigner({ secrets: SECRETS }),
+        transport: { post },
+        resolver: { resolve: async () => [PUBLIC] },
+        ledger: new MemoryDeliveryLedger(),
+        clock: { now: () => NOW },
+        timer: { nowMs: () => 0 },
+        random: { next: () => 0 },
+      }).execute({
+        endpoint: { id: 'ep_1', url: 'https://hooks.ejemplo.test/entrada' },
+        message: { id: 'msg_1', payload: new Uint8Array(bytes) },
+        attempt: 1,
+      });
+
+    expect((await send(262_144)).state).toBe('delivered');
+    await expect(send(262_145)).rejects.toThrow(/262144/);
+  });
+
   it.each([0, -1, 1.5])('rechaza el número de intento %s', async (attempt) => {
     const { execute } = build();
 
@@ -289,6 +337,7 @@ describe('SendWebhook', () => {
 
   it.each([
     ['timeoutSeconds', { timeoutSeconds: 0 }],
+    ['maxPayloadBytes', { maxPayloadBytes: 0 }],
     ['schedule', { retryPolicy: { schedule: [5, -1] } }],
     ['schedule', { retryPolicy: { schedule: [1.5] } }],
     ['maxDelaySeconds', { retryPolicy: { maxDelaySeconds: 0 } }],

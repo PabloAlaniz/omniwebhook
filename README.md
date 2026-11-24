@@ -76,6 +76,7 @@ lo procesó antes. Todo lo demás termina en un resultado con su estado HTTP sug
 | `duplicate` | 200 | Ya se había procesado |
 | `in_progress` | 409 | Otro proceso lo está procesando |
 | `missing`, `ambiguous`, `malformed`, `invalid`, `stale` | 401 | No se pudo comprobar el origen |
+| `too_large` | 413 | El cuerpo supera el tamaño máximo |
 | `unconfigured` | 500 | Falta un secreto utilizable |
 | `failed` | 500 | Falló el procesamiento y la reserva quedó libre |
 

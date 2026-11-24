@@ -29,7 +29,8 @@ from omniwebhook.domain.delivery import AttemptOutcome, classify_delivery, state
 from omniwebhook.domain.destination import DestinationProblem, inspect_destination, select_address
 from omniwebhook.domain.errors import ConfigurationError, positive_integer
 from omniwebhook.domain.ip_address import allowed_networks as _allowed_networks
-from omniwebhook.domain.message import OutgoingMessage
+from omniwebhook.domain.message import DEFAULT_MAX_PAYLOAD_BYTES, OutgoingMessage
+from omniwebhook.domain.package_version import USER_AGENT
 from omniwebhook.domain.retry import RetryPolicy, next_attempt
 
 DEFAULT_TIMEOUT_SECONDS: Final = 20
@@ -99,6 +100,7 @@ class _Sending:
         allowed_networks: Sequence[str] = (),
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
         content_type: str = DEFAULT_CONTENT_TYPE,
+        max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES,
         headers: Mapping[str, str] | None = None,
     ) -> None:
         self._signer = signer
@@ -113,7 +115,17 @@ class _Sending:
         self._base_headers = {
             **{name.lower(): value for name, value in (headers or {}).items()},
             "content-type": content_type,
+            "user-agent": USER_AGENT,
         }
+        self._max_payload_bytes = positive_integer("max_payload_bytes", max_payload_bytes)
+
+    def _check(self, delivery: Delivery) -> None:
+        """Lo que impide hacer el intento y es un error de quien integra, no un resultado."""
+        positive_integer("attempt", delivery.attempt)
+        if len(delivery.payload) > self._max_payload_bytes:
+            raise ConfigurationError(
+                f"el payload supera el máximo de {self._max_payload_bytes} bytes: no se envía"
+            )
 
     def _plan(self, delivery: Delivery, at: int) -> _Planned | _Attempted:
         signing = self._signer.sign(
@@ -192,6 +204,7 @@ class SendWebhook(_Sending):
         allowed_networks: Sequence[str] = (),
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
         content_type: str = DEFAULT_CONTENT_TYPE,
+        max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES,
         headers: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(
@@ -204,6 +217,7 @@ class SendWebhook(_Sending):
             allowed_networks=allowed_networks,
             timeout_seconds=timeout_seconds,
             content_type=content_type,
+            max_payload_bytes=max_payload_bytes,
             headers=headers,
         )
         self._transport = transport
@@ -212,7 +226,7 @@ class SendWebhook(_Sending):
 
     def execute(self, delivery: Delivery) -> AttemptRecord:
         """Hace un intento. Devuelve lo mismo que guarda en el registro."""
-        positive_integer("attempt", delivery.attempt)
+        self._check(delivery)
         at = self._clock.now()
         started_ms = self._timer.now_ms()
         attempted = self._attempt(delivery, at)
@@ -261,6 +275,7 @@ class AsyncSendWebhook(_Sending):
         allowed_networks: Sequence[str] = (),
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
         content_type: str = DEFAULT_CONTENT_TYPE,
+        max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES,
         headers: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(
@@ -273,6 +288,7 @@ class AsyncSendWebhook(_Sending):
             allowed_networks=allowed_networks,
             timeout_seconds=timeout_seconds,
             content_type=content_type,
+            max_payload_bytes=max_payload_bytes,
             headers=headers,
         )
         self._transport = transport
@@ -281,7 +297,7 @@ class AsyncSendWebhook(_Sending):
 
     async def execute(self, delivery: Delivery) -> AttemptRecord:
         """Hace un intento. Devuelve lo mismo que guarda en el registro."""
-        positive_integer("attempt", delivery.attempt)
+        self._check(delivery)
         at = self._clock.now()
         started_ms = self._timer.now_ms()
         attempted = await self._attempt(delivery, at)

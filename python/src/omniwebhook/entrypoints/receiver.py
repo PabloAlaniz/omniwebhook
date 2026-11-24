@@ -10,6 +10,7 @@ from omniwebhook.application.ports import (
     Verifier,
 )
 from omniwebhook.application.receive_webhook import AsyncReceiveWebhook, EventKeyOverride, ReceiveWebhook
+from omniwebhook.domain.reception import DEFAULT_MAX_BODY_BYTES
 from omniwebhook.domain.reservation import DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS
 
 
@@ -21,6 +22,7 @@ def create_receiver(
     tokens: TokenGenerator | None = None,
     lease_seconds: int = DEFAULT_LEASE_SECONDS,
     retention_seconds: int = DEFAULT_RETENTION_SECONDS,
+    max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
     event_key: EventKeyOverride | None = None,
 ) -> ReceiveWebhook:
     return ReceiveWebhook(
@@ -30,6 +32,7 @@ def create_receiver(
         tokens=tokens or random_tokens,
         lease_seconds=lease_seconds,
         retention_seconds=retention_seconds,
+        max_body_bytes=max_body_bytes,
         event_key=event_key,
     )
 
@@ -42,6 +45,7 @@ def create_async_receiver(
     tokens: TokenGenerator | None = None,
     lease_seconds: int = DEFAULT_LEASE_SECONDS,
     retention_seconds: int = DEFAULT_RETENTION_SECONDS,
+    max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
     event_key: EventKeyOverride | None = None,
 ) -> AsyncReceiveWebhook:
     return AsyncReceiveWebhook(
@@ -51,5 +55,6 @@ def create_async_receiver(
         tokens=tokens or random_tokens,
         lease_seconds=lease_seconds,
         retention_seconds=retention_seconds,
+        max_body_bytes=max_body_bytes,
         event_key=event_key,
     )

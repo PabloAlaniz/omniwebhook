@@ -265,8 +265,23 @@ standardSigner({ secrets: [nuevo, anterior] });
 
 ## Cabeceras propias
 
-Podés agregar cabeceras a cada envío con `headers`. No pueden reemplazar las de la firma ni la del
-tipo de contenido, que se cambia con `contentType` (`content_type`).
+Podés agregar cabeceras a cada envío con `headers`. No pueden reemplazar las de la firma, la del
+tipo de contenido, que se cambia con `contentType` (`content_type`), ni `user-agent`.
+
+Cada envío se identifica con `user-agent: omniwebhook/<versión> (<lenguaje>)`. Quien recibe lo
+puede usar para reconocer el tráfico en sus logs; para comprobar el origen está la firma.
+
+## Tamaño del payload
+
+Un payload de más de 256 KiB no se envía: `execute` lanza un error de configuración, como con un
+`id` inválido. Se cambia con `maxPayloadBytes` (`max_payload_bytes`), pero conviene no hacerlo: un
+webhook chico que dice qué pasó y dónde consultar el detalle le deja a quien recibe decidir qué
+traer, y no depende del límite de tamaño de su servidor.
+
+## La respuesta del destino
+
+De la respuesta sólo se usan el estado y la cabecera `retry-after`. El cuerpo no se lee: un
+destino no puede hacerte gastar memoria respondiendo con uno enorme.
 
 ## Qué le decís a quien recibe
 

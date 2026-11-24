@@ -19,6 +19,8 @@
           "path": "python/pyproject.toml",
           "jsonpath": "$.project.version"
         },
+        "ts/src/domain/package-version.ts",
+        "python/src/omniwebhook/domain/package_version.py",
         {
           "type": "toml",
           "path": "python/uv.lock",

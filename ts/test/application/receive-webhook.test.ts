@@ -17,6 +17,7 @@ interface ReceiveCase {
   readonly token: string;
   readonly lease_seconds: number;
   readonly retention_seconds: number;
+  readonly max_body_bytes: number;
   readonly handler: 'succeeds' | 'fails';
   readonly before: readonly StoreStep[];
   readonly request: RequestVector;
@@ -47,6 +48,7 @@ describe('vectores de recibir/caso-de-uso', () => {
       tokens: { next: () => c.token },
       leaseSeconds: c.lease_seconds,
       retentionSeconds: c.retention_seconds,
+      maxBodyBytes: c.max_body_bytes,
     });
 
     const result = await receive.execute(toRequest(c.request), handler);
@@ -154,6 +156,7 @@ describe('ReceiveWebhook', () => {
   });
 
   it.each([
+    ['maxBodyBytes', { maxBodyBytes: 0 }],
     ['leaseSeconds', { leaseSeconds: 0 }],
     ['leaseSeconds', { leaseSeconds: 1.5 }],
     ['retentionSeconds', { retentionSeconds: -1 }],

@@ -1,5 +1,6 @@
 import { positiveInteger } from '../domain/errors';
 import type { IncomingRequest } from '../domain/incoming-request';
+import { DEFAULT_MAX_BODY_BYTES } from '../domain/reception';
 import { DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS } from '../domain/reservation';
 import type { Rejected } from '../domain/verification';
 import type { Clock, IdempotencyStore, TokenGenerator, Verifier } from './ports';
@@ -16,6 +17,7 @@ export type EventHandler = (event: VerifiedEvent) => void | Promise<void>;
 export type Reception =
   | { readonly outcome: 'ok' | 'duplicate' | 'in_progress'; readonly eventKey: string }
   | { readonly outcome: 'failed'; readonly eventKey: string; readonly error: unknown }
+  | { readonly outcome: 'too_large' }
   | Rejected;
 
 export interface ReceiveWebhookDependencies {
@@ -25,17 +27,20 @@ export interface ReceiveWebhookDependencies {
   readonly tokens: TokenGenerator;
   readonly leaseSeconds?: number;
   readonly retentionSeconds?: number;
+  /** El tamaño máximo del cuerpo, en bytes. Uno más grande termina en `too_large` sin verificarse. */
+  readonly maxBodyBytes?: number;
   /** Reemplaza la clave del evento por una propia, calculada del pedido ya verificado. */
   readonly eventKey?: (event: VerifiedEvent) => string;
 }
 
 /**
- * Recibir un webhook (sección 6.2): verificar, reservar, procesar y completar. Si el
+ * Recibir un webhook (sección 6.2): acotar el tamaño, verificar, reservar, procesar y completar. Si el
  * procesamiento falla, la reserva se libera para que el reintento del emisor funcione.
  */
 export class ReceiveWebhook {
   private readonly leaseSeconds: number;
   private readonly retentionSeconds: number;
+  private readonly maxBodyBytes: number;
 
   constructor(private readonly deps: ReceiveWebhookDependencies) {
     this.leaseSeconds = positiveInteger('leaseSeconds', deps.leaseSeconds ?? DEFAULT_LEASE_SECONDS);
@@ -43,10 +48,17 @@ export class ReceiveWebhook {
       'retentionSeconds',
       deps.retentionSeconds ?? DEFAULT_RETENTION_SECONDS,
     );
+    this.maxBodyBytes = positiveInteger(
+      'maxBodyBytes',
+      deps.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES,
+    );
   }
 
   async execute(request: IncomingRequest, handler: EventHandler): Promise<Reception> {
     const { verifier, store, clock, tokens } = this.deps;
+
+    // Antes que la firma: un pedido sin autenticar no elige cuánto trabajo cuesta rechazarlo.
+    if (request.body.byteLength > this.maxBodyBytes) return { outcome: 'too_large' };
 
     const verification = await verifier.verify(request);
     if (verification.outcome !== 'ok') return verification;

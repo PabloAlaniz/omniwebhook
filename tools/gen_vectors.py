@@ -1013,7 +1013,9 @@ STATUS = {
     "stale": 401,
     "unconfigured": 500,
     "failed": 500,
+    "too_large": 413,
 }
+MAX_BODY_BYTES = 1_048_576
 
 
 def recibir_respuesta() -> Vector:
@@ -1035,12 +1037,16 @@ def recibir_caso_de_uso() -> Vector:
         before: list[dict[str, Any]] | None = None,
         after: list[dict[str, Any]] | None = None,
         secrets: list[str] | None = None,
+        max_body: int = MAX_BODY_BYTES,
     ) -> dict[str, Any]:
         secrets = [STD_SECRET] if secrets is None else secrets
         shelf = Shelf()
         prior = played(before or [], shelf)
-        verdict = check({"scheme": "standard", "secrets": secrets, "now": NOW, "request": req})
-        outcome, called = verdict["outcome"], False
+        called = False
+        if len(req["body"].encode()) > max_body:
+            outcome = "too_large"
+        else:
+            outcome = check({"scheme": "standard", "secrets": secrets, "now": NOW, "request": req})["outcome"]
         if outcome == "ok":
             state = shelf.run(claim("t-nuevo", NOW, key=key))
             if state == "claimed":
@@ -1063,6 +1069,7 @@ def recibir_caso_de_uso() -> Vector:
             "token": "t-nuevo",
             "lease_seconds": 300,
             "retention_seconds": 604800,
+            "max_body_bytes": max_body,
             "handler": handler,
             "before": prior,
             "request": req,
@@ -1106,6 +1113,32 @@ def recibir_caso_de_uso() -> Vector:
         ),
         case("sin secretos: no se reserva ni se ejecuta", "succeeds", secrets=[], after=probe),
         case("sin cabeceras: no se reserva ni se ejecuta", "succeeds", request([], STD_BODY), after=probe),
+        case(
+            "un cuerpo del tamaño máximo se procesa",
+            "succeeds",
+            max_body=len(STD_BODY.encode()),
+            after=probe,
+        ),
+        case(
+            "un byte más que el máximo: no se reserva ni se ejecuta",
+            "succeeds",
+            max_body=len(STD_BODY.encode()) - 1,
+            after=probe,
+        ),
+        case(
+            "el tamaño se comprueba antes que la firma",
+            "succeeds",
+            request(std_headers(secret=STD_OTHER), STD_BODY),
+            max_body=len(STD_BODY.encode()) - 1,
+            after=probe,
+        ),
+        case(
+            "el tamaño se comprueba antes que los secretos",
+            "succeeds",
+            secrets=[],
+            max_body=len(STD_BODY.encode()) - 1,
+            after=probe,
+        ),
     ]
     return {"spec": SPEC, "id": "recibir/caso-de-uso", "kind": "receive", "cases": cases}
 

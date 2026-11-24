@@ -51,6 +51,7 @@ def _opciones(caso: Caso) -> dict[str, Any]:
         "tokens": TokensFijos(caso["token"]),
         "lease_seconds": caso["lease_seconds"],
         "retention_seconds": caso["retention_seconds"],
+        "max_body_bytes": caso["max_body_bytes"],
     }
 
 
@@ -178,7 +179,8 @@ def test_usa_los_plazos_por_defecto_de_la_especificacion() -> None:
 
 
 @pytest.mark.parametrize(
-    ("opcion", "valor"), [("lease_seconds", 0), ("lease_seconds", 1.5), ("retention_seconds", -1)]
+    ("opcion", "valor"),
+    [("max_body_bytes", 0), ("lease_seconds", 0), ("lease_seconds", 1.5), ("retention_seconds", -1)],
 )
 def test_rechaza_un_plazo_invalido_al_construirse(opcion: str, valor: object) -> None:
     with pytest.raises(ConfigurationError, match=f"{opcion} tiene que ser un entero mayor que cero"):

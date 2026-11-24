@@ -221,14 +221,26 @@ solo lo vencido.
 - **`retentionSeconds` / `retention_seconds`** (siete días por defecto): cuánto se recuerda un
   evento ya procesado. Tiene que cubrir la ventana en la que el emisor reintenta.
 
+### Tamaño del cuerpo
+
+- **`maxBodyBytes` / `max_body_bytes`** (1 MiB por defecto): un cuerpo más grande termina en
+  `too_large`, con estado 413, antes de mirar la firma. Si tu emisor manda eventos más grandes,
+  subilo.
+
+Este límite evita calcular una firma sobre un cuerpo enorme, pero cuando llega al paquete el
+cuerpo ya está en memoria. El límite que protege la memoria es el de tu servidor o tu framework:
+configuralo igual o más bajo.
+
 ## Qué responder
 
 `toResponse` y `to_response` arman la respuesta con el estado sugerido y sin cuerpo: la respuesta no
 le dice a quien llama cuál de las comprobaciones falló. Si armás la respuesta a mano,
 `httpStatusFor(outcome)` (`http_status_for(outcome)`) da el estado.
 
-Dos casos que conviene entender:
+Tres casos que conviene entender:
 
+- **`too_large` responde 413.** No es un problema de origen sino de tamaño, y reintentar no lo
+  arregla: la mayoría de los emisores deja de intentar ante un 4xx.
 - **`duplicate` responde 200.** El evento ya se procesó; un error haría que el emisor siga
   reintentando.
 - **`failed` responde 500 y libera la reserva.** El emisor reintenta y el reintento se procesa. El
