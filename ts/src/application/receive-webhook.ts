@@ -1,9 +1,16 @@
-import { positiveInteger } from '../domain/errors';
+import { ConfigurationError, positiveInteger } from '../domain/errors';
 import type { IncomingRequest } from '../domain/incoming-request';
 import { DEFAULT_MAX_BODY_BYTES } from '../domain/reception';
 import { DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS } from '../domain/reservation';
 import type { Rejected } from '../domain/verification';
-import type { Clock, IdempotencyStore, TokenGenerator, Verifier } from './ports';
+import type {
+  Clock,
+  IdempotencyStore,
+  ReceptionObserver,
+  Timer,
+  TokenGenerator,
+  Verifier,
+} from './ports';
 
 /** Lo que recibe la función que procesa el evento: sólo existe si el pedido se verificó. */
 export interface VerifiedEvent {
@@ -31,6 +38,9 @@ export interface ReceiveWebhookDependencies {
   readonly maxBodyBytes?: number;
   /** Reemplaza la clave del evento por una propia, calculada del pedido ya verificado. */
   readonly eventKey?: (event: VerifiedEvent) => string;
+  /** Recibe el resultado y la duración de cada recepción (sección 6.4). Necesita `timer`. */
+  readonly observer?: ReceptionObserver;
+  readonly timer?: Timer;
 }
 
 /**
@@ -52,9 +62,30 @@ export class ReceiveWebhook {
       'maxBodyBytes',
       deps.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES,
     );
+    if (deps.observer !== undefined && deps.timer === undefined) {
+      throw new ConfigurationError('observer necesita timer para medir la duración');
+    }
   }
 
   async execute(request: IncomingRequest, handler: EventHandler): Promise<Reception> {
+    const { observer, timer } = this.deps;
+    if (observer === undefined || timer === undefined) return this.receive(request, handler);
+
+    const startedMs = timer.nowMs();
+    const reception = await this.receive(request, handler);
+    try {
+      observer.onReception({
+        outcome: reception.outcome,
+        eventKey: 'eventKey' in reception ? reception.eventKey : null,
+        durationMs: timer.nowMs() - startedMs,
+      });
+    } catch {
+      // Una falla al medir no cambia el resultado de la recepción.
+    }
+    return reception;
+  }
+
+  private async receive(request: IncomingRequest, handler: EventHandler): Promise<Reception> {
     const { verifier, store, clock, tokens } = this.deps;
 
     // Antes que la firma: un pedido sin autenticar no elige cuánto trabajo cuesta rechazarlo.

@@ -52,6 +52,8 @@ export type {
   IdempotencyStore,
   MessageSigner,
   RandomSource,
+  ReceptionObservation,
+  ReceptionObserver,
   ReleaseRequest,
   Timer,
   TokenGenerator,

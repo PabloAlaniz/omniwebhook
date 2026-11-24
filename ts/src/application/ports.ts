@@ -2,6 +2,7 @@ import type { DeliveryClass, DeliveryState } from '../domain/delivery';
 import type { DestinationProblem } from '../domain/destination';
 import type { IncomingRequest } from '../domain/incoming-request';
 import type { OutgoingMessage, Signing } from '../domain/message';
+import type { ReceptionOutcome } from '../domain/reception';
 import type { ClaimOutcome } from '../domain/reservation';
 import type { Verification } from '../domain/verification';
 
@@ -42,6 +43,20 @@ export interface CompleteRequest {
 export interface ReleaseRequest {
   readonly key: string;
   readonly token: string;
+}
+
+/** Lo que se le informa al observador de cada recepción. Nunca incluye el cuerpo ni un secreto. */
+export interface ReceptionObservation {
+  readonly outcome: ReceptionOutcome;
+  /** La clave del evento; `null` si el pedido no llegó a verificarse. */
+  readonly eventKey: string | null;
+  /** Cuánto llevó la recepción completa, incluido el procesamiento. */
+  readonly durationMs: number;
+}
+
+/** Observa las recepciones (sección 6.4). No cambia el resultado: si lanza, el error se descarta. */
+export interface ReceptionObserver {
+  onReception(observation: ReceptionObservation): void;
 }
 
 /** El almacén de reservas (sección 6.1). Las tres operaciones tienen que ser atómicas. */

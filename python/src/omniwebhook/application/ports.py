@@ -12,6 +12,7 @@ from omniwebhook.domain.delivery import DeliveryClass, DeliveryState
 from omniwebhook.domain.destination import DestinationProblem
 from omniwebhook.domain.incoming_request import IncomingRequest
 from omniwebhook.domain.message import OutgoingMessage, Signing
+from omniwebhook.domain.reception import ReceptionOutcome
 from omniwebhook.domain.reservation import ClaimOutcome
 from omniwebhook.domain.verification import Verification
 
@@ -84,6 +85,23 @@ class AsyncIdempotencyStore(Protocol):
     async def complete(self, request: CompleteRequest) -> bool: ...
 
     async def release(self, request: ReleaseRequest) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ReceptionObservation:
+    """Lo que se le informa al observador de cada recepción. Nunca incluye el cuerpo ni un secreto."""
+
+    outcome: ReceptionOutcome
+    event_key: str | None
+    """La clave del evento; `None` si el pedido no llegó a verificarse."""
+    duration_ms: int
+    """Cuánto llevó la recepción completa, incluido el procesamiento."""
+
+
+class ReceptionObserver(Protocol):
+    """Observa las recepciones (sección 6.4). No cambia el resultado: si lanza, el error se descarta."""
+
+    def on_reception(self, observation: ReceptionObservation) -> None: ...
 
 
 class Timer(Protocol):

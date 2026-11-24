@@ -13,17 +13,19 @@ from omniwebhook import (
     MemoryIdempotencyStore,
     ReceiveWebhook,
     Reception,
+    ReceptionObservation,
     Rejected,
     ReleaseRequest,
     Verification,
     Verified,
     VerifiedEvent,
+    create_receiver,
     http_status_for,
 )
 from omniwebhook.domain.reservation import ClaimOutcome
 from omniwebhook.standard import standard_scheme
 from tests.contracts.idempotency_store import reproducir, reproducir_async
-from tests.support.dobles import RelojFijo, TokensFijos
+from tests.support.dobles import Cronometro, RelojFijo, TokensFijos
 from tests.support.vectors import Caso, a_pedido, casos, nombre
 
 CASOS = casos("recibir/caso-de-uso")
@@ -226,3 +228,94 @@ async def test_una_cancelacion_libera_la_reserva_y_sigue_su_camino() -> None:
 
     sonda = ClaimRequest(key="prueba:1", token="sonda", now=1_700_000_000, lease_seconds=1)
     assert await almacen.claim(sonda) == "claimed"
+
+
+class Observador:
+    def __init__(self, falla: Exception | None = None) -> None:
+        self.vistos: list[ReceptionObservation] = []
+        self.falla = falla
+
+    def on_reception(self, observation: ReceptionObservation) -> None:
+        self.vistos.append(observation)
+        if self.falla is not None:
+            raise self.falla
+
+
+class Invalido:
+    def verify(self, request: IncomingRequest) -> Verification:
+        return Rejected("invalid")
+
+
+def test_el_observador_recibe_el_resultado_la_clave_y_la_duracion_una_vez_por_pedido() -> None:
+    observador = Observador()
+    recibir, _ = _recibir(observer=observador, timer=Cronometro(paso=25))
+
+    recibir.execute(PEDIDO, lambda _evento: None)
+    recibir.execute(PEDIDO, lambda _evento: None)
+
+    assert observador.vistos == [
+        ReceptionObservation(outcome="ok", event_key="prueba:1", duration_ms=25),
+        ReceptionObservation(outcome="duplicate", event_key="prueba:1", duration_ms=25),
+    ]
+
+
+def test_el_observador_recibe_un_rechazo_sin_clave_de_evento() -> None:
+    observador = Observador()
+    recibir, _ = _recibir(verifier=Invalido(), observer=observador, timer=Cronometro(paso=25))
+
+    recibir.execute(PEDIDO, lambda _evento: None)
+
+    assert observador.vistos == [ReceptionObservation(outcome="invalid", event_key=None, duration_ms=25)]
+
+
+def test_al_observador_se_lo_llama_despues_de_liberar_la_reserva() -> None:
+    observador = Observador()
+    recibir, almacen = _recibir(observer=observador, timer=Cronometro())
+
+    def falla(_evento: VerifiedEvent) -> None:
+        raise Falla("falló")
+
+    recibir.execute(PEDIDO, falla)
+
+    assert [visto.outcome for visto in observador.vistos] == ["failed"]
+    assert _sonda(almacen) == "claimed"
+
+
+def test_si_el_observador_falla_el_resultado_no_cambia() -> None:
+    recibir, _ = _recibir(observer=Observador(falla=RuntimeError("falló la telemetría")), timer=Cronometro())
+
+    assert recibir.execute(PEDIDO, lambda _evento: None) == Reception(outcome="ok", event_key="prueba:1")
+
+
+async def test_el_observador_tambien_ve_la_variante_asincronica() -> None:
+    observador = Observador()
+    recibir = AsyncReceiveWebhook(
+        verifier=Verificado(),
+        store=AsyncMemoryIdempotencyStore(),
+        clock=RelojFijo(),
+        tokens=TokensFijos(),
+        observer=observador,
+        timer=Cronometro(paso=25),
+    )
+
+    async def procesar(_evento: VerifiedEvent) -> None:
+        return None
+
+    await recibir.execute(PEDIDO, procesar)
+
+    assert observador.vistos == [ReceptionObservation(outcome="ok", event_key="prueba:1", duration_ms=25)]
+
+
+def test_un_observador_sin_cronometro_es_un_error_de_configuracion() -> None:
+    with pytest.raises(ConfigurationError, match="timer"):
+        _recibir(observer=Observador())
+
+
+def test_create_receiver_pone_el_cronometro_por_defecto() -> None:
+    observador = Observador()
+    recibir = create_receiver(verifier=Verificado(), store=MemoryIdempotencyStore(), observer=observador)
+
+    recibir.execute(PEDIDO, lambda _evento: None)
+
+    assert [visto.outcome for visto in observador.vistos] == ["ok"]
+    assert observador.vistos[0].duration_ms >= 0

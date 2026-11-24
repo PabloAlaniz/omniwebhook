@@ -323,6 +323,33 @@ const reception = await receive.execute(pedido, procesar);
 if (reception.outcome === 'failed') logger.error(reception.error);
 ```
 
+## Medir lo que pasa
+
+Con `observer`, cada recepción te informa su resultado, la clave del evento y cuánto tardó. Sirve
+para contar rechazos por motivo o para alertar si suben los `failed`, sin tocar tu función:
+
+```ts
+const receptor = createReceiver({
+  verifier: stripeScheme({ secrets: [secreto] }),
+  store,
+  observer: {
+    onReception: ({ outcome, eventKey, durationMs }) => logger.info({ outcome, eventKey, durationMs }),
+  },
+});
+```
+
+```python
+class Metricas:
+    def on_reception(self, observation: ReceptionObservation) -> None:
+        print(observation.outcome, observation.event_key, observation.duration_ms)
+
+receptor = create_receiver(verifier=stripe_scheme(secrets=[secreto]), store=store, observer=Metricas())
+```
+
+El observador no recibe el cuerpo, las cabeceras ni ningún secreto, y no puede cambiar el
+resultado: si lanza, el error se descarta. Para la emisión no hace falta: el registro de entregas
+ya recibe cada intento.
+
 ## Probar tu integración
 
 `omniwebhook/testing` (`omniwebhook.testing`) arma el pedido que mandaría cada emisor, firmado con
