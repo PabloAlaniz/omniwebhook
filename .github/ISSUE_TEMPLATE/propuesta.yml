@@ -1,0 +1,20 @@
+name: Una propuesta
+description: Un cambio de comportamiento o una pieza nueva.
+labels: [propuesta]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué problema resuelve
+      description: El caso concreto en el que hoy el paquete no alcanza.
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Qué proponés
+      description: Si cambia el comportamiento, cómo quedaría en la especificación.
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Qué otras formas consideraste
