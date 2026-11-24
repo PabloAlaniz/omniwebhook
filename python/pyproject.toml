@@ -42,6 +42,9 @@ django = ["django>=4.2"]
 # El almacén de `omniwebhook.firestore`.
 firestore = ["google-cloud-firestore>=2.16"]
 
+[project.scripts]
+omniwebhook = "omniwebhook.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/PabloAlaniz/omniwebhook"
 Repository = "https://github.com/PabloAlaniz/omniwebhook"

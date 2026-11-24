@@ -440,6 +440,33 @@ Para probar que un evento repetido no se procesa dos veces, mandá el mismo pedi
 veces. Sirve para todos los esquemas incluidos; con `hmac-body` recibe la misma configuración que
 el esquema.
 
+## Depurar desde la terminal
+
+Los dos paquetes instalan el mismo comando, `omniwebhook`, para probar una integración sin escribir
+código. Con npm se corre con `npx omniwebhook`; con Python, `omniwebhook` o `python -m omniwebhook`.
+
+```bash
+export FIRMA='el secreto del emisor'
+
+# Mandar un evento firmado a tu servidor local
+omniwebhook send --scheme stripe --secret-env FIRMA --body evento.json \
+  --url http://localhost:3000/webhooks
+
+# Ver el pedido que mandaría el emisor, y guardarlo
+omniwebhook sign --scheme stripe --secret-env FIRMA --body evento.json > pedido.json
+
+# Verificar un pedido guardado: dice el resultado y termina con 0 sólo si es ok
+omniwebhook verify --scheme stripe --secret-env FIRMA --request pedido.json
+```
+
+El secreto se lee de una variable de entorno y nunca va como argumento, para que no quede en el
+historial de la terminal. `--timestamp` firma con otra hora, para provocar un `stale`; `--body -` y
+`--request -` leen de la entrada estándar. Sirve para los esquemas de secreto compartido; los de
+clave pública no se pueden firmar desde acá.
+
+Es una herramienta de desarrollo: `send` manda a la URL que le digas, sin la política de URLs de
+destino que aplica la emisión.
+
 ## Sincrónico o asincrónico, en Python
 
 Cada pieza que hace entrada/salida tiene las dos variantes. La asincrónica lleva el prefijo
