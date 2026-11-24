@@ -3,15 +3,16 @@
 [![CI](https://github.com/PabloAlaniz/omniwebhook/actions/workflows/ci.yml/badge.svg)](https://github.com/PabloAlaniz/omniwebhook/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/PabloAlaniz/omniwebhook/badge)](https://scorecard.dev/viewer/?uri=github.com/PabloAlaniz/omniwebhook)
 
-English · [Español](README.md)
+English · [Español](README.md) · [简体中文](README.zh-CN.md) · [Português (Brasil)](README.pt-BR.md)
 
 Signed webhooks, sent and received the same way on any stack.
 
 > **Pre-1.0.** Both packages are published on npm and PyPI, complete and covering the whole
 > specification, but the API can still change between minor versions.
 
-> **About the docs.** This page is in English. The guides and the specification are written in
-> Spanish and are being translated; until then, the links below go to the Spanish originals.
+> **About this translation.** This page is a translation; if it disagrees with the
+> [Spanish original](README.md), the original wins. The guides and the specification are written
+> in Spanish and are being translated; until then, the links below go to the Spanish originals.
 
 Almost every product ends up receiving webhooks from a payment provider and sending its own. And
 it almost always gets written again from scratch: one signature check per provider, a table to
