@@ -227,6 +227,30 @@ Un esquema genérico para emisores que firman sólo el cuerpo. Se configura con:
 - Clave del evento: `<name>:<valor de id_header>` si está configurada y llega. Si no, la huella
   del cuerpo.
 
+### 5.8. `slack`
+
+- Cabeceras exigidas: `x-slack-signature` y `x-slack-request-timestamp`.
+- `x-slack-request-timestamp` DEBE cumplir `^[0-9]{1,11}$`. Si no, `malformed`.
+- `x-slack-signature` DEBE empezar con `v0=`, tal cual. Si no, `malformed`. Lo que sigue es la
+  firma.
+- Secreto: el texto completo, en UTF-8, es la clave (el *signing secret* de la app).
+- Contenido firmado: `v0:<x-slack-request-timestamp>:<cuerpo>`.
+- Firma: hexadecimal del HMAC.
+- Marca de tiempo: `x-slack-request-timestamp`, en segundos.
+- Clave del evento: `slack:<event_id>`, con la regla del campo `id` de `stripe` aplicada al campo
+  `event_id` del cuerpo. Los pedidos que no son eventos (comandos, interacciones) llegan como
+  formulario y no traen ese campo: su clave es la huella del cuerpo.
+
+### 5.9. `shopify`
+
+- Cabecera exigida: `x-shopify-hmac-sha256`. Opcional: `x-shopify-webhook-id`.
+- Secreto: el texto completo, en UTF-8, es la clave (el *client secret* de la app).
+- Contenido firmado: el cuerpo.
+- Firma: base64 del HMAC, con relleno. Se compara tal como llegó.
+- Sin marca de tiempo.
+- Clave del evento: `shopify:<x-shopify-webhook-id>` si llega. Si no, la huella del cuerpo. Ese
+  identificador se repite en los reintentos de un mismo webhook.
+
 ## 6. Recibir: procesar una sola vez
 
 ### 6.1. El almacén de reservas

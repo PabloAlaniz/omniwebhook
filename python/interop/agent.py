@@ -39,6 +39,8 @@ from omniwebhook import (
     is_blocked_address,
     mercadopago_scheme,
     next_attempt,
+    shopify_scheme,
+    slack_scheme,
     stripe_scheme,
     tiktok_scheme,
 )
@@ -85,6 +87,10 @@ def verifier(scheme: str, secrets: list[str], now: int, options: Json) -> Verifi
         return github_scheme(secrets=secrets)
     if scheme == "creem":
         return creem_scheme(secrets=secrets)
+    if scheme == "shopify":
+        return shopify_scheme(secrets=secrets)
+    if scheme == "slack":
+        return slack_scheme(**timed)
     if scheme == "hmac-body":
         return hmac_body_scheme(secrets=secrets, **options)
     raise ValueError(f"esquema desconocido: {scheme}")

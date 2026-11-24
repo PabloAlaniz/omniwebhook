@@ -87,6 +87,8 @@ simplemente la firma no coincide.
 | Mercado Pago | `mercadoPagoScheme` | `mercadopago_scheme` | Sí | `data.id` y `x-request-id` |
 | GitHub | `githubScheme` | `github_scheme` | No | `x-github-delivery` |
 | Creem | `creemScheme` | `creem_scheme` | No | `id` del cuerpo |
+| Slack | `slackScheme` | `slack_scheme` | Sí | `event_id` del cuerpo, o la huella |
+| Shopify | `shopifyScheme` | `shopify_scheme` | No | `x-shopify-webhook-id` |
 | Cuerpo firmado con HMAC | `hmacBodyScheme` | `hmac_body_scheme` | No | Una cabecera, o la huella del cuerpo |
 
 Todos reciben una lista de secretos. La firma vale si coincide con cualquiera, así que para rotar un

@@ -25,6 +25,8 @@ from omniwebhook import (
     is_blocked_address,
     mercadopago_scheme,
     next_attempt,
+    shopify_scheme,
+    slack_scheme,
     stripe_scheme,
     tiktok_scheme,
 )
@@ -45,6 +47,8 @@ ESQUEMAS: dict[str, Verifier] = {
     "mercadopago": mercadopago_scheme(secrets=["secreto-sintetico"], clock=RELOJ),
     "github": github_scheme(secrets=["secreto-sintetico"]),
     "creem": creem_scheme(secrets=["secreto-sintetico"]),
+    "slack": slack_scheme(secrets=["secreto-sintetico"], clock=RELOJ),
+    "shopify": shopify_scheme(secrets=["secreto-sintetico"]),
     "hmac-body": hmac_body_scheme(secrets=["secreto-sintetico"], header="x-firma"),
 }
 
@@ -59,6 +63,10 @@ NOMBRES = [
     "x-request-id",
     "x-hub-signature-256",
     "creem-signature",
+    "x-slack-signature",
+    "x-slack-request-timestamp",
+    "x-shopify-hmac-sha256",
+    "x-shopify-webhook-id",
     "x-firma",
     "data.id",
 ]

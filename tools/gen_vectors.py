@@ -104,13 +104,13 @@ def not_json(constant: str) -> None:
     raise ValueError(constant)
 
 
-def json_id(scheme: str, body: bytes) -> str:
+def json_id(scheme: str, body: bytes, field: str = "id") -> str:
     try:
         data = json.loads(body.decode("utf-8"), parse_constant=not_json, parse_int=float)
     except (UnicodeDecodeError, ValueError):
         return fingerprint(scheme, body)
-    if type(data) is dict and type(data.get("id")) is str and data["id"]:
-        return f"{scheme}:{data['id']}"
+    if type(data) is dict and type(data.get(field)) is str and data[field]:
+        return f"{scheme}:{data[field]}"
     return fingerprint(scheme, body)
 
 
@@ -177,6 +177,17 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             valid = any(hexmac(secret, signed) == sigs[0] for secret in secrets)
             stamp, event = int(times[0]), fingerprint("tiktok", body)
 
+        elif scheme == "slack":
+            sig = values(headers, "x-slack-signature")
+            ts = values(headers, "x-slack-request-timestamp")
+            need([sig, ts])
+            unique(sig, ts)
+            if not SECONDS.fullmatch(ts[0]) or not sig[0].startswith("v0="):
+                raise Stop("malformed")
+            signed = f"v0:{ts[0]}:".encode() + body
+            valid = any(hexmac(secret, signed) == sig[0][3:].lower() for secret in secrets)
+            stamp, event = int(ts[0]), json_id("slack", body, "event_id")
+
         elif scheme == "mercadopago":
             header = values(headers, "x-signature")
             request_id = values(headers, "x-request-id")
@@ -202,7 +213,7 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             else:
                 event = f"mercadopago:ts:{times[0]}"
 
-        elif scheme in ("github", "creem", "hmac-body"):
+        elif scheme in ("github", "creem", "shopify", "hmac-body"):
             preset = {
                 "github": {
                     "header": "x-hub-signature-256",
@@ -210,6 +221,11 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
                     "id_header": "x-github-delivery",
                 },
                 "creem": {"header": "creem-signature"},
+                "shopify": {
+                    "header": "x-shopify-hmac-sha256",
+                    "encoding": "base64",
+                    "id_header": "x-shopify-webhook-id",
+                },
                 "hmac-body": options,
             }[scheme]
             name = options.get("name", "hmac-body") if scheme == "hmac-body" else scheme
@@ -842,6 +858,135 @@ def verificar_hmac_body() -> Vector:
             case("cuerpo alterado", "invalid", basic, [["x-firma", hexsig]], body + " "),
             case("hexadecimal donde se espera base64", "invalid", b64, [["x-firma", hexsig]]),
             case("base64 sin relleno", "invalid", b64, [["x-firma", b64sig.rstrip("=")]]),
+        ],
+    )
+
+
+# --- slack y shopify ------------------------------------------------------------
+
+SLACK_BODY = '{"type":"event_callback","event_id":"Ev0SINTETICO1","event":{"type":"app_mention"}}'
+
+
+def slack_headers(
+    ts: int | str = NOW, body: str = SLACK_BODY, secret: str = TXT_SECRET, version: str = "v0"
+) -> Pairs:
+    signature = hexmac(secret, f"v0:{ts}:{body}".encode())
+    return [["x-slack-signature", f"{version}={signature}"], ["x-slack-request-timestamp", str(ts)]]
+
+
+def verificar_slack() -> Vector:
+    good = slack_headers()
+    sig = good[0][1]
+    # Ejemplo de la documentación pública del emisor. Sólo comprueba que acá se firma igual: no
+    # va a los vectores, porque su cuerpo trae una URL del emisor.
+    doc_secret, doc_ts = "8f742231b10e8888abcd99yyyzzz85a5", 1531420618
+    doc_body = (
+        "token=xyzz0WbapA4vBCDEFasx0q6G&team_id=T1DC2JH3J&team_domain=testteamnow&channel_id=G8PSS9T3V"
+        "&channel_name=foobar&user_id=U2CERLKJA&user_name=roadrunner&command=%2Fwebhook-collect&text="
+        "&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FT1DC2JH3J%2F397700885554"
+        "%2F96rGlfmibIGlgcZRskXaIFfN&trigger_id=398738663015.47445629121.803a0bc887a14d10d2c447fce8b6703c"
+    )
+    doc_headers = slack_headers(doc_ts, doc_body, doc_secret)
+    assert doc_headers[0][1] == "v0=a2114d57b48eac39b9ad189dd8316235a7b4a8d21a10bd27519666489c69b503"
+
+    def case(
+        name: str, want: str, headers: Pairs = good, body: str = SLACK_BODY, **extra: Any
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "secrets": [TXT_SECRET],
+            "request": request(headers, body),
+            **extra,
+        }
+
+    form = "token=sintetico&command=%2Fpedido&trigger_id=1.2.abc"
+    no_id = '{"type":"url_verification","challenge":"sintetico"}'
+    return verify_file(
+        "slack",
+        [
+            case("firma válida", "ok"),
+            case("cuerpo de formulario: la clave es la huella", "ok", slack_headers(body=form), form),
+            case("cuerpo sin event_id: la clave es la huella", "ok", slack_headers(body=no_id), no_id),
+            case("firma en mayúsculas", "ok", swap(good, "x-slack-signature", "v0=" + sig[3:].upper())),
+            case("nombres de cabecera en mayúsculas", "ok", [[name.upper(), value] for name, value in good]),
+            case("rotación: coincide el segundo secreto", "ok", secrets=[TXT_OTHER, TXT_SECRET]),
+            case("en el borde de la tolerancia", "ok", slack_headers(ts=NOW - 300)),
+            case("sin secretos", "unconfigured", secrets=[]),
+            case("falta la firma", "missing", good[1:]),
+            case("falta la marca de tiempo", "missing", good[:1]),
+            case("firma repetida", "ambiguous", [*good, ["x-slack-signature", sig]]),
+            case("marca de tiempo repetida", "ambiguous", [*good, ["x-slack-request-timestamp", str(NOW)]]),
+            case("falta la marca de tiempo y la firma está repetida", "missing", [good[0], good[0]]),
+            case("sin el prefijo de versión", "malformed", swap(good, "x-slack-signature", sig[3:])),
+            case("otra versión de firma", "malformed", slack_headers(version="v1")),
+            case("el prefijo de versión distingue mayúsculas", "malformed", slack_headers(version="V0")),
+            case("marca de tiempo con letras", "malformed", swap(good, "x-slack-request-timestamp", "ayer")),
+            case(
+                "marca de tiempo demasiado larga",
+                "malformed",
+                swap(good, "x-slack-request-timestamp", "1" * 12),
+            ),
+            case("firma de otro secreto", "invalid", slack_headers(secret=TXT_OTHER)),
+            case("cuerpo alterado", "invalid", body=SLACK_BODY + "\n"),
+            case(
+                "marca de tiempo cambiada después de firmar",
+                "invalid",
+                swap(good, "x-slack-request-timestamp", str(NOW - 1)),
+            ),
+            case("un segundo después de la tolerancia", "stale", slack_headers(ts=NOW - 301)),
+            case("del futuro", "stale", slack_headers(ts=NOW + 301)),
+        ],
+    )
+
+
+SHOPIFY_BODY = '{"id":820982911946154508,"email":"cliente@ejemplo.test","total_price":"10.00"}'
+
+
+def verificar_shopify() -> Vector:
+    sig = b64mac(TXT_SECRET.encode(), SHOPIFY_BODY.encode())
+    good = [["x-shopify-hmac-sha256", sig], ["x-shopify-webhook-id", "b54557e4-bdd9-4b37-8a5f-bf7d70bcd043"]]
+
+    def case(
+        name: str, want: str, headers: Pairs = good, body: str = SHOPIFY_BODY, **extra: Any
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "secrets": [TXT_SECRET],
+            "request": request(headers, body),
+            **extra,
+        }
+
+    return verify_file(
+        "shopify",
+        [
+            case("firma válida", "ok"),
+            case("sin identificador de webhook: la clave es la huella", "ok", good[:1]),
+            case("nombres de cabecera en mayúsculas", "ok", [[name.upper(), value] for name, value in good]),
+            case("no hay marca de tiempo: el reloj no importa", "ok", now=NOW + 10_000_000),
+            case("rotación: coincide el segundo secreto", "ok", secrets=[TXT_OTHER, TXT_SECRET]),
+            case("sin secretos", "unconfigured", secrets=[]),
+            case("falta la cabecera", "missing", good[1:]),
+            case("cabecera repetida", "ambiguous", [*good, ["x-shopify-hmac-sha256", sig]]),
+            case("identificador de webhook repetido", "ambiguous", [*good, ["x-shopify-webhook-id", "otro"]]),
+            case(
+                "firma de otro secreto",
+                "invalid",
+                swap(good, "x-shopify-hmac-sha256", b64mac(TXT_OTHER.encode(), SHOPIFY_BODY.encode())),
+            ),
+            case("cuerpo alterado", "invalid", body=SHOPIFY_BODY + " "),
+            case(
+                "firma en hexadecimal",
+                "invalid",
+                swap(good, "x-shopify-hmac-sha256", hexmac(TXT_SECRET, SHOPIFY_BODY.encode())),
+            ),
+            case(
+                "la firma en base64 distingue mayúsculas",
+                "invalid",
+                swap(good, "x-shopify-hmac-sha256", sig.swapcase()),
+            ),
+            case("firma sin el relleno", "invalid", swap(good, "x-shopify-hmac-sha256", sig.rstrip("="))),
         ],
     )
 
@@ -1807,6 +1952,8 @@ ALL: list[Callable[[], Vector]] = [
     verificar_tiktok,
     verificar_mercadopago,
     verificar_github,
+    verificar_slack,
+    verificar_shopify,
     verificar_creem,
     verificar_hmac_body,
     firmar_standard,

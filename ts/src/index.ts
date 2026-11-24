@@ -17,6 +17,8 @@ export { githubScheme } from './adapters/schemes/github';
 export { type HmacBodyOptions, hmacBodyScheme } from './adapters/schemes/hmac-body';
 export { mercadoPagoScheme } from './adapters/schemes/mercadopago';
 export type { SchemeConfig, TimedSchemeConfig } from './adapters/schemes/scheme-verifier';
+export { shopifyScheme } from './adapters/schemes/shopify';
+export { slackScheme } from './adapters/schemes/slack';
 export { stripeScheme } from './adapters/schemes/stripe';
 export { tiktokScheme } from './adapters/schemes/tiktok';
 export { MemoryIdempotencyStore } from './adapters/stores/memory';

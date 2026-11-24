@@ -20,7 +20,9 @@
     "retries",
     "standard-webhooks",
     "mercadopago",
-    "tiktok"
+    "tiktok",
+    "slack",
+    "shopify"
   ],
   "type": "module",
   "engines": {
