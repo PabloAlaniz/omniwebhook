@@ -7,7 +7,7 @@ import {
   stripeScheme,
   tiktokScheme,
 } from '../../src/index';
-import { standardScheme } from '../../src/standard';
+import { standardPublicKeyScheme, standardScheme } from '../../src/standard';
 
 describe('configuración de los esquemas', () => {
   it.each([0, -1, 1.5, Number.NaN])(
@@ -65,5 +65,46 @@ describe('configuración de los esquemas', () => {
     });
 
     expect(result).toEqual({ outcome: 'ok', eventKey: 'standard:m1', timestamp: 100 });
+  });
+});
+
+describe('configuración de la firma asimétrica', () => {
+  const key = (bytes: Uint8Array) => `whpk_${Buffer.from(bytes).toString('base64')}`;
+  const publicKeys = [key(Uint8Array.from({ length: 32 }, (_, index) => index))];
+
+  it.each(['', 'ep.1', undefined, 7])('rechaza el identificador de destino %j', (endpointId) => {
+    expect(() => standardPublicKeyScheme({ publicKeys, endpointId: endpointId as string })).toThrow(
+      /endpointId/,
+    );
+  });
+
+  it('rechaza una tolerancia inválida', () => {
+    expect(() =>
+      standardPublicKeyScheme({ publicKeys, endpointId: 'ep_1', toleranceSeconds: 0 }),
+    ).toThrow(ConfigurationError);
+  });
+
+  it.each([
+    ['ff', new Uint8Array(32).fill(0xff)],
+    ['00', new Uint8Array(32)],
+    ['rango', Uint8Array.from({ length: 32 }, (_, index) => index)],
+  ])('una clave que no sirve para verificar (%s) nunca verifica ni lanza', async (_name, raw) => {
+    const scheme = standardPublicKeyScheme({
+      publicKeys: [key(raw)],
+      endpointId: 'ep_1',
+      clock: { now: () => 1_700_000_000 },
+    });
+
+    const result = await scheme.verify({
+      headers: [
+        ['webhook-id', 'msg_1'],
+        ['webhook-timestamp', '1700000000'],
+        ['webhook-signature', `v2a,${Buffer.from(new Uint8Array(64).fill(1)).toString('base64')}`],
+      ],
+      query: [],
+      body: new TextEncoder().encode('{}'),
+    });
+
+    expect(result).toEqual({ outcome: 'invalid' });
   });
 });

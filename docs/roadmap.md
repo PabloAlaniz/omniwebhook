@@ -98,9 +98,11 @@ aparte, sin dependencia obligatoria.
 
 ### Esquemas de firma
 
-- **Pendiente. Firma asimétrica del formato estándar** (`v1a`, Ed25519) para verificar. La especificación
-  deja de decir «todos usan HMAC-SHA256»; el secreto pasa a ser «material de verificación». Pide
-  su propia decisión de arquitectura, porque cambia el puerto de criptografía.
+- **Hecho. Firma asimétrica del formato estándar** para verificar. Es la variante vigente del
+  formato, `v2a` (Ed25519 sobre el SHA-256 del contenido, con el identificador del destino
+  adelante); la anterior, `v1a`, está obsoleta y no se implementa. Es un esquema aparte,
+  `standard-v2a`, y en Python usa `cryptography` como dependencia opcional. Ver la
+  [decisión 0007](adr/0007-firma-asimetrica.md).
 - **Dos de cuatro hechos. Cuatro emisores más**, elegidos por demanda y por cubrir variantes que
   hoy no están. Hechos: marca de tiempo en cabecera separada con prefijo de versión (Slack) y
   HMAC en base64 sobre el cuerpo (Shopify). Pendientes: firma sobre la URL más los parámetros y

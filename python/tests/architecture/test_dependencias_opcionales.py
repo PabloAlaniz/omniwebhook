@@ -3,7 +3,7 @@
 import subprocess
 import sys
 
-OPCIONALES = ("standardwebhooks", "httpx", "starlette", "django", "psycopg", "google")
+OPCIONALES = ("standardwebhooks", "httpx", "starlette", "django", "psycopg", "google", "cryptography")
 
 
 def test_importar_el_paquete_no_carga_dependencias_opcionales() -> None:

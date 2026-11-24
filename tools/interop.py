@@ -230,6 +230,7 @@ def ask_verify(agents: list[Agent], report: Report, what: str, case: Json) -> Js
 def differential_verify(agents: list[Agent], report: Report, rng: random.Random, rounds: int) -> None:
     schemes = [
         "standard",
+        "standard-v2a",
         "stripe",
         "tiktok",
         "mercadopago",

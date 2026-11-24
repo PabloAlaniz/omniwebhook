@@ -32,7 +32,7 @@ import {
   stripeScheme,
   tiktokScheme,
 } from '../dist/index.js';
-import { standardScheme, standardSigner } from '../dist/standard.js';
+import { standardPublicKeyScheme, standardScheme, standardSigner } from '../dist/standard.js';
 
 const bytes = (base64) => new Uint8Array(Buffer.from(base64, 'base64'));
 const defined = (entries) => Object.fromEntries(entries.filter(([, value]) => value !== undefined));
@@ -45,6 +45,16 @@ function verifier({ scheme, secrets, now, options = {} }) {
     ['toleranceSeconds', options.tolerance_seconds],
   ]);
   if (scheme === 'standard') return standardScheme(timed);
+  if (scheme === 'standard-v2a') {
+    return standardPublicKeyScheme(
+      defined([
+        ['publicKeys', secrets],
+        ['endpointId', options.endpoint_id],
+        ['clock', clock],
+        ['toleranceSeconds', options.tolerance_seconds],
+      ]),
+    );
+  }
   if (scheme === 'stripe') return stripeScheme(timed);
   if (scheme === 'tiktok') return tiktokScheme(timed);
   if (scheme === 'mercadopago') return mercadoPagoScheme(timed);

@@ -18,7 +18,13 @@ from omniwebhook import (
     tiktok_scheme,
 )
 from omniwebhook.adapters.crypto import hmac_sha256
-from omniwebhook.standard import native_signer, reference_signer, standard_scheme, standard_signer
+from omniwebhook.standard import (
+    native_signer,
+    reference_signer,
+    standard_public_key_scheme,
+    standard_scheme,
+    standard_signer,
+)
 from tests.support.dobles import RelojFijo
 
 SECRETO = "secreto-sintetico-uno"
@@ -179,3 +185,32 @@ def test_el_modulo_del_formato_estandar_no_inventa_nombres() -> None:
 
     with pytest.raises(AttributeError, match="no_existe"):
         _ = omniwebhook.standard.no_existe
+
+
+CLAVE_PUBLICA = "whpk_" + base64.b64encode(bytes(range(32))).decode()
+
+
+@pytest.mark.parametrize("destino", ["", "ep.1", None, 7])
+def test_la_firma_asimetrica_exige_un_identificador_de_destino_valido(destino: str) -> None:
+    with pytest.raises(ConfigurationError, match="endpoint_id"):
+        standard_public_key_scheme(public_keys=[CLAVE_PUBLICA], endpoint_id=destino)
+
+
+def test_la_firma_asimetrica_rechaza_una_tolerancia_invalida() -> None:
+    with pytest.raises(ConfigurationError, match="tolerance_seconds"):
+        standard_public_key_scheme(public_keys=[CLAVE_PUBLICA], endpoint_id="ep_1", tolerance_seconds=0)
+
+
+@pytest.mark.parametrize("clave", [b"\xff" * 32, b"\x00" * 32, bytes(range(32))], ids=["ff", "00", "rango"])
+def test_una_clave_que_no_sirve_para_verificar_nunca_verifica_ni_lanza(clave: bytes) -> None:
+    esquema = standard_public_key_scheme(
+        public_keys=["whpk_" + base64.b64encode(clave).decode()], endpoint_id="ep_1", clock=RelojFijo()
+    )
+    firma = "v2a," + base64.b64encode(b"\x01" * 64).decode()
+    pedido = IncomingRequest(
+        headers=[("webhook-id", "msg_1"), ("webhook-timestamp", "1700000000"), ("webhook-signature", firma)],
+        query=[],
+        body=b"{}",
+    )
+
+    assert esquema.verify(pedido) == Rejected("invalid")
