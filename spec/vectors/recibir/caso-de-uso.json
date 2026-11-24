@@ -14,6 +14,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -62,6 +63,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "fails",
    "before": [],
    "request": {
@@ -110,6 +112,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [
     {
@@ -175,6 +178,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [
     {
@@ -232,6 +236,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [
     {
@@ -289,6 +294,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -336,6 +342,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -381,6 +388,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -428,6 +436,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 1048576,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -452,6 +461,365 @@
    ]
   },
   {
+   "name": "el validador acepta el payload: se procesa",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "accepts",
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "status": 200,
+    "handler_called": true,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    }
+   ]
+  },
+  {
+   "name": "el validador rechaza el payload: no se reserva ni se ejecuta",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "rejects",
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unprocessable",
+    "status": 422,
+    "handler_called": false,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "con validador, un cuerpo que no es JSON no se reserva ni se ejecuta",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "accepts",
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,5Rz4x23EY5fudihhF2z+U4/qdwc8i1xqIhHARQTkh7w="
+     ]
+    ],
+    "query": [],
+    "body": "no es json"
+   },
+   "expected": {
+    "outcome": "unprocessable",
+    "status": 422,
+    "handler_called": false,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "con validador, un cuerpo con NaN no es JSON",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "accepts",
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Dl31NFxcF2wy2dz3Tp5w+gWZUqwgh575yX4kaCZFY50="
+     ]
+    ],
+    "query": [],
+    "body": "{\"monto\":NaN}"
+   },
+   "expected": {
+    "outcome": "unprocessable",
+    "status": 422,
+    "handler_called": false,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "con validador, un cuerpo vacío no es JSON",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "accepts",
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,0IdRp1net5n9DZKmdAp9ZcyorQSajPEbtwHWO0HGLh8="
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "unprocessable",
+    "status": 422,
+    "handler_called": false,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "la firma se comprueba antes que el payload",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "rejects",
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Z3VLjh0PeeMKF1SIjo6f1UQRh5/Km424aKDDlnNnLdQ="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid",
+    "status": 401,
+    "handler_called": false
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "un payload inválido de un evento ya procesado sigue siendo inválido",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
+   "payload": "rejects",
+   "handler": "succeeds",
+   "before": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-previo",
+     "now": 1699999950,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    },
+    {
+     "op": "complete",
+     "key": "standard:msg_2aXk",
+     "token": "t-previo",
+     "now": 1699999960,
+     "retention_seconds": 604800,
+     "expected": true
+    }
+   ],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unprocessable",
+    "status": 422,
+    "handler_called": false,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    }
+   ]
+  },
+  {
    "name": "un cuerpo del tamaño máximo se procesa",
    "scheme": "standard",
    "secrets": [
@@ -462,6 +830,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 41,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -510,6 +879,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 40,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -557,6 +927,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 40,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -602,6 +973,7 @@
    "lease_seconds": 300,
    "retention_seconds": 604800,
    "max_body_bytes": 40,
+   "payload": "none",
    "handler": "succeeds",
    "before": [],
    "request": {

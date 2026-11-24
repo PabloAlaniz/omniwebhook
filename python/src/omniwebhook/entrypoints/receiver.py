@@ -11,7 +11,12 @@ from omniwebhook.application.ports import (
     TokenGenerator,
     Verifier,
 )
-from omniwebhook.application.receive_webhook import AsyncReceiveWebhook, EventKeyOverride, ReceiveWebhook
+from omniwebhook.application.receive_webhook import (
+    AsyncReceiveWebhook,
+    EventKeyOverride,
+    PayloadValidator,
+    ReceiveWebhook,
+)
 from omniwebhook.domain.reception import DEFAULT_MAX_BODY_BYTES
 from omniwebhook.domain.reservation import DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS
 
@@ -28,6 +33,7 @@ def create_receiver(
     event_key: EventKeyOverride | None = None,
     observer: ReceptionObserver | None = None,
     timer: Timer | None = None,
+    payload: PayloadValidator | None = None,
 ) -> ReceiveWebhook:
     return ReceiveWebhook(
         verifier=verifier,
@@ -40,6 +46,7 @@ def create_receiver(
         event_key=event_key,
         observer=observer,
         timer=timer or MonotonicTimer(),
+        payload=payload,
     )
 
 
@@ -55,6 +62,7 @@ def create_async_receiver(
     event_key: EventKeyOverride | None = None,
     observer: ReceptionObserver | None = None,
     timer: Timer | None = None,
+    payload: PayloadValidator | None = None,
 ) -> AsyncReceiveWebhook:
     return AsyncReceiveWebhook(
         verifier=verifier,
@@ -67,4 +75,5 @@ def create_async_receiver(
         event_key=event_key,
         observer=observer,
         timer=timer or MonotonicTimer(),
+        payload=payload,
     )

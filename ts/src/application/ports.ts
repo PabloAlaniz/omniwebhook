@@ -45,6 +45,21 @@ export interface ReleaseRequest {
   readonly token: string;
 }
 
+/** Lo que responde un validador de payload: el valor aceptado, o por qué lo rechaza. */
+export type PayloadResult<T> =
+  | { readonly value: T; readonly issues?: undefined }
+  | { readonly issues: ReadonlyArray<unknown> };
+
+/**
+ * Valida el payload de un evento ya verificado (sección 6.2). Tiene la forma de la interfaz
+ * común de las librerías de esquemas, así que un esquema de cualquiera de ellas sirve tal cual.
+ */
+export interface PayloadSchema<T> {
+  readonly '~standard': {
+    readonly validate: (value: unknown) => PayloadResult<T> | Promise<PayloadResult<T>>;
+  };
+}
+
 /** Lo que se le informa al observador de cada recepción. Nunca incluye el cuerpo ni un secreto. */
 export interface ReceptionObservation {
   readonly outcome: ReceptionOutcome;

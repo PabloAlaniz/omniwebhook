@@ -25,6 +25,7 @@ declare const pool: any, store: any, ledger: any, signer: any, db: any, cola: an
 declare const secreto: string, nuevo: string, anterior: string, secretoCompartido: string, url: string;
 declare const secrets: string[], payload: Uint8Array, entrega: any, pedido: any, procesar: any;
 declare const receive: any, env: any, request: any;
+declare const esquemaDePedido: import("omniwebhook").PayloadSchema<{ id: string }>;
 declare function registrarPago(evento: unknown): Promise<void>;
 declare function tipoDe(request: unknown): string;
 """
@@ -36,7 +37,7 @@ from omniwebhook.standard import *
 app: Any; pool: Any; store: Any; ledger: Any; signer: Any; db: Any; cola: Any; firestore: Any; request: Any
 secreto: str; nuevo: str; anterior: str; url: str; identificador: str; secrets: list[str]; payload: bytes
 entrega: Any; Request = Any; Response = Any; registrar_pago: Any; tipo_de: Any
-receive: Any; procesar: Any
+receive: Any; procesar: Any; Pedido: Any
 """
 
 

@@ -1587,6 +1587,7 @@ STATUS = {
     "unconfigured": 500,
     "failed": 500,
     "too_large": 413,
+    "unprocessable": 422,
 }
 MAX_BODY_BYTES = 1_048_576
 
@@ -1611,6 +1612,7 @@ def recibir_caso_de_uso() -> Vector:
         after: list[dict[str, Any]] | None = None,
         secrets: list[str] | None = None,
         max_body: int = MAX_BODY_BYTES,
+        payload: str = "none",
     ) -> dict[str, Any]:
         secrets = [STD_SECRET] if secrets is None else secrets
         shelf = Shelf()
@@ -1620,6 +1622,15 @@ def recibir_caso_de_uso() -> Vector:
             outcome = "too_large"
         else:
             outcome = check({"scheme": "standard", "secrets": secrets, "now": NOW, "request": req})["outcome"]
+        if outcome == "ok" and payload != "none":
+            # Con un validador, el cuerpo tiene que ser JSON y el validador lo tiene que aceptar.
+            try:
+                json.loads(req["body"].encode().decode("utf-8"), parse_constant=not_json)
+                is_json = True
+            except ValueError:
+                is_json = False
+            if not is_json or payload == "rejects":
+                outcome = "unprocessable"
         if outcome == "ok":
             state = shelf.run(claim("t-nuevo", NOW, key=key))
             if state == "claimed":
@@ -1632,7 +1643,7 @@ def recibir_caso_de_uso() -> Vector:
             else:
                 outcome = state
         expected: dict[str, Any] = {"outcome": outcome, "status": STATUS[outcome], "handler_called": called}
-        if outcome in ("ok", "failed", "duplicate", "in_progress"):
+        if outcome in ("ok", "failed", "duplicate", "in_progress", "unprocessable"):
             expected["event_key"] = key
         return {
             "name": name,
@@ -1643,6 +1654,7 @@ def recibir_caso_de_uso() -> Vector:
             "lease_seconds": 300,
             "retention_seconds": 604800,
             "max_body_bytes": max_body,
+            "payload": payload,
             "handler": handler,
             "before": prior,
             "request": req,
@@ -1686,6 +1698,48 @@ def recibir_caso_de_uso() -> Vector:
         ),
         case("sin secretos: no se reserva ni se ejecuta", "succeeds", secrets=[], after=probe),
         case("sin cabeceras: no se reserva ni se ejecuta", "succeeds", request([], STD_BODY), after=probe),
+        case("el validador acepta el payload: se procesa", "succeeds", payload="accepts", after=probe),
+        case(
+            "el validador rechaza el payload: no se reserva ni se ejecuta",
+            "succeeds",
+            payload="rejects",
+            after=probe,
+        ),
+        case(
+            "con validador, un cuerpo que no es JSON no se reserva ni se ejecuta",
+            "succeeds",
+            request(std_headers(body="no es json"), "no es json"),
+            payload="accepts",
+            after=probe,
+        ),
+        case(
+            "con validador, un cuerpo con NaN no es JSON",
+            "succeeds",
+            request(std_headers(body='{"monto":NaN}'), '{"monto":NaN}'),
+            payload="accepts",
+            after=probe,
+        ),
+        case(
+            "con validador, un cuerpo vacío no es JSON",
+            "succeeds",
+            request(std_headers(body=""), ""),
+            payload="accepts",
+            after=probe,
+        ),
+        case(
+            "la firma se comprueba antes que el payload",
+            "succeeds",
+            request(std_headers(secret=STD_OTHER), STD_BODY),
+            payload="rejects",
+            after=probe,
+        ),
+        case(
+            "un payload inválido de un evento ya procesado sigue siendo inválido",
+            "succeeds",
+            before=[claim("t-previo", NOW - 50, key=key), complete("t-previo", NOW - 40, key=key)],
+            payload="rejects",
+            after=probe,
+        ),
         case(
             "un cuerpo del tamaño máximo se procesa",
             "succeeds",

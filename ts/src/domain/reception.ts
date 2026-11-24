@@ -7,6 +7,7 @@ export type ReceptionOutcome =
   | 'in_progress'
   | 'failed'
   | 'too_large'
+  | 'unprocessable'
   | Rejection;
 
 /** El tamaño máximo del cuerpo de un pedido, en bytes, si no se indica otro (sección 6.2). */
@@ -22,6 +23,7 @@ const STATUS: Readonly<Record<ReceptionOutcome, number>> = {
   invalid: 401,
   stale: 401,
   too_large: 413,
+  unprocessable: 422,
   unconfigured: 500,
   failed: 500,
 };

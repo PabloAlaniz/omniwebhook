@@ -19,6 +19,7 @@ from omniwebhook import (
     Verification,
     Verified,
     VerifiedEvent,
+    create_async_receiver,
     create_receiver,
     http_status_for,
 )
@@ -42,7 +43,14 @@ def _comprobar(caso: Caso, resultado: Reception, llamadas: int, falla: Falla) ->
     assert http_status_for(resultado.outcome) == esperado["status"]
     assert llamadas == (1 if esperado["handler_called"] else 0)
     assert resultado.event_key == esperado.get("event_key")
-    assert resultado.error is (falla if esperado["outcome"] == "failed" else None)
+    if esperado["outcome"] == "unprocessable":
+        assert isinstance(resultado.error, ValueError)
+    else:
+        assert resultado.error is (falla if esperado["outcome"] == "failed" else None)
+
+
+def _rechazar(_valor: object) -> object:
+    raise ValueError("rechazado")
 
 
 def _opciones(caso: Caso) -> dict[str, Any]:
@@ -54,6 +62,7 @@ def _opciones(caso: Caso) -> dict[str, Any]:
         "lease_seconds": caso["lease_seconds"],
         "retention_seconds": caso["retention_seconds"],
         "max_body_bytes": caso["max_body_bytes"],
+        "payload": {"none": None, "accepts": lambda valor: valor, "rejects": _rechazar}[caso["payload"]],
     }
 
 
@@ -319,3 +328,82 @@ def test_create_receiver_pone_el_cronometro_por_defecto() -> None:
 
     assert [visto.outcome for visto in observador.vistos] == ["ok"]
     assert observador.vistos[0].duration_ms >= 0
+
+
+def _con_tipo(valor: object) -> dict[str, str]:
+    if not isinstance(valor, dict) or not isinstance(valor.get("tipo"), str):
+        raise TypeError("falta tipo")
+    return {"tipo": valor["tipo"]}
+
+
+def _con_cuerpo(texto: str) -> IncomingRequest:
+    return IncomingRequest(headers=[], query=[], body=texto.encode("utf-8"))
+
+
+def test_el_procesamiento_recibe_el_payload_que_devolvio_el_validador() -> None:
+    recibir, _ = _recibir(payload=_con_tipo)
+    eventos: list[VerifiedEvent] = []
+
+    resultado = recibir.execute(_con_cuerpo('{"tipo":"pago","de_mas":1}'), eventos.append)
+
+    assert resultado == Reception(outcome="ok", event_key="prueba:1")
+    assert eventos[0].payload == {"tipo": "pago"}
+
+
+def test_sin_validador_el_payload_queda_vacio() -> None:
+    recibir, _ = _recibir()
+    eventos: list[VerifiedEvent] = []
+
+    recibir.execute(_con_cuerpo('{"tipo":"pago"}'), eventos.append)
+
+    assert eventos[0].payload is None
+
+
+def test_un_payload_rechazado_devuelve_el_motivo_y_no_toca_el_almacen() -> None:
+    almacen = AlmacenEspia()
+    recibir, _ = _recibir(payload=_con_tipo, store=almacen)
+    eventos: list[VerifiedEvent] = []
+
+    resultado = recibir.execute(_con_cuerpo('{"otro":1}'), eventos.append)
+
+    assert (resultado.outcome, resultado.event_key) == ("unprocessable", "prueba:1")
+    assert isinstance(resultado.error, TypeError)
+    assert http_status_for(resultado.outcome) == 422
+    assert eventos == []
+    assert almacen.pedidos == []
+
+
+@pytest.mark.parametrize(
+    "texto", ["no es json", "\ufeff{}", "", "[" * 100_000], ids=["texto", "bom", "vacío", "hondo"]
+)
+def test_un_cuerpo_que_no_es_json_no_llega_al_validador(texto: str) -> None:
+    vistos: list[object] = []
+    recibir, _ = _recibir(payload=vistos.append)
+
+    resultado = recibir.execute(_con_cuerpo(texto), lambda _evento: None)
+
+    assert resultado.outcome == "unprocessable"
+    assert str(resultado.error) == "el cuerpo no es JSON"
+    assert vistos == []
+
+
+def test_un_pedido_que_no_verifica_no_llega_al_validador() -> None:
+    vistos: list[object] = []
+    recibir, _ = _recibir(verifier=Invalido(), payload=vistos.append)
+
+    assert recibir.execute(_con_cuerpo("{}"), lambda _evento: None) == Reception(outcome="invalid")
+    assert vistos == []
+
+
+async def test_el_validador_tambien_corre_en_la_variante_asincronica() -> None:
+    recibir = create_async_receiver(
+        verifier=Verificado(), store=AsyncMemoryIdempotencyStore(), payload=_con_tipo
+    )
+    eventos: list[VerifiedEvent] = []
+
+    async def procesar(evento: VerifiedEvent) -> None:
+        eventos.append(evento)
+
+    assert (await recibir.execute(_con_cuerpo('{"tipo":"alta"}'), procesar)).outcome == "ok"
+    assert (await recibir.execute(_con_cuerpo("{}"), procesar)).outcome == "unprocessable"
+    assert [evento.payload for evento in eventos] == [{"tipo": "alta"}]

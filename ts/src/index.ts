@@ -62,6 +62,8 @@ export type {
   HttpTransport,
   IdempotencyStore,
   MessageSigner,
+  PayloadResult,
+  PayloadSchema,
   RandomSource,
   ReceptionObservation,
   ReceptionObserver,
@@ -74,9 +76,11 @@ export type {
 } from './application/ports';
 export {
   type EventHandler,
+  type ReceivedEvent,
   ReceiveWebhook,
   type ReceiveWebhookDependencies,
   type Reception,
+  type ValidatedEvent,
   type VerifiedEvent,
 } from './application/receive-webhook';
 export {
