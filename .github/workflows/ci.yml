@@ -85,7 +85,7 @@ jobs:
         working-directory: ts
 
   postgres:
-    name: typescript (almacén PostgreSQL)
+    name: typescript (almacenes PostgreSQL y Redis)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -100,8 +100,18 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       OMNIWEBHOOK_PG_URL: postgres://postgres:prueba@127.0.0.1:5432/postgres
+      OMNIWEBHOOK_REDIS_URL: redis://127.0.0.1:6379
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
@@ -134,7 +144,7 @@ jobs:
       - run: uv run pytest
 
   python-integration:
-    name: python (almacenes PostgreSQL y Firestore)
+    name: python (almacenes PostgreSQL, Redis y Firestore)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -149,8 +159,18 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       OMNIWEBHOOK_PG_URL: postgres://postgres:prueba@127.0.0.1:5432/postgres
+      OMNIWEBHOOK_REDIS_URL: redis://127.0.0.1:6379
       OMNIWEBHOOK_FIRESTORE_EMULATOR: 127.0.0.1:8080
     defaults:
       run: { working-directory: python }

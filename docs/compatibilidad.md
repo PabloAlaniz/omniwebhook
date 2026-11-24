@@ -7,7 +7,7 @@ Qué se puede dar por estable, qué entornos se soportan y cómo se avisa un cam
 - **TypeScript:** lo que exportan `omniwebhook`, `omniwebhook/standard`, `omniwebhook/node` y
   `omniwebhook/testing`.
 - **Python:** lo que está en `__all__` de `omniwebhook` y lo que exportan los módulos de la raíz
-  (`omniwebhook.standard`, `omniwebhook.postgres`, `omniwebhook.sqlite`, `omniwebhook.httpx`,
+  (`omniwebhook.standard`, `omniwebhook.postgres`, `omniwebhook.sqlite`, `omniwebhook.redis`, `omniwebhook.httpx`,
   `omniwebhook.starlette`, `omniwebhook.django`, `omniwebhook.discord`, `omniwebhook.firestore`, `omniwebhook.testing`).
 - **La especificación:** los resultados, sus estados HTTP sugeridos y las tablas compartidas entre
   paquetes.

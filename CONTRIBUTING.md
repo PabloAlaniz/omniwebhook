@@ -38,11 +38,13 @@ Los almacenes que hablan con un servicio se prueban aparte, contra el servicio d
 
 ```bash
 docker run -d --rm --name omniwebhook-pg -e POSTGRES_PASSWORD=prueba -p 127.0.0.1:55432:5432 postgres:17-alpine
+docker run -d --rm --name omniwebhook-redis -p 127.0.0.1:56379:6379 redis:8-alpine
 docker run -d --rm --name omniwebhook-firestore -p 127.0.0.1:58080:8080 \
   gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators \
   gcloud emulators firestore start --host-port=0.0.0.0:8080
 
 export OMNIWEBHOOK_PG_URL=postgres://postgres:prueba@127.0.0.1:55432/postgres
+export OMNIWEBHOOK_REDIS_URL=redis://127.0.0.1:56379
 export OMNIWEBHOOK_FIRESTORE_EMULATOR=127.0.0.1:58080
 
 pnpm test:integration                                # en la raíz: TypeScript

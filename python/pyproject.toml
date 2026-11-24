@@ -64,6 +64,7 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=1.5.0",
     "pytest-cov>=7.0",
+    "redis>=8.2.0",
     "ruff>=0.8",
     "standardwebhooks>=1.3.0",
     "starlette>=1.10.0",
@@ -79,7 +80,7 @@ addopts = "--cov --cov-report=term-missing:skip-covered -m 'not integration'"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = ["error", "ignore:Using `httpx` with `starlette.testclient`"]
-markers = ["integration: necesita un servicio externo (PostgreSQL o el emulador de Firestore)"]
+markers = ["integration: necesita un servicio externo (PostgreSQL, Redis o el emulador de Firestore)"]
 
 [tool.coverage.run]
 source_pkgs = ["omniwebhook"]

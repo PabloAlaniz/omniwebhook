@@ -10,8 +10,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      // Lo de PostgreSQL se prueba contra una base real en test:integration.
-      exclude: ['src/adapters/stores/postgres.ts', 'src/adapters/ledger/postgres.ts'],
+      // Lo de PostgreSQL y lo de Redis se prueba contra el servicio de verdad en test:integration.
+      exclude: [
+        'src/adapters/stores/postgres.ts',
+        'src/adapters/stores/redis.ts',
+        'src/adapters/ledger/postgres.ts',
+      ],
       reporter: ['text-summary', 'lcov'],
       thresholds: {
         'src/domain/**': minimo,

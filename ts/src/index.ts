@@ -31,6 +31,16 @@ export {
   type SqlClient,
 } from './adapters/stores/postgres';
 export {
+  DEFAULT_REDIS_GRACE_SECONDS,
+  DEFAULT_REDIS_PREFIX,
+  ioredisClient,
+  nodeRedisClient,
+  REDIS_STORE_SCRIPTS,
+  type RedisClient,
+  RedisIdempotencyStore,
+  type RedisStoreOptions,
+} from './adapters/stores/redis';
+export {
   type D1Like,
   d1Client,
   type PreparedSqlite,
