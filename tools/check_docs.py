@@ -27,6 +27,9 @@ DOCUMENTS = [
     "docs/recibir.md",
     "docs/emitir.md",
     "docs/telemetria.md",
+    "docs/en/recibir.md",
+    "docs/en/emitir.md",
+    "docs/en/telemetria.md",
 ]
 BLOCK = re.compile(r"^```(ts|python)\n(.*?)^```$", re.DOTALL | re.MULTILINE)
 
