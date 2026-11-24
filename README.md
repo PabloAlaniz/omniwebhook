@@ -168,6 +168,7 @@ Los demás extras de Python (`httpx`, `starlette`, `postgres`, `firestore`) est�
 | [Especificación](spec/SPEC.md) | El comportamiento que comparten todos los paquetes |
 | [Decisiones de arquitectura](docs/adr/README.md) | Por qué está hecho así |
 | [Cómo se publica una versión](docs/publicar.md) | El circuito de versiones y la publicación de confianza |
+| [Hoja de ruta](docs/roadmap.md) | Lo que viene en los próximos tres sprints |
 
 ## Estructura del repositorio
 
