@@ -1,5 +1,6 @@
 import {
   creemScheme,
+  discordScheme,
   githubScheme,
   type HmacBodyOptions,
   hmacBodyScheme,
@@ -34,6 +35,9 @@ describeVerifyVectors('mercadopago', (c, clock) =>
 );
 describeVerifyVectors('github', (c) => githubScheme({ secrets: c.secrets }));
 describeVerifyVectors('creem', (c) => creemScheme({ secrets: c.secrets }));
+describeVerifyVectors('discord', (c, clock) =>
+  discordScheme({ publicKeys: c.secrets, clock, ...toleranceOf(c) }),
+);
 describeVerifyVectors('shopify', (c) => shopifyScheme({ secrets: c.secrets }));
 describeVerifyVectors('slack', (c, clock) =>
   slackScheme({ secrets: c.secrets, clock, ...toleranceOf(c) }),

@@ -103,12 +103,12 @@ aparte, sin dependencia obligatoria.
   adelante); la anterior, `v1a`, está obsoleta y no se implementa. Es un esquema aparte,
   `standard-v2a`, y en Python usa `cryptography` como dependencia opcional. Ver la
   [decisión 0007](adr/0007-firma-asimetrica.md).
-- **Dos de cuatro hechos. Cuatro emisores más**, elegidos por demanda y por cubrir variantes que
-  hoy no están. Hechos: marca de tiempo en cabecera separada con prefijo de versión (Slack) y
-  HMAC en base64 sobre el cuerpo (Shopify). Pendientes: firma sobre la URL más los parámetros y
-  clave pública por emisor; los dos dependen de la decisión sobre el puerto de criptografía,
-  porque no usan HMAC-SHA256. Cada uno entra por [el camino de siempre](agregar-un-esquema.md),
-  citando la documentación pública del emisor.
+- **Tres de cuatro hechos. Cuatro emisores más**, elegidos por demanda y por cubrir variantes que
+  hoy no están. Hechos: marca de tiempo en cabecera separada con prefijo de versión (Slack), HMAC
+  en base64 sobre el cuerpo (Shopify) y clave pública por emisor (Discord). Pendiente: firma
+  sobre la URL más los parámetros, que pide guardar la URL completa en el pedido entrante y usa
+  HMAC-SHA1. Cada uno entra por [el camino de siempre](agregar-un-esquema.md), citando la
+  documentación pública del emisor.
 - **Hecho. Varios emisores en una misma ruta.** Un verificador compuesto que elige el esquema por las
   cabeceras presentes y que rechaza como `ambiguous` un pedido que coincide con más de uno.
 

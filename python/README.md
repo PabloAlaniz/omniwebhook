@@ -73,6 +73,7 @@ attempt = send.execute(
 | `omniwebhook.sqlite` | El almacén de reservas y el registro de entregas sobre SQLite | Ninguno: usa `sqlite3` |
 | `omniwebhook.firestore` | El almacén de reservas sobre Firestore | `omniwebhook[firestore]` |
 | `omniwebhook.starlette` | Ayudas para Starlette y FastAPI | `omniwebhook[starlette]` |
+| `omniwebhook.discord` | El esquema de firma de Discord | `omniwebhook[ed25519]` |
 | `omniwebhook.django` | Ayudas para Django | `omniwebhook[django]` |
 | `omniwebhook.testing` | Pedidos firmados para probar tu integración | Ninguno |
 | `omniwebhook.httpx` | Un transporte asincrónico sobre httpx | `omniwebhook[httpx]` |

@@ -93,3 +93,15 @@ export function fromStrictBase64(text: string): Uint8Array | null {
     return null;
   }
 }
+
+const HEX = /^(?:[0-9A-Fa-f]{2})*$/;
+
+/** Decodifica hexadecimal, en mayúsculas o minúsculas; `null` si el texto no lo es. */
+export function fromHex(text: string): Uint8Array | null {
+  if (!HEX.test(text)) return null;
+  const bytes = new Uint8Array(text.length / 2);
+  for (let index = 0; index < bytes.length; index++) {
+    bytes[index] = Number.parseInt(text.slice(index * 2, index * 2 + 2), 16);
+  }
+  return bytes;
+}

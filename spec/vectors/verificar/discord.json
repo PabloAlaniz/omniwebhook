@@ -1,0 +1,748 @@
+{
+ "spec": "0",
+ "id": "verificar/discord",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:1300000000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo sin id: la clave es la huella",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "9b57ea38f52faafac96cdd0297877407d6bec02ee411a5dfbf25773d339e80473f4e3f26afd7a414aaaa55c8567a238346ab9ab83349f1bcaeb02a2cd735100f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"version\":1,\"application_id\":\"1200000000000000001\",\"type\":1,\"event\":{\"type\":\"ALTA\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:sha256:b5f16e0e888eaa043b781c42e6cefd5cc4f19793ad1d9077e8790e8c6544f2e6",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo vacío",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "c5dc0dfa829d9ea4166ac3c8e1b693d0e2a7e20051ad3c8ac8fc3fd260fb4620f99b89c650033b322e9725f5bb505089d22148814c31ef922f3fd89782caff00"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "firma en mayúsculas",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-ed25519",
+      "46A7370CBF2E7BA9E68867FF7B775C764763D28E16094EE75AF755190A23FFC8FC0C65B9D5A895DC22C8C7A4705B6A18DB322339DA64FF9DD2E434698331670F"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:1300000000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "clave pública en mayúsculas",
+   "scheme": "discord",
+   "secrets": [
+    "5DEF716F3C3421EC005931A68A56233C02BF1D0C23C74B55DD5CEC560FAAB31E"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:1300000000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "nombres de cabecera en mayúsculas",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "X-SIGNATURE-ED25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "X-SIGNATURE-TIMESTAMP",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:1300000000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: coincide la segunda clave",
+   "scheme": "discord",
+   "secrets": [
+    "93de47a970f35ba1a3c20becb15035579a37c7b8ab767e1ea6ee93ae539366c7",
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:1300000000000000001",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "en el borde de la tolerancia",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "746d26015748839dae664956a25038d51dafc3fe94a7e0b81af178811960c784b80be0fa428464e613eeae3b22bc23611989a83b0359411012f03ebf1cff6803"
+     ],
+     [
+      "x-signature-timestamp",
+      "1699999700"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "discord:1300000000000000001",
+    "timestamp": 1699999700
+   }
+  },
+  {
+   "name": "sin claves",
+   "scheme": "discord",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave vacía",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e",
+    ""
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave más corta",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab3"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave que no es hexadecimal",
+   "scheme": "discord",
+   "secrets": [
+    "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave en base64",
+   "scheme": "discord",
+   "secrets": [
+    "Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave con el prefijo del formato estándar",
+   "scheme": "discord",
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la firma",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "falta la marca de tiempo",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "firma repetida",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo repetida",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo con letras",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "ayer"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "marca de tiempo demasiado larga",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "111111111111"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otra clave",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "75adab95f62ce04fd43072405fa4d7829d842b529d7c662c1938bc2e076ab1ded7fd8a84899da9ad8b1bfd2bdf62892a2d49fb8f7a7131f522122e44aa013f01"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2} "
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "marca de tiempo cambiada después de firmar",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ],
+     [
+      "x-signature-timestamp",
+      "1699999999"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un dígito de la firma cambiado",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-ed25519",
+      "06a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e434698331670f"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma truncada",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-ed25519",
+      "46a7370cbf2e7ba9e68867ff7b775c764763d28e16094ee75af755190a23ffc8fc0c65b9d5a895dc22c8c7a4705b6a18db322339da64ff9dd2e43469833167"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma que no es hexadecimal",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-ed25519",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma en base64",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-timestamp",
+      "1700000000"
+     ],
+     [
+      "x-signature-ed25519",
+      "Rqc3DL8ue6nmiGf/e3dcdkdj0o4WCU7nWvdVGQoj/8j8DGW51aiV3CLIx6RwW2oY2zIjOdpk/53S5DRpgzFnDw=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un segundo después de la tolerancia",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "1f9c256a239bf59fb3957848dc02ce5bf88daaef1c7ea05e959745b8612cead27da09603742d36ef3a0dc661ee8b785db87d61d81346b1d6d7bcd08d539fad06"
+     ],
+     [
+      "x-signature-timestamp",
+      "1699999699"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "del futuro",
+   "scheme": "discord",
+   "secrets": [
+    "5def716f3c3421ec005931a68a56233c02bf1d0c23c74b55dd5cec560faab31e"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-signature-ed25519",
+      "18e1d0c51c07a35950ec1518bd2b95d256d726b836bce6362116ad6e7c1fa62c441d518b176c4cb1f776088fc2d06a2a03ec3ed964f889bfd2be6a6fdf48f307"
+     ],
+     [
+      "x-signature-timestamp",
+      "1700000301"
+     ]
+    ],
+    "query": [],
+    "body": "{\"id\":\"1300000000000000001\",\"application_id\":\"1200000000000000001\",\"type\":2}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  }
+ ]
+}

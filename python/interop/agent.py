@@ -44,6 +44,7 @@ from omniwebhook import (
     stripe_scheme,
     tiktok_scheme,
 )
+from omniwebhook.discord import discord_scheme
 from omniwebhook.postgres import (
     PostgresDeliveryLedger,
     PostgresIdempotencyStore,
@@ -81,6 +82,12 @@ def verifier(scheme: str, secrets: list[str], now: int, options: Json) -> Verifi
         return standard_public_key_scheme(
             public_keys=secrets,
             endpoint_id=options["endpoint_id"],
+            clock=Clock(now),
+            **({"tolerance_seconds": options["tolerance_seconds"]} if "tolerance_seconds" in options else {}),
+        )
+    if scheme == "discord":
+        return discord_scheme(
+            public_keys=secrets,
             clock=Clock(now),
             **({"tolerance_seconds": options["tolerance_seconds"]} if "tolerance_seconds" in options else {}),
         )

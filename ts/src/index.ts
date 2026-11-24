@@ -13,6 +13,7 @@ export {
   sqliteLedgerSchema,
 } from './adapters/ledger/sqlite';
 export { creemScheme } from './adapters/schemes/creem';
+export { type DiscordSchemeConfig, discordScheme } from './adapters/schemes/discord';
 export { githubScheme } from './adapters/schemes/github';
 export { type HmacBodyOptions, hmacBodyScheme } from './adapters/schemes/hmac-body';
 export { mercadoPagoScheme } from './adapters/schemes/mercadopago';

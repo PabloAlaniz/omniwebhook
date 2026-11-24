@@ -18,6 +18,7 @@ from omniwebhook import (
     stripe_scheme,
     tiktok_scheme,
 )
+from omniwebhook.discord import discord_scheme
 from omniwebhook.standard import (
     StandardSigner,
     native_signer,
@@ -51,6 +52,10 @@ ESQUEMAS: dict[str, tuple[str, Fabrica]] = {
         lambda c, reloj: standard_public_key_scheme(
             public_keys=c["secrets"], endpoint_id=c["options"]["endpoint_id"], clock=reloj, **_tolerancia(c)
         ),
+    ),
+    "discord": (
+        "discord",
+        lambda c, reloj: discord_scheme(public_keys=c["secrets"], clock=reloj, **_tolerancia(c)),
     ),
     "stripe": ("stripe", lambda c, reloj: stripe_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c))),
     "tiktok": ("tiktok", lambda c, reloj: tiktok_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c))),
