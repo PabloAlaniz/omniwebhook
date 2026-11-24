@@ -11,8 +11,8 @@ Signed webhooks, sent and received the same way on any stack.
 > specification, but the API can still change between minor versions.
 
 > **About this translation.** This page is a translation; if it disagrees with the
-> [Spanish original](README.md), the original wins. The guides and the specification are written
-> in Spanish and are being translated; until then, the links below go to the Spanish originals.
+> [Spanish original](README.md), the original wins. The guides and the specification are
+> translated too; the architecture decisions, the roadmap and the contributor docs are in Spanish.
 
 Almost every product ends up receiving webhooks from a payment provider and sending its own. And
 it almost always gets written again from scratch: one signature check per provider, a table to
@@ -26,7 +26,7 @@ else:
   policy that refuses to deliver to internal addresses.
 - **Any provider, any database, any HTTP client.** The core knows none of them: they are ports,
   and each one is filled in by an adapter.
-- **The same behaviour in every language.** There is a [specification](spec/SPEC.md) and shared
+- **The same behaviour in every language.** There is a [specification](spec/SPEC.en.md) and shared
   conformance vectors. The TypeScript and Python packages run the same cases, and an
   interoperability test compares them request by request.
 
@@ -92,7 +92,7 @@ it before. Everything else ends in a result with a suggested HTTP status:
 | `unconfigured` | 500 | A usable secret is missing |
 | `failed` | 500 | Processing failed and the reservation was released |
 
-More in the [receiving guide](docs/recibir.md) (Spanish).
+More in the [receiving guide](docs/en/recibir.md).
 
 ## Sending
 
@@ -140,7 +140,7 @@ attempt = send.execute(
 Each call is one attempt. The package tells you when the next one is due, but it does not
 schedule it: that stays with the queue or scheduler you already use. If you do not want to lose
 an event when the process dies, the outbox stores pending deliveries and hands them out to the
-processes that dispatch. More in the [sending guide](docs/emitir.md) (Spanish).
+processes that dispatch. More in the [sending guide](docs/en/emitir.md).
 
 ## What each package includes
 
@@ -174,21 +174,19 @@ The other Python extras (`httpx`, `starlette`, `django`, `postgres`, `firestore`
 
 ## Documentation
 
-The documents below are in Spanish.
-
 | | |
 |---|---|
-| [Receiving guide](docs/recibir.md) | Schemes, stores, event keys and responses |
-| [Sending guide](docs/emitir.md) | Signing, URL policy, retries, outbox and endpoint health |
-| [Telemetry](docs/telemetria.md) | Metrics and traces with OpenTelemetry |
-| [Examples](examples/README.md) | Minimal receivers and an outbox, tested in CI |
-| [How to add a signature scheme](docs/agregar-un-esquema.md) | From the specification to the adapter |
-| [Specification](spec/SPEC.md) | The behaviour every package shares |
-| [Architecture decisions](docs/adr/README.md) | Why it is built this way |
-| [How a version is published](docs/publicar.md) | The release flow and trusted publishing |
-| [Compatibility](docs/compatibilidad.md) | What is stable, which runtimes are supported and how changes are announced |
-| [Roadmap](docs/roadmap.md) | What is done and what is missing |
-| [1.0 criteria](docs/criterios-1.0.md) | What has to be true before the API is frozen |
+| [Receiving guide](docs/en/recibir.md) | Schemes, stores, event keys and responses |
+| [Sending guide](docs/en/emitir.md) | Signing, URL policy, retries, outbox and endpoint health |
+| [Telemetry](docs/en/telemetria.md) | Metrics and traces with OpenTelemetry |
+| [Examples](examples/README.md) | Minimal receivers and an outbox, tested in CI (Spanish) |
+| [How to add a signature scheme](docs/en/agregar-un-esquema.md) | From the specification to the adapter |
+| [Specification](spec/SPEC.en.md) | The behaviour every package shares |
+| [Architecture decisions](docs/adr/README.md) | Why it is built this way (Spanish) |
+| [How a version is published](docs/publicar.md) | The release flow and trusted publishing (Spanish) |
+| [Compatibility](docs/en/compatibilidad.md) | What is stable, which runtimes are supported and how changes are announced |
+| [Roadmap](docs/roadmap.md) | What is done and what is missing (Spanish) |
+| [1.0 criteria](docs/criterios-1.0.md) | What has to be true before the API is frozen (Spanish) |
 
 ## Repository layout
 

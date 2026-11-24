@@ -49,10 +49,11 @@ No hay fecha. Se publica cuando todo lo de «Tiene que estar» esté tildado.
 
 ### La documentación
 
-- [ ] En inglés, además de en español: el README, las guías y la especificación.
+- [x] En inglés, además de en español: el README, las guías y la especificación.
+- [ ] La especificación en inglés, leída entera contra el original por una segunda persona.
 - [ ] Las traducciones del README al chino simplificado y al portugués de Brasil, revisadas por
   alguien que hable el idioma.
-- [ ] Cada ejemplo de la documentación pasa por el comprobador, en los dos idiomas.
+- [x] Cada ejemplo de la documentación pasa por el comprobador, en los dos idiomas.
 - [ ] Una guía de migración desde la última 0.x.
 
 ## Queda afuera de la 1.0
