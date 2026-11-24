@@ -137,7 +137,8 @@ mayúsculas) es un error de configuración al construirlo, no un resultado.
 
 ## 5. Esquemas
 
-Todos usan HMAC-SHA256, salvo `standard-v2a` (sección 5.10), que verifica con una clave pública.
+Todos usan HMAC-SHA256, salvo `standard-v2a` (sección 5.10) y `discord` (sección 5.11), que
+verifican con una clave pública.
 «Cuerpo» es siempre el cuerpo crudo.
 
 ### 5.1. `standard`
@@ -298,6 +299,22 @@ emisor le asignó a este destino al crearlo.
 - Marca de tiempo: `webhook-timestamp`, en segundos.
 - Clave del evento: `standard:<webhook-id>`, la misma que con firma simétrica: es el mismo
   emisor y el mismo mensaje.
+
+### 5.11. `discord`
+
+Firma con Ed25519. Se configura con una lista de claves públicas: la de la aplicación.
+
+- Cabeceras exigidas: `x-signature-ed25519` y `x-signature-timestamp`.
+- Clave pública: 64 dígitos hexadecimales, en mayúsculas o minúsculas, que son los 32 bytes de la
+  clave. Cualquier otra forma da `unconfigured`, con las reglas de la sección 4.2.
+- `x-signature-timestamp` DEBE cumplir `^[0-9]{1,11}$`. Si no, `malformed`.
+- Contenido firmado: `<x-signature-timestamp><cuerpo>`, sin separador.
+- Firma: los 64 bytes de la firma Ed25519 (RFC 8032) de ese contenido, en hexadecimal, en
+  mayúsculas o minúsculas. Una que no son 128 dígitos hexadecimales simplemente no verifica.
+- Marca de tiempo: `x-signature-timestamp`, en segundos. El emisor no fija una tolerancia; como la
+  marca está firmada, vale la de la sección 4.4.
+- Clave del evento: `discord:<id>`, con la misma regla del campo `id` que en `stripe`. Los eventos
+  que no traen `id` usan la huella del cuerpo.
 
 ## 6. Recibir: procesar una sola vez
 

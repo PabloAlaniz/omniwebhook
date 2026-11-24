@@ -231,6 +231,7 @@ def differential_verify(agents: list[Agent], report: Report, rng: random.Random,
     schemes = [
         "standard",
         "standard-v2a",
+        "discord",
         "stripe",
         "tiktok",
         "mercadopago",

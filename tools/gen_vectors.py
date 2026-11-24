@@ -170,6 +170,24 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             valid = any(candidate in expected_sigs for candidate in candidates)
             stamp, event = int(ts[0]), f"standard:{ident[0]}"
 
+        elif scheme == "discord":
+            publics = [discord_public(secret) for secret in secrets]
+            if any(public is None for public in publics):
+                raise Stop("unconfigured")
+            sig = values(headers, "x-signature-ed25519")
+            ts = values(headers, "x-signature-timestamp")
+            need([sig, ts])
+            unique(sig, ts)
+            if not SECONDS.fullmatch(ts[0]):
+                raise Stop("malformed")
+            expected_sigs = [
+                ed_sign(V2A_SEEDS[public], ts[0].encode() + body).hex()
+                for public in publics
+                if public in V2A_SEEDS
+            ]
+            valid = sig[0].lower() in expected_sigs
+            stamp, event = int(ts[0]), json_id("discord", body)
+
         elif scheme == "stripe":
             header = values(headers, "stripe-signature")
             need([header])
@@ -655,6 +673,89 @@ def verificar_standard_v2a() -> Vector:
             ),
             case("un segundo después de la tolerancia", "stale", v2a_headers(ts=NOW - 301)),
             case("del futuro", "stale", v2a_headers(ts=NOW + 301)),
+        ],
+    )
+
+
+# --- discord -----------------------------------------------------------------
+
+DISCORD_KEY = ed_public(V2A_SEED).hex()
+DISCORD_OTHER = ed_public(V2A_OTHER_SEED).hex()
+DISCORD_BODY = '{"id":"1300000000000000001","application_id":"1200000000000000001","type":2}'
+HEX_KEY = re.compile(r"[0-9A-Fa-f]{64}")
+
+
+def discord_public(text: str) -> bytes | None:
+    return bytes.fromhex(text) if HEX_KEY.fullmatch(text) else None
+
+
+def discord_headers(ts: int | str = NOW, body: str = DISCORD_BODY, seed: bytes = V2A_SEED) -> Pairs:
+    signature = ed_sign(seed, f"{ts}{body}".encode()).hex()
+    return [["x-signature-ed25519", signature], ["x-signature-timestamp", str(ts)]]
+
+
+def verificar_discord() -> Vector:
+    good = discord_headers()
+    sig = good[0][1]
+
+    def case(
+        name: str, want: str, headers: Pairs = good, body: str = DISCORD_BODY, **extra: Any
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "secrets": [DISCORD_KEY],
+            "request": request(headers, body),
+            **extra,
+        }
+
+    def with_sig(value: str) -> Pairs:
+        return swap(good, "x-signature-ed25519", value)
+
+    event = '{"version":1,"application_id":"1200000000000000001","type":1,"event":{"type":"ALTA"}}'
+    flipped = ("1" if sig[0] == "0" else "0") + sig[1:]
+    return verify_file(
+        "discord",
+        [
+            case("firma válida", "ok"),
+            case("cuerpo sin id: la clave es la huella", "ok", discord_headers(body=event), event),
+            case("cuerpo vacío", "ok", discord_headers(body=""), ""),
+            case("firma en mayúsculas", "ok", with_sig(sig.upper())),
+            case("clave pública en mayúsculas", "ok", secrets=[DISCORD_KEY.upper()]),
+            case("nombres de cabecera en mayúsculas", "ok", [[name.upper(), value] for name, value in good]),
+            case("rotación: coincide la segunda clave", "ok", secrets=[DISCORD_OTHER, DISCORD_KEY]),
+            case("en el borde de la tolerancia", "ok", discord_headers(ts=NOW - 300)),
+            case("sin claves", "unconfigured", secrets=[]),
+            case("una clave vacía", "unconfigured", secrets=[DISCORD_KEY, ""]),
+            case("una clave más corta", "unconfigured", secrets=[DISCORD_KEY[:-2]]),
+            case("una clave que no es hexadecimal", "unconfigured", secrets=["z" * 64]),
+            case("una clave en base64", "unconfigured", secrets=[V2A_KEY[5:]]),
+            case("una clave con el prefijo del formato estándar", "unconfigured", secrets=[V2A_KEY]),
+            case("falta la firma", "missing", good[1:]),
+            case("falta la marca de tiempo", "missing", good[:1]),
+            case("firma repetida", "ambiguous", [*good, ["x-signature-ed25519", sig]]),
+            case("marca de tiempo repetida", "ambiguous", [*good, ["x-signature-timestamp", str(NOW)]]),
+            case("marca de tiempo con letras", "malformed", swap(good, "x-signature-timestamp", "ayer")),
+            case(
+                "marca de tiempo demasiado larga", "malformed", swap(good, "x-signature-timestamp", "1" * 12)
+            ),
+            case("firma de otra clave", "invalid", discord_headers(seed=V2A_OTHER_SEED)),
+            case("cuerpo alterado", "invalid", body=DISCORD_BODY + " "),
+            case(
+                "marca de tiempo cambiada después de firmar",
+                "invalid",
+                swap(good, "x-signature-timestamp", str(NOW - 1)),
+            ),
+            case("un dígito de la firma cambiado", "invalid", with_sig(flipped)),
+            case("firma truncada", "invalid", with_sig(sig[:-2])),
+            case("firma que no es hexadecimal", "invalid", with_sig("z" * 128)),
+            case(
+                "firma en base64",
+                "invalid",
+                with_sig(base64.b64encode(bytes.fromhex(sig)).decode()),
+            ),
+            case("un segundo después de la tolerancia", "stale", discord_headers(ts=NOW - 301)),
+            case("del futuro", "stale", discord_headers(ts=NOW + 301)),
         ],
     )
 
@@ -2282,6 +2383,7 @@ ALL: list[Callable[[], Vector]] = [
     verificar_github,
     verificar_slack,
     verificar_shopify,
+    verificar_discord,
     verificar_varios,
     verificar_creem,
     verificar_hmac_body,

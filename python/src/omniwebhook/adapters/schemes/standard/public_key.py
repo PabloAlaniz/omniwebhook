@@ -1,6 +1,6 @@
 """El formato Standard Webhooks con firma asimétrica `v2a` (sección 5.10).
 
-Es el único módulo que importa `cryptography`: la biblioteca estándar no trae Ed25519.
+Necesita `omniwebhook[ed25519]`.
 """
 
 import base64
@@ -10,10 +10,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-
 from omniwebhook.adapters.crypto import utf8
+from omniwebhook.adapters.ed25519 import verifies_ed25519
 from omniwebhook.adapters.schemes.scheme_verifier import Reading, ReadProblem, public_key_scheme_verifier
 from omniwebhook.application.ports import Clock, Verifier
 from omniwebhook.domain.errors import ConfigurationError
@@ -93,13 +91,7 @@ class _StandardPublicKey:
         signature = _strict_base64(received)
         if signature is None or len(signature) != _SIGNATURE_BYTES:
             return False
-        content = hashlib.sha256(reading.prefix + request.body).digest()
-        try:
-            Ed25519PublicKey.from_public_bytes(key).verify(signature, content)
-        except (InvalidSignature, ValueError):
-            # Una clave que la plataforma no puede cargar cuenta como que no verifica.
-            return False
-        return True
+        return verifies_ed25519(key, signature, hashlib.sha256(reading.prefix + request.body).digest())
 
 
 def standard_public_key_scheme(

@@ -10,6 +10,7 @@ import {
   classifyDelivery,
   creemScheme,
   evaluateDestination,
+  discordScheme,
   githubScheme,
   hmacBodyScheme,
   httpStatusFor,
@@ -50,6 +51,15 @@ function verifier({ scheme, secrets, now, options = {} }) {
       defined([
         ['publicKeys', secrets],
         ['endpointId', options.endpoint_id],
+        ['clock', clock],
+        ['toleranceSeconds', options.tolerance_seconds],
+      ]),
+    );
+  }
+  if (scheme === 'discord') {
+    return discordScheme(
+      defined([
+        ['publicKeys', secrets],
         ['clock', clock],
         ['toleranceSeconds', options.tolerance_seconds],
       ]),

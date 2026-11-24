@@ -136,7 +136,7 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 
 | | TypeScript | Python |
 |---|---|---|
-| Esquemas de firma | Standard Webhooks (con secreto compartido o con clave pública), Stripe, Slack, Shopify, TikTok, Mercado Pago, GitHub, Creem y uno genérico de cuerpo firmado | Los mismos |
+| Esquemas de firma | Standard Webhooks (con secreto compartido o con clave pública), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem y uno genérico de cuerpo firmado | Los mismos |
 | Almacén de reservas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite, Firestore |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
 | Registro de entregas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite |

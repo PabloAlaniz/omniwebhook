@@ -90,6 +90,7 @@ simplemente la firma no coincide.
 | Creem | `creemScheme` | `creem_scheme` | No | `id` del cuerpo |
 | Slack | `slackScheme` | `slack_scheme` | Sí | `event_id` del cuerpo, o la huella |
 | Shopify | `shopifyScheme` | `shopify_scheme` | No | `x-shopify-webhook-id` |
+| Discord | `discordScheme` | `discord_scheme`, en `omniwebhook.discord` | Sí | `id` del cuerpo, o la huella |
 | Cuerpo firmado con HMAC | `hmacBodyScheme` | `hmac_body_scheme` | No | Una cabecera, o la huella del cuerpo |
 
 Todos reciben una lista de secretos. La firma vale si coincide con cualquiera, así que para rotar un
@@ -132,6 +133,10 @@ En Python necesita `omniwebhook[ed25519]`. El identificador del destino es parte
 firma: tiene que ser el que te dio el emisor, nunca uno sacado del pedido. Para rotar, pasá la
 clave nueva y la anterior. Un emisor que está migrando puede mandar la firma simétrica y la
 asimétrica juntas; cada esquema mira sólo la suya.
+
+Discord también firma con clave pública, la de tu aplicación, en hexadecimal:
+`discordScheme({ publicKeys: [...] })` y `discord_scheme(public_keys=[...])`. En Python vive en
+`omniwebhook.discord` y necesita el mismo extra.
 
 ### Varios emisores en la misma URL
 
