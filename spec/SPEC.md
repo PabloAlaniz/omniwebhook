@@ -137,7 +137,8 @@ mayúsculas) es un error de configuración al construirlo, no un resultado.
 
 ## 5. Esquemas
 
-Todos usan HMAC-SHA256. «Cuerpo» es siempre el cuerpo crudo.
+Todos usan HMAC-SHA256, salvo `standard-v2a` (sección 5.10), que verifica con una clave pública.
+«Cuerpo» es siempre el cuerpo crudo.
 
 ### 5.1. `standard`
 
@@ -268,6 +269,35 @@ Un esquema genérico para emisores que firman sólo el cuerpo. Se configura con:
 - Sin marca de tiempo.
 - Clave del evento: `shopify:<x-shopify-webhook-id>` si llega. Si no, la huella del cuerpo. Ese
   identificador se repite en los reintentos de un mismo webhook.
+
+### 5.10. `standard-v2a`
+
+El formato [Standard Webhooks](https://www.standardwebhooks.com/) con firma asimétrica `v2a`
+(Ed25519). Quien recibe guarda una clave pública: con ella puede verificar, pero no firmar.
+
+Se configura con una lista de claves públicas y con el `endpoint_id`: el identificador que el
+emisor le asignó a este destino al crearlo.
+
+- Cabeceras exigidas: `webhook-id`, `webhook-timestamp`, `webhook-signature`.
+- Clave pública: el prefijo `whpk_` es obligatorio; el resto es base64 y, decodificado, son los 32
+  bytes de la clave. Es utilizable si, sin el prefijo, cumple `^[A-Za-z0-9+/]*={0,2}$`, su largo es
+  múltiplo de cuatro y decodifica a exactamente 32 bytes. Las reglas de la sección 4.2 valen
+  igual: una lista vacía o una clave inutilizable dan `unconfigured`.
+- `endpoint_id` NO DEBE estar vacío ni contener `.`. Si no, es un error de configuración al
+  construir el esquema. Nunca se toma del pedido.
+- `webhook-timestamp` DEBE cumplir `^[0-9]{1,11}$`. Si no, `malformed`.
+- `webhook-signature` trae una o más firmas separadas por espacios. Sólo cuentan las que empiezan
+  con `v2a,`; el resto se ignora, incluidas las simétricas `v1,` y las de la versión anterior
+  `v1a,`. Si no hay ninguna `v2a,`, `malformed`.
+- Contenido firmado: los 32 bytes crudos de
+  `SHA-256(<endpoint_id>.<webhook-id>.<webhook-timestamp>.<cuerpo>)`.
+- Firma: base64, con relleno, de los 64 bytes de la firma Ed25519 (RFC 8032) de ese contenido.
+- La firma es válida si alguna de las recibidas verifica con alguna de las claves. Una firma que
+  no es base64 o que no tiene 64 bytes simplemente no verifica: no es un error aparte. Acá no
+  aplica la comparación de texto de la sección 4.3.
+- Marca de tiempo: `webhook-timestamp`, en segundos.
+- Clave del evento: `standard:<webhook-id>`, la misma que con firma simétrica: es el mismo
+  emisor y el mismo mensaje.
 
 ## 6. Recibir: procesar una sola vez
 

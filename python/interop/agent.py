@@ -58,7 +58,7 @@ from omniwebhook.sqlite import (
     sqlite_ledger_schema,
     sqlite_store_schema,
 )
-from omniwebhook.standard import standard_scheme, standard_signer
+from omniwebhook.standard import standard_public_key_scheme, standard_scheme, standard_signer
 
 Json = dict[str, Any]
 
@@ -77,6 +77,13 @@ def verifier(scheme: str, secrets: list[str], now: int, options: Json) -> Verifi
         timed["tolerance_seconds"] = options["tolerance_seconds"]
     if scheme == "standard":
         return standard_scheme(**timed)
+    if scheme == "standard-v2a":
+        return standard_public_key_scheme(
+            public_keys=secrets,
+            endpoint_id=options["endpoint_id"],
+            clock=Clock(now),
+            **({"tolerance_seconds": options["tolerance_seconds"]} if "tolerance_seconds" in options else {}),
+        )
     if scheme == "stripe":
         return stripe_scheme(**timed)
     if scheme == "tiktok":

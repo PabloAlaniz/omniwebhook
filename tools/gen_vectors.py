@@ -149,6 +149,27 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
             valid = any(b64mac(key, signed) in candidates for key in keys if key is not None)
             stamp, event = int(ts[0]), f"standard:{ident[0]}"
 
+        elif scheme == "standard-v2a":
+            publics = [v2a_public(secret) for secret in secrets]
+            if any(public is None for public in publics):
+                raise Stop("unconfigured")
+            ident, ts, sig = (values(headers, f"webhook-{part}") for part in ("id", "timestamp", "signature"))
+            need([ident, ts, sig])
+            unique(ident, ts, sig)
+            candidates = [token[4:] for token in sig[0].split(" ") if token.startswith("v2a,")]
+            if not SECONDS.fullmatch(ts[0]) or not candidates:
+                raise Stop("malformed")
+            content = v2a_content(options["endpoint_id"], ident[0], ts[0], body)
+            # Ed25519 es determinista: para una clave conocida hay una sola firma que este
+            # generador puede esperar.
+            expected_sigs = [
+                base64.b64encode(ed_sign(V2A_SEEDS[public], content)).decode()
+                for public in publics
+                if public in V2A_SEEDS
+            ]
+            valid = any(candidate in expected_sigs for candidate in candidates)
+            stamp, event = int(ts[0]), f"standard:{ident[0]}"
+
         elif scheme == "stripe":
             header = values(headers, "stripe-signature")
             need([header])
@@ -429,6 +450,211 @@ def verificar_standard() -> Vector:
                 "invalid",
                 swap(std_headers(ts=NOW - 5000), "webhook-signature", "v1,AAAA"),
             ),
+        ],
+    )
+
+
+# --- standard con firma asimétrica (v2a) ---------------------------------------
+#
+# Ed25519 según el RFC 8032, con la biblioteca estándar: el generador no depende de nada.
+
+ED_P = 2**255 - 19
+ED_L = 2**252 + 27742317777372353535851937790883648493
+ED_D = -121665 * pow(121666, ED_P - 2, ED_P) % ED_P
+EdPoint = tuple[int, int, int, int]
+
+
+def ed_add(a: EdPoint, b: EdPoint) -> EdPoint:
+    t1 = (a[1] - a[0]) * (b[1] - b[0]) % ED_P
+    t2 = (a[1] + a[0]) * (b[1] + b[0]) % ED_P
+    t3 = 2 * a[3] * b[3] * ED_D % ED_P
+    t4 = 2 * a[2] * b[2] % ED_P
+    e, f, g, h = t2 - t1, t4 - t3, t4 + t3, t2 + t1
+    return (e * f % ED_P, g * h % ED_P, f * g % ED_P, e * h % ED_P)
+
+
+def ed_mul(scalar: int, point: EdPoint) -> EdPoint:
+    result: EdPoint = (0, 1, 1, 0)
+    while scalar > 0:
+        if scalar & 1:
+            result = ed_add(result, point)
+        point = ed_add(point, point)
+        scalar >>= 1
+    return result
+
+
+def ed_base() -> EdPoint:
+    y = 4 * pow(5, ED_P - 2, ED_P) % ED_P
+    x2 = (y * y - 1) * pow(ED_D * y * y + 1, ED_P - 2, ED_P) % ED_P
+    x = pow(x2, (ED_P + 3) // 8, ED_P)
+    if (x * x - x2) % ED_P != 0:
+        x = x * pow(2, (ED_P - 1) // 4, ED_P) % ED_P
+    if x & 1:
+        x = ED_P - x
+    return (x, y, 1, x * y % ED_P)
+
+
+ED_G = ed_base()
+
+
+def ed_compress(point: EdPoint) -> bytes:
+    inverse = pow(point[2], ED_P - 2, ED_P)
+    x, y = point[0] * inverse % ED_P, point[1] * inverse % ED_P
+    return (y | ((x & 1) << 255)).to_bytes(32, "little")
+
+
+def ed_expand(seed: bytes) -> tuple[int, bytes]:
+    digest = hashlib.sha512(seed).digest()
+    scalar = int.from_bytes(digest[:32], "little")
+    scalar &= (1 << 254) - 8
+    scalar |= 1 << 254
+    return scalar, digest[32:]
+
+
+def ed_public(seed: bytes) -> bytes:
+    return ed_compress(ed_mul(ed_expand(seed)[0], ED_G))
+
+
+def ed_sign(seed: bytes, message: bytes) -> bytes:
+    scalar, prefix = ed_expand(seed)
+    public = ed_compress(ed_mul(scalar, ED_G))
+    r = int.from_bytes(hashlib.sha512(prefix + message).digest(), "little") % ED_L
+    commitment = ed_compress(ed_mul(r, ED_G))
+    h = int.from_bytes(hashlib.sha512(commitment + public + message).digest(), "little") % ED_L
+    return commitment + ((r + h * scalar) % ED_L).to_bytes(32, "little")
+
+
+# El par de claves de ejemplo de la especificación pública del formato.
+assert (
+    base64.b64encode(ed_public(base64.b64decode("4uKPjji/dhB8w6GW3YYDnIMYvXcdHrvH6lidTr4Z+EY="))).decode()
+    == "uWKK13PfwqyOgrqT0OrWKcS2uVD7e89+oUKnkoPjx7w="
+)
+
+V2A_SEED = hashlib.sha256(b"omniwebhook-clave-sintetica-01").digest()
+V2A_OTHER_SEED = hashlib.sha256(b"omniwebhook-clave-sintetica-02").digest()
+V2A_SEEDS = {ed_public(seed): seed for seed in (V2A_SEED, V2A_OTHER_SEED)}
+V2A_KEY = "whpk_" + base64.b64encode(ed_public(V2A_SEED)).decode()
+V2A_OTHER = "whpk_" + base64.b64encode(ed_public(V2A_OTHER_SEED)).decode()
+V2A_ENDPOINT = "ep_sintetico_1"
+STRICT_BASE64 = re.compile(r"[A-Za-z0-9+/]*={0,2}")
+
+
+def v2a_public(text: str) -> bytes | None:
+    """La clave pública de un texto `whpk_…`, o None si no se puede usar."""
+    encoded = text.removeprefix("whpk_")
+    if encoded == text or not encoded or len(encoded) % 4 or not STRICT_BASE64.fullmatch(encoded):
+        return None
+    raw = base64.b64decode(encoded)
+    return raw if len(raw) == 32 else None
+
+
+def v2a_content(endpoint: str, ident: str, ts: int | str, body: bytes) -> bytes:
+    return hashlib.sha256(f"{endpoint}.{ident}.{ts}.".encode() + body).digest()
+
+
+def v2a_sig(
+    ident: str = "msg_2aXk",
+    ts: int | str = NOW,
+    body: str = STD_BODY,
+    seed: bytes = V2A_SEED,
+    endpoint: str = V2A_ENDPOINT,
+) -> str:
+    return "v2a," + base64.b64encode(ed_sign(seed, v2a_content(endpoint, ident, ts, body.encode()))).decode()
+
+
+def v2a_headers(ident: str = "msg_2aXk", ts: int | str = NOW, sig: str | None = None, **kw: Any) -> Pairs:
+    signature = v2a_sig(ident, ts, **kw) if sig is None else sig
+    return [["webhook-id", ident], ["webhook-timestamp", str(ts)], ["webhook-signature", signature]]
+
+
+def verificar_standard_v2a() -> Vector:
+    good = v2a_headers()
+    sig = good[2][1]
+    raw = base64.b64decode(sig[4:])
+
+    def case(
+        name: str, want: str, headers: Pairs = good, body: str = STD_BODY, **extra: Any
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "options": {"endpoint_id": V2A_ENDPOINT, **extra.pop("options", {})},
+            "secrets": [V2A_KEY],
+            "request": request(headers, body),
+            **extra,
+        }
+
+    def with_sig(value: str) -> Pairs:
+        return swap(good, "webhook-signature", value)
+
+    symmetric = std_sig(STD_SECRET, "msg_2aXk", NOW, STD_BODY)
+    flipped = bytes([raw[0] ^ 1]) + raw[1:]
+    return verify_file(
+        "standard-v2a",
+        [
+            case("firma válida", "ok"),
+            case("rotación: coincide la segunda clave", "ok", secrets=[V2A_OTHER, V2A_KEY]),
+            case(
+                "rotación: dos firmas, coincide la segunda",
+                "ok",
+                with_sig(f"{v2a_sig(seed=V2A_OTHER_SEED)} {sig}"),
+            ),
+            case("junto a una firma simétrica", "ok", with_sig(f"{symmetric} {sig}")),
+            case("versiones desconocidas se ignoran", "ok", with_sig(f"v9,abc {sig} v1a,def")),
+            case("cuerpo vacío", "ok", v2a_headers(body=""), ""),
+            case("en el borde de la tolerancia", "ok", v2a_headers(ts=NOW - 300)),
+            case("tolerancia propia", "ok", v2a_headers(ts=NOW - 600), options={"tolerance_seconds": 600}),
+            case("sin claves", "unconfigured", secrets=[]),
+            case("una clave vacía", "unconfigured", secrets=[V2A_KEY, ""]),
+            case("una clave sin el prefijo", "unconfigured", secrets=[V2A_KEY[5:]]),
+            case("una clave con el prefijo de un secreto simétrico", "unconfigured", secrets=[STD_SECRET]),
+            case("una clave que no es base64", "unconfigured", secrets=["whpk_***"]),
+            case(
+                "una clave de otro largo",
+                "unconfigured",
+                secrets=["whpk_" + base64.b64encode(b"x" * 31).decode()],
+            ),
+            case("alcanza con una clave inutilizable", "unconfigured", secrets=[V2A_KEY, "whpk_"]),
+            case("falta el identificador", "missing", good[1:]),
+            case("falta la firma", "missing", good[:2]),
+            case("identificador repetido", "ambiguous", [*good, ["webhook-id", "otro"]]),
+            case("firma repetida", "ambiguous", [*good, ["webhook-signature", sig]]),
+            case("marca de tiempo con letras", "malformed", swap(good, "webhook-timestamp", "ayer")),
+            case("sólo una firma simétrica", "malformed", with_sig(symmetric)),
+            case(
+                "la versión anterior de la firma asimétrica no cuenta", "malformed", with_sig("v1a" + sig[3:])
+            ),
+            case("la versión distingue mayúsculas", "malformed", with_sig("V2A" + sig[3:])),
+            case("firma de otra clave", "invalid", with_sig(v2a_sig(seed=V2A_OTHER_SEED))),
+            case("firma para otro destino", "invalid", with_sig(v2a_sig(endpoint="ep_sintetico_2"))),
+            case("configurado para otro destino", "invalid", options={"endpoint_id": "ep_sintetico_2"}),
+            case("cuerpo alterado", "invalid", body=STD_BODY + " "),
+            case(
+                "marca de tiempo cambiada después de firmar",
+                "invalid",
+                swap(good, "webhook-timestamp", str(NOW - 1)),
+            ),
+            case(
+                "un bit de la firma cambiado",
+                "invalid",
+                with_sig("v2a," + base64.b64encode(flipped).decode()),
+            ),
+            case("firma truncada", "invalid", with_sig("v2a," + base64.b64encode(raw[:63]).decode())),
+            case("firma que no es base64", "invalid", with_sig("v2a,***")),
+            case("firma vacía", "invalid", with_sig("v2a,")),
+            case("firma sin el relleno", "invalid", with_sig(sig.rstrip("="))),
+            case(
+                "firma sobre el contenido sin pasar por SHA-256",
+                "invalid",
+                with_sig(
+                    "v2a,"
+                    + base64.b64encode(
+                        ed_sign(V2A_SEED, f"{V2A_ENDPOINT}.msg_2aXk.{NOW}.{STD_BODY}".encode())
+                    ).decode()
+                ),
+            ),
+            case("un segundo después de la tolerancia", "stale", v2a_headers(ts=NOW - 301)),
+            case("del futuro", "stale", v2a_headers(ts=NOW + 301)),
         ],
     )
 
@@ -2049,6 +2275,7 @@ def entregar_reintentos() -> Vector:
 # El `id` es además la ruta del archivo dentro de spec/vectors/.
 ALL: list[Callable[[], Vector]] = [
     verificar_standard,
+    verificar_standard_v2a,
     verificar_stripe,
     verificar_tiktok,
     verificar_mercadopago,

@@ -1,0 +1,1177 @@
+{
+ "spec": "0",
+ "id": "verificar/standard-v2a",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "firma válida",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: coincide la segunda clave",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_k95HqXDzW6GjwgvssVA1V5o3x7irdn4epu6TrlOTZsc=",
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "rotación: dos firmas, coincide la segunda",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,ANPPDM4UKMneI6iIO8aEaXjm4AILK/WmtmaQ9Gxcp64xKgM6X68didMW6z1Pshh8HWvZaVvg9Y/heLPM2rikCA== v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "junto a una firma simétrica",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI= v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "versiones desconocidas se ignoran",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v9,abc v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA== v1a,def"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "cuerpo vacío",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,G2Ru3lIaBl2NDMtC8m/Iqc/rWdQtAiaOxMjsEFP8zawoV4gtioFRmVkXEIL7sfRa6/G+LuxnBdu/blbr2x1YBw=="
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1700000000
+   }
+  },
+  {
+   "name": "en el borde de la tolerancia",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1699999700"
+     ],
+     [
+      "webhook-signature",
+      "v2a,RL51DhjJEV0xOAZsAEXVCphpYlKP7nkyrkDlYG1ICt80KTj5GZ5yo1G+1cZL0yB6iiXJLJ5XRiJSJkMpPx0+AA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1699999700
+   }
+  },
+  {
+   "name": "tolerancia propia",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1",
+    "tolerance_seconds": 600
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1699999400"
+     ],
+     [
+      "webhook-signature",
+      "v2a,68gfMxG5ZC5vKOYu/JagBHIcn26L9sF3Hg8DUW8FAuPNFDS2UL47cAsMbUv9URdLc0Ek1/N0NWUa3osn8OJhAw=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "standard:msg_2aXk",
+    "timestamp": 1699999400
+   }
+  },
+  {
+   "name": "sin claves",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave vacía",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4=",
+    ""
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave sin el prefijo",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave con el prefijo de un secreto simétrico",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave que no es base64",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_***"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "una clave de otro largo",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eA=="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "alcanza con una clave inutilizable",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4=",
+    "whpk_"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta el identificador",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "falta la firma",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "identificador repetido",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ],
+     [
+      "webhook-id",
+      "otro"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "firma repetida",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "marca de tiempo con letras",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ],
+     [
+      "webhook-timestamp",
+      "ayer"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "sólo una firma simétrica",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "la versión anterior de la firma asimétrica no cuenta",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "la versión distingue mayúsculas",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "V2A,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "firma de otra clave",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,ANPPDM4UKMneI6iIO8aEaXjm4AILK/WmtmaQ9Gxcp64xKgM6X68didMW6z1Pshh8HWvZaVvg9Y/heLPM2rikCA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma para otro destino",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,MdfEdQV9M4G5JI6lMgKhVS4wuhCqywVTLglhsHqg+f7sgOZoJVnJb9IlRbhjW1FnKU99i0nAmlyt1+f8tEZ0Aw=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "configurado para otro destino",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_2"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "cuerpo alterado",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}} "
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "marca de tiempo cambiada después de firmar",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ],
+     [
+      "webhook-timestamp",
+      "1699999999"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un bit de la firma cambiado",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6wVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma truncada",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXq"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma que no es base64",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,***"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma vacía",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma sin el relleno",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA"
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "firma sobre el contenido sin pasar por SHA-256",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v2a,OwOcaiOeYS/SrTgFiIBmj3bcfvB0HJWmN10MPTD7bcqIrEd3KA/ZSzQlQcm619YMx9XEY7tAnTZlOF1bPTCxCg=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "un segundo después de la tolerancia",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1699999699"
+     ],
+     [
+      "webhook-signature",
+      "v2a,GlpMXcG7OF/OCnpDRpbX2g8GizGWLS8qqbQDzAERmSuG1ZsCBvPA5BjrmoibmKjTESZArhtrEN4ahBqd0C0qAw=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  },
+  {
+   "name": "del futuro",
+   "scheme": "standard-v2a",
+   "options": {
+    "endpoint_id": "ep_sintetico_1"
+   },
+   "secrets": [
+    "whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4="
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000301"
+     ],
+     [
+      "webhook-signature",
+      "v2a,XXMeIBrCvzYs6kUJXsJAuxCrWDqo9Orru4ah8DTJHC6ld6rrsh4KK47zCrDHPn1gj7Obq8u22GJcMazY9n9eCA=="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "stale"
+   }
+  }
+ ]
+}

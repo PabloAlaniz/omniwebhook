@@ -82,6 +82,7 @@ simplemente la firma no coincide.
 | Emisor | TypeScript | Python | Marca de tiempo | Clave del evento |
 |---|---|---|---|---|
 | Standard Webhooks | `standardScheme` | `standard_scheme` | Sí | `webhook-id` |
+| Standard Webhooks, con clave pública | `standardPublicKeyScheme` | `standard_public_key_scheme` | Sí | `webhook-id` |
 | Stripe | `stripeScheme` | `stripe_scheme` | Sí | `id` del cuerpo |
 | TikTok | `tiktokScheme` | `tiktok_scheme` | Sí | La huella del cuerpo |
 | Mercado Pago | `mercadoPagoScheme` | `mercadopago_scheme` | Sí | `data.id` y `x-request-id` |
@@ -108,6 +109,29 @@ la repetición es la reserva del evento.
 
 El esquema del formato estándar vive en una entrada aparte (`omniwebhook/standard` en TypeScript,
 `omniwebhook.standard` en Python) porque es el único que usa una librería externa.
+
+### Standard Webhooks con clave pública
+
+Si el emisor firma con la variante asimétrica del formato (`v2a`, Ed25519), no hay secreto
+compartido: te da una clave pública, con la forma `whpk_…`, y el identificador que le asignó a tu
+destino. Con eso podés verificar, pero no firmar.
+
+```ts
+import { standardPublicKeyScheme } from 'omniwebhook/standard';
+
+const verifier = standardPublicKeyScheme({ publicKeys: [secreto], endpointId: 'ep_42' });
+```
+
+```python
+from omniwebhook.standard import standard_public_key_scheme
+
+verifier = standard_public_key_scheme(public_keys=[secreto], endpoint_id="ep_42")
+```
+
+En Python necesita `omniwebhook[ed25519]`. El identificador del destino es parte de lo que se
+firma: tiene que ser el que te dio el emisor, nunca uno sacado del pedido. Para rotar, pasá la
+clave nueva y la anterior. Un emisor que está migrando puede mandar la firma simétrica y la
+asimétrica juntas; cada esquema mira sólo la suya.
 
 ### Varios emisores en la misma URL
 

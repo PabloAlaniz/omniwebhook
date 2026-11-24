@@ -31,7 +31,7 @@ R = TypeVar("R", bound=Reading)
 
 
 class SchemeDefinition(Protocol[R]):
-    """Lo que distingue a un esquema de otro."""
+    """Un esquema HMAC: lo distingue la firma que debería haber llegado."""
 
     def key_of(self, secret: str) -> bytes | None:
         """Convierte un secreto en la clave del HMAC; `None` si no se puede usar."""
@@ -44,6 +44,49 @@ class SchemeDefinition(Protocol[R]):
     def expected(self, key: bytes, reading: R, request: IncomingRequest) -> str:
         """La firma que debería haber llegado para esta clave, como texto."""
         ...
+
+
+class PublicKeySchemeDefinition(Protocol[R]):
+    """Un esquema de clave pública: no puede calcular la firma, sólo decir si una verifica."""
+
+    def key_of(self, secret: str) -> bytes | None:
+        """Convierte el texto de una clave pública en sus bytes; `None` si no se puede usar."""
+        ...
+
+    def read(self, request: IncomingRequest) -> R | ReadProblem:
+        """Lee el pedido, o dice por qué no se puede."""
+        ...
+
+    def verifies(self, key: bytes, received: str, reading: R, request: IncomingRequest) -> bool:
+        """Si la firma recibida verifica con esta clave pública. Nunca lanza."""
+        ...
+
+
+Matcher = Callable[[bytes, R, IncomingRequest], bool]
+"""Si alguna de las firmas recibidas vale para una clave."""
+
+
+def _by_expected(definition: SchemeDefinition[R]) -> Matcher[R]:
+    def matches(key: bytes, reading: R, request: IncomingRequest) -> bool:
+        expected = definition.expected(key, reading, request)
+        valid = False
+        for received in reading.received:
+            if equal_in_constant_time(expected, received):
+                valid = True
+        return valid
+
+    return matches
+
+
+def _by_verification(definition: PublicKeySchemeDefinition[R]) -> Matcher[R]:
+    def matches(key: bytes, reading: R, request: IncomingRequest) -> bool:
+        valid = False
+        for received in reading.received:
+            if definition.verifies(key, received, reading, request):
+                valid = True
+        return valid
+
+    return matches
 
 
 def text_key(secret: str) -> bytes | None:
@@ -72,12 +115,14 @@ def usable_keys(key_of: Callable[[str], bytes | None], secrets: Sequence[str]) -
 class _SchemeVerifier(Generic[R]):
     def __init__(
         self,
-        definition: SchemeDefinition[R],
+        definition: SchemeDefinition[R] | PublicKeySchemeDefinition[R],
+        matches: Matcher[R],
         secrets: Sequence[str],
         clock: Clock | None,
         tolerance_seconds: int,
     ) -> None:
         self._definition = definition
+        self._matches = matches
         self._keys = usable_keys(definition.key_of, checked_secrets(secrets))
         self._clock = clock or system_clock
         self._tolerance_seconds = positive_integer("tolerance_seconds", tolerance_seconds)
@@ -90,12 +135,11 @@ class _SchemeVerifier(Generic[R]):
         if isinstance(reading, str):
             return Rejected(reading)
 
+        # Se recorren todas las claves y todas las firmas aunque ya haya coincidido una.
         valid = False
         for key in self._keys:
-            expected = self._definition.expected(key, reading, request)
-            for received in reading.received:
-                if equal_in_constant_time(expected, received):
-                    valid = True
+            if self._matches(key, reading, request):
+                valid = True
         if not valid:
             return Rejected("invalid")
 
@@ -113,4 +157,15 @@ def scheme_verifier(
     tolerance_seconds: int = DEFAULT_TOLERANCE_SECONDS,
 ) -> Verifier:
     """Arma el verificador de un esquema aplicando las comprobaciones en el orden de la sección 4.1."""
-    return _SchemeVerifier(definition, secrets, clock, tolerance_seconds)
+    return _SchemeVerifier(definition, _by_expected(definition), secrets, clock, tolerance_seconds)
+
+
+def public_key_scheme_verifier(
+    definition: PublicKeySchemeDefinition[R],
+    *,
+    keys: Sequence[str],
+    clock: Clock | None = None,
+    tolerance_seconds: int = DEFAULT_TOLERANCE_SECONDS,
+) -> Verifier:
+    """Lo mismo, para un esquema que verifica con una clave pública."""
+    return _SchemeVerifier(definition, _by_verification(definition), keys, clock, tolerance_seconds)

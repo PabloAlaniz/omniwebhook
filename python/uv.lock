@@ -1296,6 +1296,9 @@ django = [
     { name = "django", version = "5.2.19", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "django", version = "6.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
+ed25519 = [
+    { name = "cryptography" },
+]
 firestore = [
     { name = "google-cloud-firestore" },
 ]
@@ -1314,6 +1317,7 @@ starlette = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "cryptography" },
     { name = "django", version = "5.2.19", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "django", version = "6.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "django-stubs" },
@@ -1335,6 +1339,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cryptography", marker = "extra == 'ed25519'", specifier = ">=42" },
     { name = "django", marker = "extra == 'django'", specifier = ">=4.2" },
     { name = "google-cloud-firestore", marker = "extra == 'firestore'", specifier = ">=2.16" },
     { name = "httpx", marker = "extra == 'httpx'", specifier = ">=0.27" },
@@ -1342,10 +1347,11 @@ requires-dist = [
     { name = "standardwebhooks", marker = "extra == 'standard'", specifier = ">=1.3" },
     { name = "starlette", marker = "extra == 'starlette'", specifier = ">=0.37" },
 ]
-provides-extras = ["standard", "httpx", "starlette", "postgres", "django", "firestore"]
+provides-extras = ["standard", "ed25519", "httpx", "starlette", "postgres", "django", "firestore"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "cryptography", specifier = ">=50.0.2" },
     { name = "django", specifier = ">=5.2.19" },
     { name = "django-stubs", specifier = ">=6.1.2" },
     { name = "google-cloud-firestore", specifier = ">=2.34.1" },

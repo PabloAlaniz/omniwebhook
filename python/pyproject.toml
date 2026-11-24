@@ -29,6 +29,8 @@ dependencies = []
 [project.optional-dependencies]
 # La librería de referencia del formato Standard Webhooks, para `omniwebhook.standard`.
 standard = ["standardwebhooks>=1.3"]
+# La firma asimétrica del formato estándar, `standard_public_key_scheme`.
+ed25519 = ["cryptography>=42"]
 # El transporte asincrónico de `omniwebhook.httpx`.
 httpx = ["httpx>=0.27"]
 # Las ayudas de `omniwebhook.starlette`, también para FastAPI.
@@ -49,6 +51,7 @@ Changelog = "https://github.com/PabloAlaniz/omniwebhook/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
+    "cryptography>=50.0.2",
     "django>=5.2.19",
     "django-stubs>=6.1.2",
     "google-cloud-firestore>=2.34.1",
@@ -141,4 +144,4 @@ ignore_imports = ["omniwebhook.adapters.schemes.standard.reference_signer -> sta
 name = "El núcleo no depende de paquetes opcionales"
 type = "forbidden"
 source_modules = ["omniwebhook.domain", "omniwebhook.application"]
-forbidden_modules = ["httpx", "starlette", "django", "psycopg", "google"]
+forbidden_modules = ["httpx", "starlette", "django", "psycopg", "google", "cryptography"]

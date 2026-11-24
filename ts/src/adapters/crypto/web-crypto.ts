@@ -58,3 +58,38 @@ export function equalInConstantTime(a: string, b: string): boolean {
   }
   return difference === 0;
 }
+
+export async function sha256(message: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', owned(message)));
+}
+
+/**
+ * Si `signature` es la firma Ed25519 de `message` para la clave pública cruda `publicKey`.
+ * Un error de la plataforma al cargar la clave o al verificar cuenta como que no verifica.
+ */
+export async function verifiesEd25519(
+  publicKey: Uint8Array,
+  signature: Uint8Array,
+  message: Uint8Array,
+): Promise<boolean> {
+  try {
+    const key = await crypto.subtle.importKey('raw', owned(publicKey), { name: 'Ed25519' }, false, [
+      'verify',
+    ]);
+    return await crypto.subtle.verify({ name: 'Ed25519' }, key, owned(signature), owned(message));
+  } catch {
+    return false;
+  }
+}
+
+const STRICT_BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+
+/** Decodifica base64 estándar con relleno; `null` si el texto no lo es. */
+export function fromStrictBase64(text: string): Uint8Array | null {
+  if (text.length % 4 !== 0 || !STRICT_BASE64.test(text)) return null;
+  try {
+    return fromBase64(text);
+  } catch {
+    return null;
+  }
+}

@@ -9,11 +9,19 @@ import {
   stripeScheme,
   tiktokScheme,
 } from '../../src/index';
-import { standardScheme } from '../../src/standard';
+import { standardPublicKeyScheme, standardScheme } from '../../src/standard';
 import { describeVerifyVectors, toleranceOf } from '../support/verify-vectors';
 
 describeVerifyVectors('standard', (c, clock) =>
   standardScheme({ secrets: c.secrets, clock, ...toleranceOf(c) }),
+);
+describeVerifyVectors('standard-v2a', (c, clock) =>
+  standardPublicKeyScheme({
+    publicKeys: c.secrets,
+    endpointId: String(c.options?.endpoint_id),
+    clock,
+    ...toleranceOf(c),
+  }),
 );
 describeVerifyVectors('stripe', (c, clock) =>
   stripeScheme({ secrets: c.secrets, clock, ...toleranceOf(c) }),

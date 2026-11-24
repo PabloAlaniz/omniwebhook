@@ -18,7 +18,7 @@ import {
   toResponse,
   USER_AGENT,
 } from '../../dist/index.js';
-import { standardScheme, standardSigner } from '../../dist/standard.js';
+import { standardPublicKeyScheme, standardScheme, standardSigner } from '../../dist/standard.js';
 
 const SECRET = 'whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE=';
 const URL_DESTINO = 'https://hooks.ejemplo.test/entrada';
@@ -96,5 +96,25 @@ const verification = await githubScheme({ secrets: ['secreto-sintetico'] }).veri
   body: payload,
 });
 check('esquema con Web Crypto', verification.outcome, 'ok');
+
+// --- Firma asimétrica: Ed25519 con el Web Crypto de cada entorno ----------------------
+// El primer caso de spec/vectors/verificar/standard-v2a.json, con claves sintéticas.
+const asymmetric = await standardPublicKeyScheme({
+  publicKeys: ['whpk_Xe9xbzw0IewAWTGmilYjPAK/HQwjx0tV3VzsVg+qsx4='],
+  endpointId: 'ep_sintetico_1',
+  clock: { now: () => 1700000000 },
+}).verify({
+  headers: [
+    ['webhook-id', 'msg_2aXk'],
+    ['webhook-timestamp', '1700000000'],
+    [
+      'webhook-signature',
+      'v2a,6gVa3eLYvayW6klKRx2j5WK1WyWZgnHykmhRTYvNYbdMzElBZCY0GQf0J9E7lrOQY0SGDa+lKAU2BuKbXAXqBA==',
+    ],
+  ],
+  query: [],
+  body: new TextEncoder().encode('{"type":"pedido.creado","data":{"id":42}}'),
+});
+check('firma asimétrica', asymmetric.outcome, 'ok');
 
 console.log(`ok: ${USER_AGENT}`);

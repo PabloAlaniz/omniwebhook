@@ -16,14 +16,32 @@ export interface Reading {
   eventKey(): string | Promise<string>;
 }
 
-/** Lo que distingue a un esquema de otro. El recorrido de la sección 4.1 es común a todos. */
-export interface SchemeDefinition<R extends Reading> {
-  /** Convierte un secreto en la clave del HMAC; `null` si no se puede usar. */
+/** Lo que comparten todos los esquemas: cómo se lee la clave y cómo se lee el pedido. */
+interface KeyedDefinition<R extends Reading> {
+  /** Convierte un secreto en la clave; `null` si no se puede usar. */
   keyOf(secret: string): Uint8Array | null;
   /** Lee el pedido, o dice por qué no se puede: `missing`, `ambiguous` o `malformed`. */
   read(request: IncomingRequest): R | Extract<Rejection, 'missing' | 'ambiguous' | 'malformed'>;
+}
+
+/**
+ * Un esquema HMAC: lo distingue la firma que debería haber llegado. El recorrido de la sección
+ * 4.1 es común a todos.
+ */
+export interface SchemeDefinition<R extends Reading> extends KeyedDefinition<R> {
   /** La firma que debería haber llegado para esta clave, como texto. */
   expected(key: Uint8Array, reading: R, request: IncomingRequest): string | Promise<string>;
+}
+
+/** Un esquema de clave pública: no puede calcular la firma, sólo decir si una verifica. */
+export interface PublicKeySchemeDefinition<R extends Reading> extends KeyedDefinition<R> {
+  /** Si la firma recibida verifica con esta clave pública. Nunca lanza. */
+  verifies(
+    key: Uint8Array,
+    received: string,
+    reading: R,
+    request: IncomingRequest,
+  ): boolean | Promise<boolean>;
 }
 
 export interface SchemeConfig {
@@ -39,7 +57,7 @@ export interface TimedSchemeConfig extends SchemeConfig {
 
 /** Arma el verificador de un esquema aplicando las comprobaciones en el orden de la sección 4.1. */
 export function schemeVerifier<R extends Reading>(
-  definition: SchemeDefinition<R>,
+  definition: SchemeDefinition<R> | PublicKeySchemeDefinition<R>,
   config: TimedSchemeConfig,
 ): Verifier {
   const toleranceSeconds = positiveInteger(
@@ -56,11 +74,18 @@ export function schemeVerifier<R extends Reading>(
       const reading = definition.read(request);
       if (typeof reading === 'string') return rejected(reading);
 
+      // Se recorren todas las claves y todas las firmas aunque ya haya coincidido una.
       let valid = false;
       for (const key of keys) {
-        const expected = await definition.expected(key, reading, request);
-        for (const received of reading.received) {
-          if (equalInConstantTime(expected, received)) valid = true;
+        if ('verifies' in definition) {
+          for (const received of reading.received) {
+            if (await definition.verifies(key, received, reading, request)) valid = true;
+          }
+        } else {
+          const expected = await definition.expected(key, reading, request);
+          for (const received of reading.received) {
+            if (equalInConstantTime(expected, received)) valid = true;
+          }
         }
       }
       if (!valid) return rejected('invalid');
@@ -76,7 +101,7 @@ export function schemeVerifier<R extends Reading>(
 
 /** Las claves de todos los secretos, o `null` si no hay ninguno o alguno no se puede usar. */
 function usableKeys<R extends Reading>(
-  definition: SchemeDefinition<R>,
+  definition: KeyedDefinition<R>,
   secrets: readonly string[],
 ): readonly Uint8Array[] | null {
   if (secrets.length === 0) return null;
