@@ -440,7 +440,12 @@ def check_url(agents: list[Agent], report: Report, data: Json, expected: str | N
     if "host" not in reply:
         return
     for name, platform in platforms.items():
-        seen = None if platform is None else normal_host(platform["host"])
+        # Que la plataforma rechace una URL que la política aceptó no es una diferencia: el
+        # intento falla sin salir hacia ningún lado. Pasa con etiquetas `xn--` que no son
+        # Punycode válido. Lo que no puede pasar es que lea otro host.
+        if platform is None:
+            continue
+        seen = normal_host(platform["host"])
         report.expect(f"{what}: el host que ve el analizador de {name}", seen, normal_host(reply["host"]))
 
 
