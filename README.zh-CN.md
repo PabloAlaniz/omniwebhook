@@ -10,8 +10,8 @@
 > **尚未发布 1.0。** 两个包都已发布到 npm 和 PyPI，功能完整并覆盖了整份规范，但在 1.0 之前，
 > API 仍可能在次版本之间发生变化。
 
-> **关于本译文。** 本页是译文，如有出入，以[西班牙语原文](README.md)为准。使用指南和规范另有英文译本，
-> 下方的链接指向英文版；其余文档为西班牙语。
+> **关于本译文。** 本页是译文，如有出入，以[西班牙语原文](README.md)为准。使用指南、规范以及其余文档另有英文译本，
+> 下方的链接指向英文版。
 
 几乎每个产品最终都要接收支付服务商的 webhook，同时也要发出自己的 webhook。而这些逻辑几乎每次都要
 重写一遍：每个服务商一套签名校验、一张防止重复处理的表、一段手写的重试。`omniwebhook` 把规则和
@@ -163,25 +163,25 @@ pip install "omniwebhook[standard]"       # 附带 Standard Webhooks 参考库
 ```
 
 Python 的其他可选依赖（`httpx`、`starlette`、`django`、`postgres`、`firestore`、`ed25519`、
-`otel`）见[包的 README](python/README.md)。
+`otel`）见[包的 README](python/README.en.md)（英文）。
 
 ## 文档
 
-以下文档为英文；示例、架构决策、发布流程、路线图和 1.0 标准为西班牙语。
+以下文档为英文；西班牙语原文位于相同的目录中。
 
 | | |
 |---|---|
 | [接收指南](docs/en/recibir.md) | 签名方案、存储、事件键和响应 |
 | [发送指南](docs/en/emitir.md) | 签名、URL 策略、重试、发件箱和端点健康状况 |
 | [遥测](docs/en/telemetria.md) | 基于 OpenTelemetry 的指标和链路追踪 |
-| [示例](examples/README.md) | 最小化的接收端和一个发件箱示例，均在 CI 中测试 |
+| [示例](examples/README.en.md) | 最小化的接收端和一个发件箱示例，均在 CI 中测试 |
 | [如何添加签名方案](docs/en/agregar-un-esquema.md) | 从规范到适配器 |
 | [规范](spec/SPEC.en.md) | 所有包共同遵循的行为 |
-| [架构决策](docs/adr/README.md) | 为什么这样设计 |
-| [如何发布版本](docs/publicar.md) | 发布流程与可信发布 |
+| [架构决策](docs/en/adr/README.md) | 为什么这样设计 |
+| [如何发布版本](docs/en/publicar.md) | 发布流程与可信发布 |
 | [兼容性](docs/en/compatibilidad.md) | 哪些是稳定的、支持哪些运行环境、变更如何通知 |
-| [路线图](docs/roadmap.md) | 已完成和尚未完成的内容 |
-| [1.0 标准](docs/criterios-1.0.md) | 冻结 API 之前必须满足的条件 |
+| [路线图](docs/en/roadmap.md) | 已完成和尚未完成的内容 |
+| [1.0 标准](docs/en/criterios-1.0.md) | 冻结 API 之前必须满足的条件 |
 
 ## 仓库结构
 
@@ -196,8 +196,8 @@ Python 的其他可选依赖（`httpx`、`starlette`、`django`、`postgres`、`
 
 ## 参与贡献
 
-请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 和[行为准则](CODE_OF_CONDUCT.md)（均为西班牙语）。
-报告安全问题请参阅 [SECURITY.md](SECURITY.md)。
+请参阅 [CONTRIBUTING](CONTRIBUTING.en.md) 和[行为准则](CODE_OF_CONDUCT.en.md)（均为英文）。
+报告安全问题请参阅 [SECURITY](SECURITY.en.md)。
 
 ## 许可证
 

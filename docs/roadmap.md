@@ -206,7 +206,7 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 
 ### Documentación para llegar a la 1.0
 
-- **Hecho. Documentación en inglés** además de la de español: el README, las guías (`docs/en/`)
+- **Hecho. Documentación en inglés** además de la de español: toda, no sólo el README, las guías (`docs/en/`)
   y la especificación (`spec/SPEC.en.md`). El español sigue siendo el original. Los ejemplos
   pasan por el comprobador de tipos, y otro comprobador hace fallar la integración continua si
   una traducción deja de tener los mismos títulos, tablas y bloques de código que su original.

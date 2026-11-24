@@ -49,7 +49,7 @@ No hay fecha. Se publica cuando todo lo de «Tiene que estar» esté tildado.
 
 ### La documentación
 
-- [x] En inglés, además de en español: el README, las guías y la especificación.
+- [x] En inglés, además de en español: toda la documentación del repositorio.
 - [ ] La especificación en inglés, leída entera contra el original por una segunda persona.
 - [ ] Las traducciones del README al chino simplificado y al portugués de Brasil, revisadas por
   alguien que hable el idioma.

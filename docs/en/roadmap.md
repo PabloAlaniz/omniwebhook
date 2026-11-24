@@ -209,7 +209,7 @@ asymmetric signature when sending, telemetry and, last, documentation in English
 
 ### Documentation to get to 1.0
 
-- **Done. Documentation in English** in addition to the Spanish one: the README, the guides (`docs/en/`)
+- **Done. Documentation in English** in addition to the Spanish one: all of it, not only the README, the guides (`docs/en/`)
   and the specification (`spec/SPEC.en.md`). Spanish remains the original. The examples
   go through the type checker, and another checker makes continuous integration (CI) fail if
   a translation stops having the same headings, tables and code blocks as its original.
