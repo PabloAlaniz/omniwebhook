@@ -9,23 +9,43 @@ La firma asimétrica, `standard_public_key_scheme`, necesita `omniwebhook[ed2551
 from typing import TYPE_CHECKING
 
 from omniwebhook.adapters.schemes.standard import standard_scheme
+from omniwebhook.adapters.schemes.standard.combined_signer import combined_signer
 from omniwebhook.adapters.schemes.standard.native_signer import native_signer
 from omniwebhook.adapters.schemes.standard.signer import StandardSigner
 from omniwebhook.adapters.schemes.standard.standard_signer import standard_signer
 from omniwebhook.domain.errors import ConfigurationError
 
 if TYPE_CHECKING:
+    from omniwebhook.adapters.schemes.standard.key_signer import (
+        StandardKeyPair,
+        generate_standard_key_pair,
+        standard_key_signer,
+        standard_public_key_of,
+    )
     from omniwebhook.adapters.schemes.standard.public_key import standard_public_key_scheme
     from omniwebhook.adapters.schemes.standard.reference_signer import reference_signer
 
 __all__ = [
+    "StandardKeyPair",
     "StandardSigner",
+    "combined_signer",
+    "generate_standard_key_pair",
     "native_signer",
     "reference_signer",
+    "standard_key_signer",
+    "standard_public_key_of",
     "standard_public_key_scheme",
     "standard_scheme",
     "standard_signer",
 ]
+
+
+_KEY_SIGNER = {
+    "StandardKeyPair",
+    "generate_standard_key_pair",
+    "standard_key_signer",
+    "standard_public_key_of",
+}
 
 
 def __getattr__(name: str) -> object:
@@ -34,6 +54,14 @@ def __getattr__(name: str) -> object:
         from omniwebhook.adapters.schemes.standard.reference_signer import reference_signer
 
         return reference_signer
+    if name in _KEY_SIGNER:
+        try:
+            from omniwebhook.adapters.schemes.standard import key_signer
+        except ImportError as error:
+            raise ConfigurationError(
+                "falta la librería de Ed25519: instalá `omniwebhook[ed25519]`"
+            ) from error
+        return getattr(key_signer, name)
     if name == "standard_public_key_scheme":
         try:
             from omniwebhook.adapters.schemes.standard.public_key import standard_public_key_scheme

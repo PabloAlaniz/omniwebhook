@@ -16,10 +16,12 @@ class OutgoingMessage:
     """La hora del intento, en segundos."""
     payload: bytes
     """El cuerpo, byte a byte como se va a enviar."""
+    endpoint_id: str | None = None
+    """El identificador del destino. Lo necesita la firma asimétrica (sección 7.1)."""
 
 
 MessageProblem = Literal["invalid_id", "invalid_timestamp"]
-SigningProblem = MessageProblem | Literal["unconfigured"]
+SigningProblem = MessageProblem | Literal["invalid_endpoint", "unconfigured"]
 
 
 @dataclass(frozen=True, slots=True)

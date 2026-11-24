@@ -276,3 +276,54 @@ def test_send_informa_el_estado_de_un_rechazo_y_no_sigue_redirecciones() -> None
     assert codigo == 1
     assert salida == ["302"]
     assert len(local.recibidos) == 1
+
+
+def test_keygen_da_un_par_con_el_que_se_firma_y_se_verifica() -> None:
+    generacion = Consola()
+    assert generacion.correr("keygen") == 0
+    par = json.loads("\n".join(generacion.salida))
+    comunes = ["--scheme", "standard-v2a", "--endpoint-id", "ep_1"]
+
+    def consola(archivos: dict[str, str] | None = None) -> tuple[Consola, CliIo]:
+        nueva = Consola(archivos=archivos or {})
+        entorno = CliIo(
+            env={"PRIVADA": par["secretKey"], "PUBLICA": par["publicKey"]},
+            read=nueva._leer,
+            out=nueva.salida.append,
+            err=nueva.errores.append,
+        )
+        return nueva, entorno
+
+    firma, entorno = consola()
+    assert run_cli(["sign", *comunes, "--secret-env", "PRIVADA", "--body", "cuerpo.json"], entorno) == 0
+    pedido = "\n".join(firma.salida)
+
+    _, entorno = consola({"-": pedido})
+    assert run_cli(["verify", *comunes, "--secret-env", "PUBLICA", "--request", "-"], entorno) == 0
+    _, entorno = consola({"-": pedido})
+    otro = ["verify", "--scheme", "standard-v2a", "--endpoint-id", "ep_2", "--secret-env", "PUBLICA"]
+    assert run_cli([*otro, "--request", "-"], entorno) == 1
+    errores, entorno = consola({"-": pedido})
+    sin_destino = ["verify", "--scheme", "standard-v2a", "--secret-env", "PUBLICA", "--request", "-"]
+    assert run_cli(sin_destino, entorno) == 2
+    assert "endpoint-id" in "\n".join(errores.errores)
+
+
+def test_discord_firma_con_la_semilla_y_verifica_con_la_clave_publica() -> None:
+    claves = {
+        "PRIVADA": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+        "PUBLICA": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+    }
+    firma = Consola()
+    entorno = CliIo(env=claves, read=firma._leer, out=firma.salida.append, err=firma.errores.append)
+    assert (
+        run_cli(["sign", "--scheme", "discord", "--secret-env", "PRIVADA", "--body", "cuerpo.json"], entorno)
+        == 0
+    )
+
+    verificacion = Consola(archivos={"-": "\n".join(firma.salida)})
+    entorno = CliIo(env=claves, read=verificacion._leer, out=verificacion.salida.append)
+    argumentos = ["verify", "--scheme", "discord", "--secret-env", "PUBLICA", "--tolerance", "600"]
+
+    assert run_cli([*argumentos, "--request", "-"], entorno) == 0
+    assert json.loads(verificacion.salida[0])["eventKey"] == "discord:evt_1"

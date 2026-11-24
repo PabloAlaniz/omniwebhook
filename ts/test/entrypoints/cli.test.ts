@@ -89,6 +89,90 @@ describe('la línea de comandos', () => {
     expect(await runCli(['verify', ...verifyOptions, '--request', '-'], verifying.io)).toBe(0);
   });
 
+  it('keygen da un par con el que se firma y se verifica', async () => {
+    const generating = io();
+    expect(await runCli(['keygen'], generating.io)).toBe(0);
+    const pair = JSON.parse(generating.out.join('\n')) as { secretKey: string; publicKey: string };
+    const env = { PRIVADA: pair.secretKey, PUBLICA: pair.publicKey };
+    const common = ['--scheme', 'standard-v2a', '--endpoint-id', 'ep_1'];
+
+    const signing = io({ env });
+    expect(
+      await runCli(
+        ['sign', ...common, '--secret-env', 'PRIVADA', '--body', 'cuerpo.json'],
+        signing.io,
+      ),
+    ).toBe(0);
+    const verifying = io({ env }, { '-': signing.out.join('\n') });
+
+    expect(
+      await runCli(
+        ['verify', ...common, '--secret-env', 'PUBLICA', '--request', '-'],
+        verifying.io,
+      ),
+    ).toBe(0);
+    const other = io({ env }, { '-': signing.out.join('\n') });
+    expect(
+      await runCli(
+        [
+          'verify',
+          '--scheme',
+          'standard-v2a',
+          '--endpoint-id',
+          'ep_2',
+          '--secret-env',
+          'PUBLICA',
+          '--request',
+          '-',
+        ],
+        other.io,
+      ),
+    ).toBe(1);
+  });
+
+  it('discord: firma con la semilla y verifica con la clave pública', async () => {
+    const env = {
+      PRIVADA: '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60',
+      PUBLICA: 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
+    };
+    const signing = io({ env });
+    await runCli(
+      ['sign', '--scheme', 'discord', '--secret-env', 'PRIVADA', '--body', 'cuerpo.json'],
+      signing.io,
+    );
+    const verifying = io({ env }, { '-': signing.out.join('\n') });
+
+    expect(
+      await runCli(
+        ['verify', '--scheme', 'discord', '--secret-env', 'PUBLICA', '--request', '-'],
+        verifying.io,
+      ),
+    ).toBe(0);
+  });
+
+  it('standard-v2a sin el destino es un uso incorrecto', async () => {
+    const { io: cli, err } = io(
+      { env: { PUBLICA: 'whpk_abc' } },
+      { 'pedido.json': '{"headers":[],"body":""}' },
+    );
+
+    expect(
+      await runCli(
+        [
+          'verify',
+          '--scheme',
+          'standard-v2a',
+          '--secret-env',
+          'PUBLICA',
+          '--request',
+          'pedido.json',
+        ],
+        cli,
+      ),
+    ).toBe(2);
+    expect(err.join('\n')).toMatch(/endpoint-id/);
+  });
+
   it('send manda el pedido firmado y termina según el estado', async () => {
     const fetchOk = vi.fn(async (_url: Parameters<typeof fetch>[0], _init?: RequestInit) => {
       return new Response('ignorado', { status: 200 });

@@ -1479,6 +1479,99 @@ def firmar_standard() -> Vector:
     }
 
 
+def v2a_secret(text: str) -> bytes | None:
+    """La semilla de un texto `whsk_…`, o None si no se puede usar."""
+    encoded = text.removeprefix("whsk_")
+    if encoded == text or not encoded or len(encoded) % 4 or not STRICT_BASE64.fullmatch(encoded):
+        return None
+    raw = base64.b64decode(encoded)
+    return raw if len(raw) == 32 else None
+
+
+V2A_SECRET_KEY = "whsk_" + base64.b64encode(V2A_SEED).decode()
+V2A_OTHER_SECRET_KEY = "whsk_" + base64.b64encode(V2A_OTHER_SEED).decode()
+# El par de claves de ejemplo de la especificación pública del formato.
+V2A_DOC_SECRET_KEY = "whsk_4uKPjji/dhB8w6GW3YYDnIMYvXcdHrvH6lidTr4Z+EY="
+
+
+def firmar_standard_v2a() -> Vector:
+    def case(
+        name: str,
+        secrets: list[str],
+        ident: str = "msg_2aXk",
+        ts: int = NOW,
+        payload: str = STD_BODY,
+        endpoint: str | None = V2A_ENDPOINT,
+    ) -> dict[str, Any]:
+        seeds = [v2a_secret(secret) if secret else None for secret in secrets]
+        expected: dict[str, Any]
+        if ident == "" or "." in ident:
+            expected = {"error": "invalid_id"}
+        elif ts < 0:
+            expected = {"error": "invalid_timestamp"}
+        elif not endpoint or "." in endpoint:
+            expected = {"error": "invalid_endpoint"}
+        elif not seeds or any(seed is None for seed in seeds):
+            expected = {"error": "unconfigured"}
+        else:
+            content = v2a_content(endpoint, ident, ts, payload.encode())
+            signatures = [
+                "v2a," + base64.b64encode(ed_sign(seed, content)).decode() for seed in seeds if seed
+            ]
+            expected = {
+                "headers": {
+                    "webhook-id": ident,
+                    "webhook-timestamp": str(ts),
+                    "webhook-signature": " ".join(signatures),
+                },
+                "public_keys": [
+                    "whpk_" + base64.b64encode(ed_public(seed)).decode() for seed in seeds if seed
+                ],
+            }
+        return {
+            "name": name,
+            "secrets": secrets,
+            "id": ident,
+            "timestamp": ts,
+            "payload": payload,
+            "endpoint_id": endpoint,
+            "expected": expected,
+        }
+
+    one = [V2A_SECRET_KEY]
+    return {
+        "spec": SPEC,
+        "id": "firmar/standard-v2a",
+        "kind": "sign",
+        "cases": [
+            case("una clave", one),
+            case("dos claves: una firma por clave, en orden", [V2A_SECRET_KEY, V2A_OTHER_SECRET_KEY]),
+            case("la clave de ejemplo del formato", [V2A_DOC_SECRET_KEY]),
+            case("cuerpo vacío", one, ident="msg_vacio", payload=""),
+            case(
+                "cuerpo con caracteres fuera de ASCII", one, ident="msg_ñ", payload='{"saludo":"¡Hola! 👋"}'
+            ),
+            case("época cero", one, ident="msg_0", ts=0, payload="{}"),
+            case("otro destino da otra firma", one, endpoint="ep_sintetico_2"),
+            case("identificador vacío", one, ident=""),
+            case("identificador con punto", one, ident="msg.1"),
+            case("marca de tiempo negativa", one, ts=-1),
+            case("sin destino", one, endpoint=None),
+            case("destino vacío", one, endpoint=""),
+            case("destino con punto", one, endpoint="ep.1"),
+            case("el identificador se comprueba antes que el destino", one, ident="", endpoint="ep.1"),
+            case("el destino se comprueba antes que las claves", [], endpoint="ep.1"),
+            case("sin claves", []),
+            case("una clave vacía", [V2A_SECRET_KEY, ""]),
+            case("una clave sin el prefijo", [V2A_SECRET_KEY[5:]]),
+            case("una clave pública no sirve para firmar", [V2A_KEY]),
+            case("un secreto simétrico no sirve para firmar", [STD_SECRET]),
+            case("una clave que no es base64", ["whsk_***"]),
+            case("una clave de otro largo", ["whsk_" + base64.b64encode(b"x" * 31).decode()]),
+        ],
+    }
+
+
 # --- reservas ------------------------------------------------------------------
 
 
@@ -2988,6 +3081,7 @@ ALL: list[Callable[[], Vector]] = [
     verificar_creem,
     verificar_hmac_body,
     firmar_standard,
+    firmar_standard_v2a,
     reservas_almacen,
     recibir_respuesta,
     recibir_caso_de_uso,

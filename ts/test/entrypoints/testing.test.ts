@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ConfigurationError,
   creemScheme,
+  discordScheme,
   githubScheme,
   hmacBodyScheme,
   mercadoPagoScheme,
@@ -12,7 +13,11 @@ import {
   toIncomingRequest,
   type Verifier,
 } from '../../src/index';
-import { standardScheme } from '../../src/standard';
+import {
+  generateStandardKeyPair,
+  standardPublicKeyScheme,
+  standardScheme,
+} from '../../src/standard';
 import {
   type SignedRequestOptions,
   type SignedScheme,
@@ -150,5 +155,60 @@ describe('toFetchRequest', () => {
 
     expect(await mercadoPagoScheme(timed).verify(incoming)).toMatchObject({ outcome: 'ok' });
     expect(new TextDecoder().decode(incoming.body)).toBe(BODY);
+  });
+});
+
+describe('signedRequest con esquemas de clave pública', () => {
+  const SEED = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60';
+  const DISCORD_PUBLIC = 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a';
+
+  it('standard-v2a: lo que arma lo verifica la clave pública, y alterado no', async () => {
+    const pair = await generateStandardKeyPair();
+    const scheme = standardPublicKeyScheme({
+      publicKeys: [pair.publicKey],
+      endpointId: 'ep_1',
+      clock,
+    });
+
+    const request = await signedRequest('standard-v2a', {
+      secret: pair.secretKey,
+      body: BODY,
+      timestamp: NOW,
+      id: 'msg_1',
+      endpointId: 'ep_1',
+    });
+
+    expect(await scheme.verify(request)).toMatchObject({
+      outcome: 'ok',
+      eventKey: 'standard:msg_1',
+    });
+    expect(await scheme.verify(tampered(request))).toEqual({ outcome: 'invalid' });
+  });
+
+  it('discord: lo que arma lo verifica la clave pública de esa semilla', async () => {
+    const scheme = discordScheme({ publicKeys: [DISCORD_PUBLIC], clock });
+
+    const request = await signedRequest('discord', { secret: SEED, body: BODY, timestamp: NOW });
+
+    expect(await scheme.verify(request)).toMatchObject({
+      outcome: 'ok',
+      eventKey: 'discord:evt_1',
+    });
+    expect(await scheme.verify(tampered(request))).toEqual({ outcome: 'invalid' });
+  });
+
+  it.each([
+    ['standard-v2a sin destino', 'standard-v2a', { secret: `whsk_${'A'.repeat(43)}=` }],
+    ['standard-v2a con una clave pública', 'standard-v2a', { secret: 'whpk_abc', endpointId: 'e' }],
+    [
+      'standard-v2a con un destino con punto',
+      'standard-v2a',
+      { secret: `whsk_${'A'.repeat(43)}=`, endpointId: 'e.1' },
+    ],
+    ['discord con una semilla corta', 'discord', { secret: 'abcd' }],
+  ] as const)('rechaza %s', async (_what, scheme, extra) => {
+    await expect(signedRequest(scheme, { body: BODY, ...extra })).rejects.toThrow(
+      ConfigurationError,
+    );
   });
 });

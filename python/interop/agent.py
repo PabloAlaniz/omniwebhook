@@ -71,7 +71,13 @@ from omniwebhook.sqlite import (
     sqlite_ledger_schema,
     sqlite_store_schema,
 )
-from omniwebhook.standard import standard_public_key_scheme, standard_scheme, standard_signer
+from omniwebhook.standard import (
+    standard_key_signer,
+    standard_public_key_of,
+    standard_public_key_scheme,
+    standard_scheme,
+    standard_signer,
+)
 
 Json = dict[str, Any]
 
@@ -149,6 +155,18 @@ class Agent:
         if isinstance(result, Signed):
             return {"outcome": "signed", "headers": dict(result.headers)}
         return {"outcome": result.outcome}
+
+    def sign_key(
+        self, secret_keys: list[str], id: str, timestamp: int, payload: str, endpoint_id: str
+    ) -> Json:
+        message = OutgoingMessage(
+            id=id, timestamp=timestamp, payload=base64.b64decode(payload), endpoint_id=endpoint_id
+        )
+        result = standard_key_signer(secret_keys=secret_keys).sign(message)
+        public_keys = [standard_public_key_of(key) for key in secret_keys]
+        if isinstance(result, Signed):
+            return {"outcome": "signed", "headers": dict(result.headers), "public_keys": public_keys}
+        return {"outcome": result.outcome, "public_keys": public_keys}
 
     def reference_verify(self, secret: str, headers: dict[str, str], body: str) -> Json:
         """Lo que firmó el otro paquete, verificado con la librería de referencia del formato."""

@@ -8,11 +8,14 @@
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { creemScheme } from './adapters/schemes/creem';
+import { discordScheme } from './adapters/schemes/discord';
 import { githubScheme } from './adapters/schemes/github';
 import { hmacBodyScheme } from './adapters/schemes/hmac-body';
 import { mercadoPagoScheme } from './adapters/schemes/mercadopago';
 import { shopifyScheme } from './adapters/schemes/shopify';
 import { slackScheme } from './adapters/schemes/slack';
+import { generateStandardKeyPair } from './adapters/schemes/standard/key-signer';
+import { standardPublicKeyScheme } from './adapters/schemes/standard/public-key';
 import { stripeScheme } from './adapters/schemes/stripe';
 import { tiktokScheme } from './adapters/schemes/tiktok';
 import type { Verifier } from './application/ports';
@@ -34,11 +37,14 @@ Comandos:
   sign     Firma un cuerpo y muestra el pedido que mandaría el emisor, en JSON.
   verify   Verifica un pedido guardado. Termina con 0 si el resultado es ok, y con 1 si no.
   send     Firma un cuerpo y lo manda por POST a una URL. Termina con 0 si responde 2xx.
+  keygen   Genera un par de claves para la firma asimétrica y lo muestra en JSON.
 
 Opciones:
-  --scheme <nombre>      standard, stripe, slack, shopify, tiktok, mercadopago, github, creem
-                         o hmac-body.
-  --secret-env <VAR>     La variable de entorno que tiene el secreto.
+  --scheme <nombre>      standard, standard-v2a, discord, stripe, slack, shopify, tiktok,
+                         mercadopago, github, creem o hmac-body.
+  --secret-env <VAR>     La variable de entorno que tiene el secreto. En standard-v2a y discord,
+                         la clave privada para sign y send, y la pública para verify.
+  --endpoint-id <texto>  El identificador del destino. (standard-v2a)
   --body <archivo>       El cuerpo crudo; - para la entrada estándar. (sign, send)
   --request <archivo>    El pedido en JSON, como lo muestra sign; - para la entrada estándar.
                          (verify)
@@ -105,6 +111,7 @@ async function signed(options: Options, io: CliIo): Promise<IncomingRequest> {
     timestamp: integer(options, 'timestamp'),
     id: options.id,
     dataId: options['data-id'],
+    endpointId: options['endpoint-id'],
     header: options.header,
     prefix: options.prefix,
     encoding: encodingOf(options),
@@ -123,6 +130,18 @@ async function verifierOf(options: Options, io: CliIo): Promise<Verifier> {
       const { standardScheme } = await import('./adapters/schemes/standard/index');
       return standardScheme(timed);
     }
+    case 'standard-v2a':
+      return standardPublicKeyScheme(
+        defined({
+          publicKeys: secrets,
+          endpointId: required(options, 'endpoint-id'),
+          toleranceSeconds: integer(options, 'tolerance'),
+        }),
+      );
+    case 'discord':
+      return discordScheme(
+        defined({ publicKeys: secrets, toleranceSeconds: integer(options, 'tolerance') }),
+      );
     case 'stripe':
       return stripeScheme(timed);
     case 'slack':
@@ -211,6 +230,7 @@ export async function runCli(argv: readonly string[], io: CliIo): Promise<number
           'timestamp',
           'id',
           'data-id',
+          'endpoint-id',
           'header',
           'prefix',
           'encoding',
@@ -221,6 +241,12 @@ export async function runCli(argv: readonly string[], io: CliIo): Promise<number
     });
     const options = values as Options;
 
+    if (command === 'keygen') {
+      // La clave privada sale por la salida estándar porque se la pidió: guardala en un gestor
+      // de secretos y compartí sólo la pública.
+      io.out(JSON.stringify(await generateStandardKeyPair(), null, 2));
+      return 0;
+    }
     if (command === 'sign') {
       io.out(shown(await signed(options, io)));
       return 0;

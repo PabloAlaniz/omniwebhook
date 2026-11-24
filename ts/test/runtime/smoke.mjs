@@ -18,7 +18,13 @@ import {
   toResponse,
   USER_AGENT,
 } from '../../dist/index.js';
-import { standardPublicKeyScheme, standardScheme, standardSigner } from '../../dist/standard.js';
+import {
+  generateStandardKeyPair,
+  standardKeySigner,
+  standardPublicKeyScheme,
+  standardScheme,
+  standardSigner,
+} from '../../dist/standard.js';
 
 const SECRET = 'whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE=';
 const URL_DESTINO = 'https://hooks.ejemplo.test/entrada';
@@ -116,5 +122,21 @@ const asymmetric = await standardPublicKeyScheme({
   body: new TextEncoder().encode('{"type":"pedido.creado","data":{"id":42}}'),
 });
 check('firma asimétrica', asymmetric.outcome, 'ok');
+
+// --- Firmar con una clave privada nueva y verificar con su pública --------------------
+const pair = await generateStandardKeyPair();
+const keySigned = await standardKeySigner({ secretKeys: [pair.secretKey] }).sign({
+  id: 'msg_1',
+  timestamp: 1000,
+  payload,
+  endpointId: 'ep_1',
+});
+check('firma con clave privada', keySigned.outcome, 'signed');
+const keyVerified = await standardPublicKeyScheme({
+  publicKeys: [pair.publicKey],
+  endpointId: 'ep_1',
+  clock: { now: () => 1000 },
+}).verify({ headers: Object.entries(keySigned.headers), query: [], body: payload });
+check('verificación con clave pública', keyVerified.outcome, 'ok');
 
 console.log(`ok: ${USER_AGENT}`);

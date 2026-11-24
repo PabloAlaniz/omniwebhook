@@ -105,3 +105,36 @@ export function fromHex(text: string): Uint8Array | null {
   }
   return bytes;
 }
+
+// Web Crypto no importa una semilla Ed25519 suelta: hay que envolverla en PKCS #8.
+const ED25519_PKCS8_PREFIX = Uint8Array.from([
+  0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20,
+]);
+
+function ed25519PrivateKey(seed: Uint8Array, extractable: boolean) {
+  return crypto.subtle.importKey(
+    'pkcs8',
+    owned(concat(ED25519_PKCS8_PREFIX, seed)),
+    { name: 'Ed25519' },
+    extractable,
+    ['sign'],
+  );
+}
+
+/** La firma Ed25519 de `message` con la clave privada de semilla `seed` (32 bytes). */
+export async function signEd25519(seed: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
+  const key = await ed25519PrivateKey(seed, false);
+  return new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, key, owned(message)));
+}
+
+/** Los 32 bytes de la clave pública que le corresponde a una semilla Ed25519. */
+export async function ed25519PublicKey(seed: Uint8Array): Promise<Uint8Array> {
+  const jwk = await crypto.subtle.exportKey('jwk', await ed25519PrivateKey(seed, true));
+  const base64 = (jwk.x ?? '').replaceAll('-', '+').replaceAll('_', '/');
+  return fromBase64(base64 + '='.repeat((4 - (base64.length % 4)) % 4));
+}
+
+/** Una semilla Ed25519 nueva: 32 bytes al azar. */
+export function randomEd25519Seed(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(32));
+}

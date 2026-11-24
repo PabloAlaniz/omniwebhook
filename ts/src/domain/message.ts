@@ -6,12 +6,18 @@ export interface OutgoingMessage {
   readonly timestamp: number;
   /** El cuerpo, byte a byte como se va a enviar. */
   readonly payload: Uint8Array;
+  /** El identificador del destino. Lo necesita la firma asimétrica (sección 7.1). */
+  readonly endpointId?: string;
 }
 
 /** El tamaño máximo del payload de un mensaje, en bytes, si no se indica otro (sección 7). */
 export const DEFAULT_MAX_PAYLOAD_BYTES = 262_144;
 
-export type SigningProblem = 'invalid_id' | 'invalid_timestamp' | 'unconfigured';
+export type SigningProblem =
+  | 'invalid_id'
+  | 'invalid_timestamp'
+  | 'invalid_endpoint'
+  | 'unconfigured';
 
 export type Signing =
   | { readonly outcome: 'signed'; readonly headers: Readonly<Record<string, string>> }
