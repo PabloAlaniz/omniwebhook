@@ -11,8 +11,8 @@ Webhooks assinados, enviados e recebidos do mesmo jeito em qualquer stack.
 > especificação, mas a API ainda pode mudar entre versões menores.
 
 > **Sobre esta tradução.** Esta página é uma tradução; em caso de divergência, vale o
-> [original em espanhol](README.md). Os guias e a especificação existem, por enquanto, só em
-> espanhol, e os links abaixo levam aos originais.
+> [original em espanhol](README.md). Os guias e a especificação também têm tradução
+> para o inglês, e os links abaixo levam a ela; o restante da documentação está em espanhol.
 
 Quase todo produto acaba recebendo webhooks de um provedor de pagamentos e enviando os seus. E quase
 sempre isso é escrito de novo: uma verificação de assinatura por provedor, uma tabela para não
@@ -26,7 +26,7 @@ resto:
   uma política que impede a entrega em endereços internos.
 - **Qualquer provedor, qualquer banco, qualquer cliente HTTP.** O núcleo não conhece nenhum deles:
   são portas, e cada uma é resolvida por um adaptador.
-- **O mesmo comportamento em cada linguagem.** Existe uma [especificação](spec/SPEC.md) e vetores
+- **O mesmo comportamento em cada linguagem.** Existe uma [especificação](spec/SPEC.en.md) e vetores
   de conformidade compartilhados. O pacote de TypeScript e o de Python executam os mesmos casos, e
   um teste de interoperabilidade compara os dois requisição por requisição.
 
@@ -92,7 +92,7 @@ ninguém a tiver processado antes. Todo o resto termina em um resultado com o st
 | `unconfigured` | 500 | Falta um segredo utilizável |
 | `failed` | 500 | O processamento falhou e a reserva foi liberada |
 
-Mais no [guia para receber](docs/recibir.md) (em espanhol).
+Mais no [guia para receber](docs/en/recibir.md) (em inglês).
 
 ## Enviar
 
@@ -140,7 +140,7 @@ attempt = send.execute(
 Cada chamada é uma tentativa. O pacote diz quando cabe a próxima, mas não a agenda: isso fica com a
 fila ou o agendador que você já usa. Se você não quer perder um evento quando o processo cai, a
 caixa de saída (outbox) guarda as entregas pendentes e as distribui entre os processos que
-despacham. Mais no [guia para enviar](docs/emitir.md) (em espanhol).
+despacham. Mais no [guia para enviar](docs/en/emitir.md) (em inglês).
 
 ## O que cada pacote traz
 
@@ -175,19 +175,20 @@ Os demais extras de Python (`httpx`, `starlette`, `django`, `postgres`, `firesto
 
 ## Documentação
 
-Os documentos abaixo estão em espanhol.
+Os documentos abaixo estão em inglês; os exemplos, as decisões de arquitetura, a publicação, o
+roadmap e os critérios da 1.0 estão em espanhol.
 
 | | |
 |---|---|
-| [Guia para receber](docs/recibir.md) | Esquemas, armazenamentos, chaves de evento e respostas |
-| [Guia para enviar](docs/emitir.md) | Assinatura, política de URLs, retentativas, caixa de saída e saúde dos destinos |
-| [Telemetria](docs/telemetria.md) | Métricas e traces com OpenTelemetry |
+| [Guia para receber](docs/en/recibir.md) | Esquemas, armazenamentos, chaves de evento e respostas |
+| [Guia para enviar](docs/en/emitir.md) | Assinatura, política de URLs, retentativas, caixa de saída e saúde dos destinos |
+| [Telemetria](docs/en/telemetria.md) | Métricas e traces com OpenTelemetry |
 | [Exemplos](examples/README.md) | Receptores mínimos e uma caixa de saída, testados na integração contínua |
-| [Como adicionar um esquema de assinatura](docs/agregar-un-esquema.md) | Da especificação ao adaptador |
-| [Especificação](spec/SPEC.md) | O comportamento que todos os pacotes compartilham |
+| [Como adicionar um esquema de assinatura](docs/en/agregar-un-esquema.md) | Da especificação ao adaptador |
+| [Especificação](spec/SPEC.en.md) | O comportamento que todos os pacotes compartilham |
 | [Decisões de arquitetura](docs/adr/README.md) | Por que foi feito assim |
 | [Como uma versão é publicada](docs/publicar.md) | O fluxo de versões e a publicação confiável |
-| [Compatibilidade](docs/compatibilidad.md) | O que é estável, quais ambientes são suportados e como uma mudança é avisada |
+| [Compatibilidade](docs/en/compatibilidad.md) | O que é estável, quais ambientes são suportados e como uma mudança é avisada |
 | [Roadmap](docs/roadmap.md) | O que está feito e o que falta |
 | [Critérios da 1.0](docs/criterios-1.0.md) | O que precisa acontecer para congelar a API |
 
