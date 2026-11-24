@@ -1,0 +1,38 @@
+name: Algo no funciona como dice la especificación
+description: Un resultado distinto del esperado, en cualquiera de los dos paquetes.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Si el problema permite aceptar un webhook que no corresponde, procesarlo dos veces o
+        entregar a una dirección bloqueada, no lo reportes acá: usá el reporte privado.
+  - type: dropdown
+    id: paquete
+    attributes:
+      label: Paquete
+      options: [TypeScript (npm), Python (PyPI), Los dos, La especificación]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión del paquete y del entorno
+      placeholder: omniwebhook 0.4.0, Node 24 / Python 3.13 / Workers
+    validations:
+      required: true
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Qué pasa y qué esperabas
+      description: Si podés, citá la sección de la especificación.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducir
+    attributes:
+      label: Cómo reproducirlo
+      description: El caso más chico posible. Usá secretos y URLs inventados, nunca reales.
+      render: shell
+    validations:
+      required: true

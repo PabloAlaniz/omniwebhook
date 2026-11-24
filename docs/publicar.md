@@ -40,6 +40,17 @@ Detalles de npm que no son obvios:
 La primera versión arranca en 0.1.0 por `initial-version` en `release-please-config.json`; sin eso,
 release-please propone 1.0.0.
 
+## Qué acompaña a cada versión
+
+- **Procedencia.** npm publica con `--provenance` y PyPI con atestaciones: cada registro guarda
+  la prueba de que el paquete salió de este repositorio, de este workflow y de qué commit.
+- **Inventario de dependencias.** El job `sbom` adjunta a la versión en GitHub un SBOM en formato
+  SPDX por paquete. No condiciona la publicación: si falla, los paquetes salen igual.
+- **El número de versión dentro del código.** `PACKAGE_VERSION` vive en
+  `ts/src/domain/package-version.ts` y en `python/src/omniwebhook/domain/package_version.py`, y
+  es lo que va en la cabecera `user-agent`. Release-please lo actualiza junto con los manifiestos,
+  y un test de cada paquete falla si no coinciden.
+
 ## Si algo sale mal
 
 Una versión publicada no se puede reemplazar. Si un paquete se publicó y el otro no, se corrige la

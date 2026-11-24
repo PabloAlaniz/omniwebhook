@@ -1,0 +1,30 @@
+name: Un esquema de firma nuevo
+description: Pedir que se agregue la verificación de un emisor.
+labels: [esquema]
+body:
+  - type: input
+    id: emisor
+    attributes:
+      label: Emisor
+    validations:
+      required: true
+  - type: input
+    id: documentacion
+    attributes:
+      label: Documentación pública de la firma
+      description: El enlace a donde el emisor describe cómo firma sus webhooks.
+    validations:
+      required: true
+  - type: textarea
+    id: formato
+    attributes:
+      label: Cómo firma
+      description: >-
+        Cabeceras, qué contenido se firma, codificación, si lleva marca de tiempo y qué dato
+        identifica al evento. Con lo que sepas alcanza.
+  - type: checkboxes
+    id: aporte
+    attributes:
+      label: Aporte
+      options:
+        - label: Puedo escribir la sección de la especificación y los vectores

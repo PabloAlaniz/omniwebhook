@@ -19,6 +19,8 @@ pull request y una decisión de diseño nueva es un archivo nuevo en [`adr/`](ad
 
 ## Sprint 1: base sólida
 
+**Estado: hecho, salvo lo que se indica abajo como pendiente.**
+
 **Objetivo.** Que el repositorio cumpla las prácticas habituales de un paquete de seguridad
 publicado, y que los límites que hoy quedan implícitos pasen a estar en la especificación.
 
@@ -30,8 +32,8 @@ publicado, y que los límites que hoy quedan implícitos pasen a estar en la esp
 - **Evaluación periódica de prácticas de seguridad del repositorio** con
   [OpenSSF Scorecard](https://scorecard.dev/), con el resultado publicado como insignia en el
   README.
-- **Atestaciones de procedencia también en PyPI.** npm ya publica con procedencia; falta lo
-  equivalente del lado de Python, y un SBOM adjunto a cada versión.
+- **Atestaciones de procedencia en los dos registros**, pedidas de forma explícita en el workflow
+  de publicación, y un SBOM por paquete adjunto a cada versión.
 - **Revisión de dependencias en el pull request**: falla si entra una dependencia con una
   vulnerabilidad conocida o con una licencia incompatible con MIT.
 
@@ -42,10 +44,14 @@ publicado, y que los límites que hoy quedan implícitos pasen a estar en la esp
   mínima es que nunca se lanza una excepción y que el resultado siempre es uno de los definidos.
 - **Fuzzing diferencial programado.** La prueba de interoperabilidad ya compara los dos paquetes
   con variaciones al azar; pasa a correr cada noche con semilla nueva y muchas más rondas, y una
-  diferencia abre un issue con la semilla para reproducirla.
+  diferencia abre un issue con la semilla para reproducirla. La primera corrida larga encontró
+  una: una etiqueta `xn--` que no es Punycode válido pasa la gramática de la URL de destino, y
+  el analizador de una de las plataformas la rechaza. No sale ningún pedido, así que hoy se
+  acepta como falla segura. **Pendiente:** decidir en la especificación si esa URL debe ser
+  `invalid_url`.
 - **Umbral de cobertura también para los adaptadores**, no sólo para el dominio y la aplicación.
-- **Matriz de entornos de ejecución.** Los tests de TypeScript que no dependen de Node corren
-  también en los otros entornos con API Fetch que el README promete: Workers, Deno y Bun.
+- **Matriz de entornos de ejecución.** Una prueba de humo que sólo usa APIs web recorre un ciclo
+  completo en Deno y en Bun, además de Node. **Pendiente:** lo mismo dentro de un Worker.
 
 ### Límites explícitos en la especificación
 
