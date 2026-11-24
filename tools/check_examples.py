@@ -97,6 +97,85 @@ def check(name: str, command: list[str], body: Path) -> list[str]:
     return problems
 
 
+def check_outbox(body: Path) -> list[str]:
+    """Encola en una transacción y despacha contra el receptor de Starlette, con el formato estándar."""
+    url = os.environ["OMNIWEBHOOK_PG_URL"]
+    port = free_port()
+    secret = "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="  # sintético
+    env = {**os.environ, "PORT": str(port)}
+    receiver = subprocess.Popen(  # noqa: S603
+        [*PYTHON, "-c", RECEIVER, secret],
+        cwd=ROOT / "examples" / "python-outbox",
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    order = f"pedido-{time.time_ns()}"
+    emitter_env = {
+        **os.environ,
+        "OMNIWEBHOOK_PG_URL": url,
+        "WEBHOOK_SIGNING_SECRET": secret,
+        "ENDPOINT_URL": f"http://127.0.0.1:{port}/webhooks",
+        "ALLOW_LOCAL": "1",
+    }
+    try:
+        wait_for(port, receiver)
+        emitted = subprocess.run(  # noqa: S603
+            [*PYTHON, "app.py", order],
+            cwd=ROOT / "examples" / "python-outbox",
+            env=emitter_env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    finally:
+        receiver.terminate()
+        try:
+            received, _ = receiver.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            receiver.kill()
+            received, _ = receiver.communicate()
+
+    problems = []
+    if "despachado ep_cliente_1 intento 1: delivered" not in emitted.stdout:
+        problems.append(f"no despachó la entrega:\n{emitted.stdout}{emitted.stderr}")
+    if received.count(f"recibido {order}") != 1:
+        problems.append(f"el receptor no procesó el pedido una vez:\n{received}")
+    return problems
+
+
+# Un receptor mínimo del formato estándar, para el ejemplo de la bandeja.
+RECEIVER = """
+import json, os, sys
+from wsgiref.simple_server import WSGIRequestHandler, make_server
+from omniwebhook import MemoryIdempotencyStore, create_receiver, incoming_request_from_environ, wsgi_response
+from omniwebhook.standard import native_signer, standard_scheme
+
+receive = create_receiver(
+    verifier=standard_scheme(secrets=[sys.argv[1]], signer=native_signer), store=MemoryIdempotencyStore()
+)
+
+def app(environ, start_response):
+    def process(event):
+        print("recibido", json.loads(event.request.body)["pedido"], flush=True)
+    return wsgi_response(receive.execute(incoming_request_from_environ(environ), process), start_response)
+
+class Silent(WSGIRequestHandler):
+    def log_message(self, *args):
+        pass
+
+make_server("127.0.0.1", int(os.environ["PORT"]), app, handler_class=Silent).serve_forever()
+"""
+
+
+def report(name: str, problems: list[str]) -> bool:
+    print(f"{'✗' if problems else '✓'} {name}")
+    for problem in problems:
+        print(f"  {problem}")
+    return bool(problems)
+
+
 def main() -> int:
     for tool in ("node", "uv"):
         if shutil.which(tool) is None:
@@ -112,10 +191,16 @@ def main() -> int:
                 problems = check(name, command, body)
             except RuntimeError as error:
                 problems = [str(error)]
-            print(f"{'✗' if problems else '✓'} {name}")
-            for problem in problems:
-                failed = True
-                print(f"  {problem}")
+            failed = report(name, problems) or failed
+
+        if "OMNIWEBHOOK_PG_URL" in os.environ:
+            try:
+                problems = check_outbox(body)
+            except RuntimeError as error:
+                problems = [str(error)]
+            failed = report("python-outbox", problems) or failed
+        else:
+            print("- python-outbox: omitido, necesita OMNIWEBHOOK_PG_URL")
 
     print("Hay ejemplos que no funcionan." if failed else "Los ejemplos reciben como dice la documentación.")
     return 1 if failed else 0

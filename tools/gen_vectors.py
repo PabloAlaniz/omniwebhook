@@ -1573,6 +1573,267 @@ def reservas_almacen() -> Vector:
     return {"spec": SPEC, "id": "reservas/almacen", "kind": "store", "cases": cases}
 
 
+# --- bandeja de salida -----------------------------------------------------------
+
+OUTBOX_FINAL = ("delivered", "rejected", "blocked", "gone", "exhausted", "cancelled")
+
+
+class Tray:
+    """Bandeja de referencia: una lista de entradas en el orden en que se encolaron."""
+
+    def __init__(self) -> None:
+        self.rows: list[dict[str, Any]] = []
+
+    def find(self, step: dict[str, Any]) -> dict[str, Any] | None:
+        pair = (step["message_id"], step["endpoint_id"])
+        return next((row for row in self.rows if (row["message_id"], row["endpoint_id"]) == pair), None)
+
+    def run(self, step: dict[str, Any]) -> Any:
+        if step["op"] == "enqueue":
+            if self.find(step):
+                return False
+            self.rows.append(
+                {
+                    "message_id": step["message_id"],
+                    "endpoint_id": step["endpoint_id"],
+                    "payload": step["payload"],
+                    "attempt": 1,
+                    "available_at": step["now"],
+                    "state": "pending",
+                    "token": None,
+                    "lease": None,
+                    "seq": len(self.rows),
+                }
+            )
+            return True
+        if step["op"] == "claim":
+            now = step["now"]
+            due = [
+                row
+                for row in self.rows
+                if row["state"] == "pending"
+                and row["available_at"] <= now
+                and (row["lease"] is None or row["lease"] <= now)
+            ]
+            due.sort(key=lambda row: (row["available_at"], row["seq"]))
+            taken = due[: step["limit"]]
+            for row in taken:
+                row["token"], row["lease"] = step["token"], now + step["lease_seconds"]
+            return [
+                {key: row[key] for key in ("message_id", "endpoint_id", "payload", "attempt")}
+                for row in taken
+            ]
+        row = self.find(step)
+        if row is None or row["state"] != "pending" or row["token"] != step["token"]:
+            return False
+        if step["state"] == "pending":
+            row["attempt"] += 1
+            row["available_at"] = step["next_at"]
+        else:
+            assert step["state"] in OUTBOX_FINAL
+            row["state"] = step["state"]
+        row["token"], row["lease"] = None, None
+        return True
+
+
+def entregar_bandeja() -> Vector:
+    def enqueue(message: str, now: int, endpoint: str = "ep_1", payload: str | None = None) -> dict[str, Any]:
+        return {
+            "op": "enqueue",
+            "message_id": message,
+            "endpoint_id": endpoint,
+            "payload": payload or f'{{"n":"{message}"}}',
+            "now": now,
+        }
+
+    def take(token: str, now: int, limit: int = 10, lease: int = 300) -> dict[str, Any]:
+        return {"op": "claim", "token": token, "now": now, "limit": limit, "lease_seconds": lease}
+
+    def settle(
+        message: str, token: str, state: str, next_at: int | None = None, endpoint: str = "ep_1"
+    ) -> dict[str, Any]:
+        step = {"op": "settle", "message_id": message, "endpoint_id": endpoint}
+        step |= {"token": token, "state": state}
+        return step if next_at is None else {**step, "next_at": next_at}
+
+    def case(name: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
+        tray = Tray()
+        return {"name": name, "steps": [{**step, "expected": tray.run(step)} for step in steps]}
+
+    t = NOW
+    cases = [
+        case(
+            "lo encolado se toma y, entregado, no vuelve a salir",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t),
+                settle("msg_1", "d-1", "delivered"),
+                take("d-2", t + 1000),
+            ],
+        ),
+        case("sin nada encolado no hay nada que tomar", [take("d-1", t)]),
+        case(
+            "encolar dos veces el mismo mensaje para el mismo destino no lo duplica",
+            [
+                enqueue("msg_1", t),
+                enqueue("msg_1", t + 5, payload='{"otro":true}'),
+                take("d-1", t + 10),
+            ],
+        ),
+        case(
+            "el mismo mensaje para dos destinos son dos entregas",
+            [
+                enqueue("msg_1", t, "ep_1"),
+                enqueue("msg_1", t, "ep_2"),
+                take("d-1", t),
+            ],
+        ),
+        case(
+            "lo que todavía no venció no se toma",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t - 1),
+                take("d-1", t),
+            ],
+        ),
+        case(
+            "se toma en el orden en que venció y, a igual momento, en el que se encoló",
+            [
+                enqueue("msg_b", t + 2),
+                enqueue("msg_a", t + 1),
+                enqueue("msg_c", t + 1),
+                take("d-1", t + 5),
+            ],
+        ),
+        case(
+            "el límite corta la tanda y el resto queda para la siguiente",
+            [
+                enqueue("msg_1", t),
+                enqueue("msg_2", t),
+                enqueue("msg_3", t),
+                take("d-1", t, limit=2),
+                take("d-2", t, limit=2),
+                take("d-3", t, limit=2),
+            ],
+        ),
+        case(
+            "lo tomado no lo toma otro mientras dure el plazo",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t, lease=300),
+                take("d-2", t + 299),
+            ],
+        ),
+        case(
+            "lo tomado y nunca cerrado vuelve a estar disponible al vencer el plazo",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t, lease=300),
+                take("d-2", t + 300),
+            ],
+        ),
+        case(
+            "quien perdió la toma no cierra lo que tomó otro después",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t, lease=300),
+                take("d-2", t + 300),
+                settle("msg_1", "d-1", "delivered"),
+                settle("msg_1", "d-2", "delivered"),
+            ],
+        ),
+        case(
+            "quien se demoró puede cerrar si nadie tomó la entrega",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t, lease=300),
+                settle("msg_1", "d-1", "delivered"),
+                take("d-2", t + 400),
+            ],
+        ),
+        case(
+            "un fallo reintentable la deja pendiente para más tarde, con el intento siguiente",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t),
+                settle("msg_1", "d-1", "pending", next_at=t + 5),
+                take("d-2", t + 4),
+                take("d-2", t + 5),
+                settle("msg_1", "d-2", "pending", next_at=t + 305),
+                take("d-3", t + 305),
+            ],
+        ),
+        case(
+            "cerrar como pendiente libera la toma aunque el plazo no haya vencido",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t, lease=300),
+                settle("msg_1", "d-1", "pending", next_at=t + 1),
+                take("d-2", t + 1),
+            ],
+        ),
+        *[
+            case(
+                f"cerrada como {state} no vuelve a salir",
+                [
+                    enqueue("msg_1", t),
+                    take("d-1", t),
+                    settle("msg_1", "d-1", state),
+                    take("d-2", t + 100_000),
+                    settle("msg_1", "d-1", "delivered"),
+                ],
+            )
+            for state in OUTBOX_FINAL
+        ],
+        case(
+            "no se cierra lo que no se tomó",
+            [
+                enqueue("msg_1", t),
+                settle("msg_1", "d-1", "delivered"),
+                take("d-1", t),
+            ],
+        ),
+        case(
+            "no se cierra con el token de otro",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t),
+                settle("msg_1", "d-2", "delivered"),
+                settle("msg_1", "d-1", "delivered"),
+            ],
+        ),
+        case("no se cierra lo que no existe", [settle("msg_1", "d-1", "delivered")]),
+        case(
+            "cerrar una entrega no toca las otras de la misma tanda",
+            [
+                enqueue("msg_1", t),
+                enqueue("msg_2", t),
+                take("d-1", t),
+                settle("msg_1", "d-1", "delivered"),
+                take("d-2", t + 300),
+            ],
+        ),
+        case(
+            "una entrega ya cerrada no se vuelve a encolar",
+            [
+                enqueue("msg_1", t),
+                take("d-1", t),
+                settle("msg_1", "d-1", "delivered"),
+                enqueue("msg_1", t + 10),
+                take("d-2", t + 10),
+            ],
+        ),
+        case(
+            "el payload sale byte a byte como se encoló",
+            [
+                enqueue("msg_1", t, payload='{"ñ":"\u00e9","espacios":  1}\n'),
+                take("d-1", t),
+            ],
+        ),
+    ]
+    return {"spec": SPEC, "id": "entregar/bandeja", "kind": "outbox", "cases": cases}
+
+
 # --- recibir -------------------------------------------------------------------
 
 STATUS = {
@@ -2450,6 +2711,7 @@ ALL: list[Callable[[], Vector]] = [
     entregar_redes,
     entregar_clasificacion,
     entregar_reintentos,
+    entregar_bandeja,
 ]
 
 

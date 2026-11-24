@@ -149,20 +149,22 @@ sentidos.
 
 ## Sprint 3: emitir de punta a punta
 
-**Objetivo.** Hoy el paquete resuelve un intento y dice cuándo toca el siguiente. Este sprint
+**Objetivo.** El paquete resolvía un intento y decía cuándo tocaba el siguiente. Este sprint
 agrega, como piezas opcionales, lo que hace falta para operar entregas en producción sin
 reescribirlo en cada proyecto.
 
+**Estado: en curso.** Orden acordado: bandeja y despacho, salud de destinos, tipos de evento,
+firma asimétrica al emitir, telemetría y, al final, documentación en inglés y criterios de la
+1.0. Rotación con fecha, catálogo en OpenAPI y sitio de documentación quedan para después.
+
 ### De un intento a una entrega
 
-- **Bandeja de salida transaccional.** Un puerto y su tabla, compartida entre paquetes como las
-  otras, para encolar un mensaje en la misma transacción que el cambio de negocio que lo origina.
-  Es la forma estándar de no perder un evento ni emitir uno de un cambio que no se confirmó.
-- **Despachador de referencia.** Un caso de uso que toma lo pendiente que ya venció, lo entrega y
-  registra el resultado, con toma exclusiva para que varios procesos no entreguen lo mismo. No
-  trae planificador: se llama desde un cron, una cola o un bucle. Reemplaza la frase «programarlo
-  es responsabilidad de quien integra» por una pieza que se puede usar o no, y pide una decisión
-  de arquitectura.
+- **Hecho. Bandeja de salida transaccional.** Un puerto de tres operaciones (encolar, tomar,
+  cerrar) y su tabla en la especificación, compartida entre paquetes. Encolar acepta la
+  transacción de quien integra. Adaptadores: memoria y PostgreSQL.
+- **Hecho. Despacho de una tanda.** `DispatchDue` toma lo pendiente que ya venció, hace un
+  intento por entrega y la cierra con el resultado. No trae bucle ni planificador. Ver la
+  [decisión 0009](adr/0009-bandeja-de-salida.md). **Pendiente:** bandeja sobre SQLite.
 - **Orden y concurrencia por destino.** Un tope de entregas simultáneas por destino, para no
   tumbar a un receptor lento.
 

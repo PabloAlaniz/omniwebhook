@@ -1,0 +1,1175 @@
+{
+ "spec": "0",
+ "id": "entregar/bandeja",
+ "kind": "outbox",
+ "cases": [
+  {
+   "name": "lo encolado se toma y, entregado, no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700001000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    }
+   ]
+  },
+  {
+   "name": "sin nada encolado no hay nada que tomar",
+   "steps": [
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    }
+   ]
+  },
+  {
+   "name": "encolar dos veces el mismo mensaje para el mismo destino no lo duplica",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"otro\":true}",
+     "now": 1700000005,
+     "expected": false
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "el mismo mensaje para dos destinos son dos entregas",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_2",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_2",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "lo que todavía no venció no se toma",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1699999999,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "se toma en el orden en que venció y, a igual momento, en el que se encoló",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_b",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_b\"}",
+     "now": 1700000002,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_a",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_a\"}",
+     "now": 1700000001,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_c",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_c\"}",
+     "now": 1700000001,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000005,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_a",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_a\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_c",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_c\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_b",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_b\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "el límite corta la tanda y el resto queda para la siguiente",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_2",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_2\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_3",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_3\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 2,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_2",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_2\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000000,
+     "limit": 2,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_3",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_3\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "claim",
+     "token": "d-3",
+     "now": 1700000000,
+     "limit": 2,
+     "lease_seconds": 300,
+     "expected": []
+    }
+   ]
+  },
+  {
+   "name": "lo tomado no lo toma otro mientras dure el plazo",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000299,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    }
+   ]
+  },
+  {
+   "name": "lo tomado y nunca cerrado vuelve a estar disponible al vencer el plazo",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000300,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "quien perdió la toma no cierra lo que tomó otro después",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000300,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-2",
+     "state": "delivered",
+     "expected": true
+    }
+   ]
+  },
+  {
+   "name": "quien se demoró puede cerrar si nadie tomó la entrega",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000400,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    }
+   ]
+  },
+  {
+   "name": "un fallo reintentable la deja pendiente para más tarde, con el intento siguiente",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "pending",
+     "next_at": 1700000005,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000004,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000005,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 2
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-2",
+     "state": "pending",
+     "next_at": 1700000305,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-3",
+     "now": 1700000305,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "cerrar como pendiente libera la toma aunque el plazo no haya vencido",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "pending",
+     "next_at": 1700000001,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000001,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "cerrada como delivered no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700100000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "cerrada como rejected no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "rejected",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700100000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "cerrada como blocked no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "blocked",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700100000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "cerrada como gone no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "gone",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700100000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "cerrada como exhausted no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "exhausted",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700100000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "cerrada como cancelled no vuelve a salir",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "cancelled",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700100000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "no se cierra lo que no se tomó",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "no se cierra con el token de otro",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-2",
+     "state": "delivered",
+     "expected": false
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    }
+   ]
+  },
+  {
+   "name": "no se cierra lo que no existe",
+   "steps": [
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": false
+    }
+   ]
+  },
+  {
+   "name": "cerrar una entrega no toca las otras de la misma tanda",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_2",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_2\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      },
+      {
+       "message_id": "msg_2",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_2\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000300,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_2",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_2\"}",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "una entrega ya cerrada no se vuelve a encolar",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"n\":\"msg_1\"}",
+       "attempt": 1
+      }
+     ]
+    },
+    {
+     "op": "settle",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "token": "d-1",
+     "state": "delivered",
+     "expected": true
+    },
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"n\":\"msg_1\"}",
+     "now": 1700000010,
+     "expected": false
+    },
+    {
+     "op": "claim",
+     "token": "d-2",
+     "now": 1700000010,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": []
+    }
+   ]
+  },
+  {
+   "name": "el payload sale byte a byte como se encoló",
+   "steps": [
+    {
+     "op": "enqueue",
+     "message_id": "msg_1",
+     "endpoint_id": "ep_1",
+     "payload": "{\"ñ\":\"é\",\"espacios\":  1}\n",
+     "now": 1700000000,
+     "expected": true
+    },
+    {
+     "op": "claim",
+     "token": "d-1",
+     "now": 1700000000,
+     "limit": 10,
+     "lease_seconds": 300,
+     "expected": [
+      {
+       "message_id": "msg_1",
+       "endpoint_id": "ep_1",
+       "payload": "{\"ñ\":\"é\",\"espacios\":  1}\n",
+       "attempt": 1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

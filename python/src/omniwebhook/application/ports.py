@@ -196,3 +196,93 @@ class AsyncDeliveryLedger(Protocol):
     """La variante asincrónica de `DeliveryLedger`."""
 
     async def record(self, attempt: AttemptRecord) -> None: ...
+
+
+OutboxState = DeliveryState | Literal["cancelled"]
+"""El estado de una entrada de la bandeja de salida (sección 8.5)."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EnqueueRequest:
+    message_id: str
+    endpoint_id: str
+    payload: bytes
+    """El cuerpo, byte a byte como se va a enviar."""
+    now: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OutboxClaimRequest:
+    token: str
+    now: int
+    limit: int
+    """Cuántas entradas tomar, como mucho."""
+    lease_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class OutboxEntry:
+    """Una entrega tomada de la bandeja: lo que hace falta para hacer el intento."""
+
+    message_id: str
+    endpoint_id: str
+    payload: bytes
+    attempt: int
+    """El número del intento que toca. El primero es el 1."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SettleRequest:
+    message_id: str
+    endpoint_id: str
+    token: str
+    state: OutboxState
+    next_at: int | None = None
+    """Desde cuándo vuelve a estar disponible. Obligatorio con `state="pending"`."""
+
+
+class Outbox(Protocol):
+    """La bandeja de salida (sección 8.5). Las tres operaciones tienen que ser atómicas."""
+
+    def enqueue(self, request: EnqueueRequest) -> bool:
+        """Devuelve si se encoló: `False` si ese mensaje ya estaba para ese destino."""
+        ...
+
+    def claim(self, request: OutboxClaimRequest) -> Sequence[OutboxEntry]:
+        """Toma lo pendiente que ya venció, en orden, y lo deja tomado por `token`."""
+        ...
+
+    def settle(self, request: SettleRequest) -> bool:
+        """Devuelve si se aplicó: sólo si la entrada sigue pendiente y la tomó ese mismo token."""
+        ...
+
+
+class AsyncOutbox(Protocol):
+    """La variante asincrónica de `Outbox`."""
+
+    async def enqueue(self, request: EnqueueRequest) -> bool: ...
+
+    async def claim(self, request: OutboxClaimRequest) -> Sequence[OutboxEntry]: ...
+
+    async def settle(self, request: SettleRequest) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedEndpoint:
+    """Lo que hace falta saber de un destino para entregarle."""
+
+    url: str
+
+
+class EndpointDirectory(Protocol):
+    """Dónde quien integra guarda sus destinos. La bandeja sólo conoce el identificador."""
+
+    def resolve(self, endpoint_id: str) -> ResolvedEndpoint | None:
+        """El destino, o `None` si no existe o está deshabilitado: su entrega se cancela."""
+        ...
+
+
+class AsyncEndpointDirectory(Protocol):
+    """La variante asincrónica de `EndpointDirectory`."""
+
+    async def resolve(self, endpoint_id: str) -> ResolvedEndpoint | None: ...

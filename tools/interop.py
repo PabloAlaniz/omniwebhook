@@ -574,6 +574,29 @@ def shared_store(agents: list[Agent], report: Report, url: str) -> None:
             agent.ask("store_close", table=TABLE, drop=index == 0)
 
 
+OUTBOX_TABLE = "omniwebhook_outbox_interop"
+
+
+def shared_outbox(agents: list[Agent], report: Report, url: str) -> None:
+    """Lo que encola un paquete lo toma y lo cierra el otro, sobre la misma tabla."""
+    for index, agent in enumerate(agents):
+        agent.ask("outbox_open", url=url, table=OUTBOX_TABLE, create=index == 0)
+    try:
+        for offset in range(len(agents)):
+            for case in cases("entregar/bandeja"):
+                agents[0].ask("outbox_reset", table=OUTBOX_TABLE)
+                # Los pasos se alternan entre los paquetes.
+                for position, step in enumerate(case["steps"]):
+                    agent = agents[(position + offset) % len(agents)]
+                    data = {key: value for key, value in step.items() if key != "expected"}
+                    got = agent.ask("outbox_step", **data)
+                    what = f"bandeja compartida, «{case['name']}», paso {position + 1} en {agent.name}"
+                    report.expect(what, got, {"result": step["expected"]})
+    finally:
+        for index, agent in enumerate(agents):
+            agent.ask("outbox_close", table=OUTBOX_TABLE, drop=index == 0)
+
+
 LEDGER_TABLE = "omniwebhook_attempts_interop"
 ATTEMPTS = [
     {
@@ -659,6 +682,7 @@ def main() -> int:
         if url:
             shared_store(agents, report, url)
             shared_ledger(agents, report, url)
+            shared_outbox(agents, report, url)
         else:
             print("Sin OMNIWEBHOOK_PG_URL: no se prueban las tablas compartidas en PostgreSQL.")
     finally:

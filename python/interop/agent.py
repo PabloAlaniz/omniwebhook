@@ -21,10 +21,13 @@ from omniwebhook import (
     ClaimRequest,
     CompleteRequest,
     ConfigurationError,
+    EnqueueRequest,
     IncomingRequest,
+    OutboxClaimRequest,
     OutgoingMessage,
     ReleaseRequest,
     RetryPolicy,
+    SettleRequest,
     Signed,
     Verified,
     Verifier,
@@ -48,8 +51,10 @@ from omniwebhook.discord import discord_scheme
 from omniwebhook.postgres import (
     PostgresDeliveryLedger,
     PostgresIdempotencyStore,
+    PostgresOutbox,
     PsycopgClient,
     postgres_ledger_schema,
+    postgres_outbox_schema,
     postgres_store_schema,
 )
 from omniwebhook.sqlite import (
@@ -116,6 +121,7 @@ class Agent:
         self._sqlite: sqlite3.Connection | None = None
         self._store: PostgresIdempotencyStore | SqliteIdempotencyStore | None = None
         self._ledger: PostgresDeliveryLedger | SqliteDeliveryLedger | None = None
+        self._outbox: PostgresOutbox | None = None
 
     def verify(
         self, scheme: str, secrets: list[str], now: int, request: Json, options: Json | None = None
@@ -229,6 +235,48 @@ class Agent:
             self._sqlite.close()
             self._sqlite = None
             return {"closed": True}
+        assert self._pool is not None
+        if drop:
+            with self._pool.connection() as connection:
+                connection.execute(f"DROP TABLE IF EXISTS {table}")
+        self._pool.close()
+        return {"closed": True}
+
+    def outbox_open(self, url: str, table: str, create: bool) -> Json:
+        self._pool = ConnectionPool(url, min_size=1, max_size=2, open=True)
+        if create:
+            with self._pool.connection() as connection:
+                connection.execute(f"DROP TABLE IF EXISTS {table}")
+                connection.execute(postgres_outbox_schema(table))
+        self._outbox = PostgresOutbox(PsycopgClient(self._pool.connection), table=table)
+        return {"ready": True}
+
+    def outbox_reset(self, table: str) -> Json:
+        assert self._pool is not None
+        with self._pool.connection() as connection:
+            connection.execute(f"TRUNCATE {table} RESTART IDENTITY")
+        return {"reset": True}
+
+    def outbox_step(self, op: str, **step: Any) -> Json:
+        assert self._outbox is not None
+        if op == "enqueue":
+            step["payload"] = step["payload"].encode("utf-8")
+            return {"result": self._outbox.enqueue(EnqueueRequest(**step))}
+        if op == "claim":
+            return {
+                "result": [
+                    {
+                        "message_id": entry.message_id,
+                        "endpoint_id": entry.endpoint_id,
+                        "payload": entry.payload.decode("utf-8"),
+                        "attempt": entry.attempt,
+                    }
+                    for entry in self._outbox.claim(OutboxClaimRequest(**step))
+                ]
+            }
+        return {"result": self._outbox.settle(SettleRequest(**step))}
+
+    def outbox_close(self, table: str, drop: bool) -> Json:
         assert self._pool is not None
         if drop:
             with self._pool.connection() as connection:

@@ -24,6 +24,7 @@
         "route",
         "sign",
         "store",
+        "outbox",
         "receive",
         "response",
         "address",
