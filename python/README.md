@@ -71,6 +71,7 @@ attempt = send.execute(
 | `omniwebhook.standard` | El formato Standard Webhooks: verificar y firmar | `omniwebhook[standard]`; `omniwebhook[ed25519]` para la firma asimétrica |
 | `omniwebhook.postgres` | El almacén de reservas sobre PostgreSQL | `omniwebhook[postgres]`, para el pool de psycopg |
 | `omniwebhook.redis` | El almacén de reservas sobre Redis | Ninguno: recibe tu cliente de `redis` |
+| `omniwebhook.key_value` | El almacén de reservas sobre DynamoDB o cualquier clave-valor | Ninguno: recibe tu cliente |
 | `omniwebhook.sqlite` | El almacén de reservas y el registro de entregas sobre SQLite | Ninguno: usa `sqlite3` |
 | `omniwebhook.firestore` | El almacén de reservas sobre Firestore | `omniwebhook[firestore]` |
 | `omniwebhook.starlette` | Ayudas para Starlette y FastAPI | `omniwebhook[starlette]` |

@@ -23,6 +23,20 @@ export { shopifyScheme } from './adapters/schemes/shopify';
 export { slackScheme } from './adapters/schemes/slack';
 export { stripeScheme } from './adapters/schemes/stripe';
 export { tiktokScheme } from './adapters/schemes/tiktok';
+export {
+  DEFAULT_KEY_VALUE_GRACE_SECONDS,
+  DEFAULT_KEY_VALUE_PREFIX,
+  type DynamoDbClientOptions,
+  type DynamoDbDocumentClient,
+  dynamoDbClient,
+  type KeyValueClient,
+  KeyValueIdempotencyStore,
+  type KeyValueRecord,
+  type KeyValueStoreOptions,
+  MemoryKeyValueClient,
+  type WorkersKvNamespace,
+  workersKvClient,
+} from './adapters/stores/key-value';
 export { MemoryIdempotencyStore } from './adapters/stores/memory';
 export {
   PostgresIdempotencyStore,

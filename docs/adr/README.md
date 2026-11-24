@@ -13,3 +13,4 @@ anterior.
 | [0005](0005-redes-permitidas.md) | Redes permitidas explícitas, sin habilitar nunca los metadatos de la nube | Aceptada |
 | [0006](0006-dns-sobre-https.md) | DNS sobre HTTPS para entornos sin DNS del sistema | Aceptada |
 | [0007](0007-firma-asimetrica.md) | Firma asimétrica: un esquema aparte y una dependencia opcional | Aceptada |
+| [0008](0008-almacen-clave-valor.md) | Un almacén sobre cualquier clave-valor, con la garantía a la vista | Aceptada |

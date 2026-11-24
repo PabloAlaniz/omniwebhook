@@ -138,7 +138,7 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 | | TypeScript | Python |
 |---|---|---|
 | Esquemas de firma | Standard Webhooks (con secreto compartido o con clave pública), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem y uno genérico de cuerpo firmado | Los mismos |
-| Almacén de reservas | Memoria, PostgreSQL, Redis, SQLite (también D1) | Memoria, PostgreSQL, Redis, SQLite, Firestore |
+| Almacén de reservas | Memoria, PostgreSQL, Redis, SQLite (también D1), DynamoDB, Workers KV o cualquier clave-valor | Memoria, PostgreSQL, Redis, SQLite, Firestore, DynamoDB o cualquier clave-valor |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
 | Registro de entregas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite |
 | Entrada | API Fetch (`Request` y `Response`), `node:http` y lo que se monta encima | ASGI, Starlette y FastAPI, WSGI, Django, o cualquier framework |
