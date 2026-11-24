@@ -26,6 +26,7 @@
         "store",
         "outbox",
         "endpoint-health",
+        "event-match",
         "receive",
         "response",
         "address",

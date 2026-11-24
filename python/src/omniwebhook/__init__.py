@@ -108,6 +108,7 @@ from omniwebhook.domain.endpoint_health import (
     summarize_failures,
 )
 from omniwebhook.domain.errors import ConfigurationError
+from omniwebhook.domain.event_type import is_event_pattern, is_event_type, subscribes
 from omniwebhook.domain.freshness import DEFAULT_TOLERANCE_SECONDS
 from omniwebhook.domain.incoming_request import Field, IncomingRequest
 from omniwebhook.domain.ip_address import AllowedNetworks, allowed_networks, is_blocked_address
@@ -269,6 +270,8 @@ __all__ = [
     "incoming_request_from_scope",
     "inspect_destination",
     "is_blocked_address",
+    "is_event_pattern",
+    "is_event_type",
     "mercadopago_scheme",
     "next_attempt",
     "random_message_id",
@@ -277,6 +280,7 @@ __all__ = [
     "shopify_scheme",
     "slack_scheme",
     "stripe_scheme",
+    "subscribes",
     "summarize_failures",
     "system_clock",
     "tiktok_scheme",

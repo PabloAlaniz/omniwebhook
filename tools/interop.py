@@ -506,6 +506,22 @@ def differential_domain(agents: list[Agent], report: Report, rng: random.Random,
     for case in cases("recibir/respuesta-http"):
         both(agents, report, f"estado HTTP de {case['outcome']}", "status", {"outcome": case["outcome"]})
 
+    for case in cases("entregar/tipos"):
+        data = {"type": case["type"], "patterns": case["patterns"]}
+        got = both(agents, report, f"tipo de evento: {case['name']}", "event", data)
+        report.expect(f"tipo de evento: {case['name']}", got, case["expected"])
+    pieces = ["pedido", "item", "creado", "*", ".", "..", "", "a-b", "x_1", "ñ", " ", "A"]
+    for number in range(rounds * 20):
+        build = lambda: "".join(rng.choice(pieces) for _ in range(rng.randrange(0, 6)))  # noqa: E731
+        patterns = None if rng.random() < 0.1 else [build() for _ in range(rng.randrange(0, 4))]
+        both(
+            agents,
+            report,
+            f"tipo de evento al azar {number}",
+            "event",
+            {"type": build(), "patterns": patterns},
+        )
+
     for case in cases("entregar/salud"):
         data = {key: case[key] for key in ("attempts", "since", "now", "policy") if key in case}
         got = both(agents, report, f"salud: {case['name']}", "health", data)
