@@ -82,53 +82,58 @@ sección en la especificación, vectores y adaptador en los dos paquetes.
 **Objetivo.** Que integrar la recepción sea una línea en el framework que ya se usa, con el emisor
 que ya se tiene, y que probar esa integración no exija escribir la firma a mano.
 
+**Estado: en curso.** Cada ítem dice si está hecho o pendiente.
+
 ### Adaptadores de entrada
 
 El problema que resuelven es siempre el mismo y ya está nombrado en la
 [guía para recibir](recibir.md): llegar al cuerpo crudo. Cada adaptador es un módulo de entrada
 aparte, sin dependencia obligatoria.
 
-- **TypeScript:** `IncomingMessage` y `ServerResponse` de Node (cubre los frameworks montados
-  sobre ellos) y una ayuda para los frameworks que ya entregan el cuerpo como `Buffer`.
-- **Python:** WSGI (cubre Flask y cualquier otro) y Django.
-- **Ejemplos ejecutables** en `examples/`, uno por framework y por entorno, que la integración
-  continua levanta y prueba con un pedido firmado.
+- **Hecho. TypeScript:** `IncomingMessage` y `ServerResponse` de Node (cubre los frameworks
+  montados sobre ellos) y una ayuda para los frameworks que ya entregan el cuerpo como `Buffer`.
+- **Hecho. Python:** WSGI (cubre Flask y cualquier otro) y Django.
+- **Pendiente. Ejemplos ejecutables** en `examples/`, uno por framework y por entorno, que la
+  integración continua levanta y prueba con un pedido firmado.
 
 ### Esquemas de firma
 
-- **Firma asimétrica del formato estándar** (`v1a`, Ed25519) para verificar. La especificación
+- **Pendiente. Firma asimétrica del formato estándar** (`v1a`, Ed25519) para verificar. La especificación
   deja de decir «todos usan HMAC-SHA256»; el secreto pasa a ser «material de verificación». Pide
   su propia decisión de arquitectura, porque cambia el puerto de criptografía.
-- **Cuatro emisores más**, elegidos por demanda y por cubrir variantes que hoy no están: firma
-  sobre la URL más los parámetros, marca de tiempo en cabecera separada con prefijo de versión,
-  HMAC en base64 sobre el cuerpo y clave pública por emisor. Cada uno entra por
-  [el camino de siempre](agregar-un-esquema.md), citando la documentación pública del emisor.
-- **Varios emisores en una misma ruta.** Un verificador compuesto que elige el esquema por las
+- **Dos de cuatro hechos. Cuatro emisores más**, elegidos por demanda y por cubrir variantes que
+  hoy no están. Hechos: marca de tiempo en cabecera separada con prefijo de versión (Slack) y
+  HMAC en base64 sobre el cuerpo (Shopify). Pendientes: firma sobre la URL más los parámetros y
+  clave pública por emisor; los dos dependen de la decisión sobre el puerto de criptografía,
+  porque no usan HMAC-SHA256. Cada uno entra por [el camino de siempre](agregar-un-esquema.md),
+  citando la documentación pública del emisor.
+- **Hecho. Varios emisores en una misma ruta.** Un verificador compuesto que elige el esquema por las
   cabeceras presentes y que rechaza como `ambiguous` un pedido que coincide con más de uno.
 
 ### Almacenes de reservas
 
-- **Redis** y **almacenes clave-valor con vencimiento** (el de Workers y DynamoDB), que es donde
+- **Pendiente. Redis** y **almacenes clave-valor con vencimiento** (el de Workers y DynamoDB), que es donde
   viven las reservas en los despliegues sin base relacional. Los dos pasan el contrato de almacén
   que ya existe; el de clave-valor documenta qué garantía pierde si el almacén no tiene escritura
   condicional.
 
 ### Ayudas para probar
 
-- **Un módulo de pruebas por paquete** (`omniwebhook/testing`, `omniwebhook.testing`) que arma un
+- **Hecho. Un módulo de pruebas por paquete** (`omniwebhook/testing`, `omniwebhook.testing`) que arma un
   pedido firmado válido para cualquier esquema, y sus variantes inválidas: vencido, con firma
   alterada, repetido. Sale de las mismas reglas que el generador de vectores.
-- **Una línea de comandos mínima**: firmar un archivo, verificar un pedido guardado y reenviar un
+- **Pendiente. Una línea de comandos mínima**: firmar un archivo, verificar un pedido guardado y reenviar un
   pedido firmado a una URL local. Sirve para depurar sin escribir código.
 
 ### Lo que pasa después de verificar
 
-- **Validación opcional del payload.** El evento verificado acepta un validador que cumpla la
+- **Pendiente. Validación opcional del payload.** El evento verificado acepta un validador que cumpla la
   interfaz común de esquemas de cada ecosistema, sin atarse a una librería. Un payload que no
   valida es un resultado propio, distinto de `failed`, y no libera la reserva: reintentar no lo
   va a arreglar.
-- **Puerto de observación.** Un único punto donde quien integra recibe cada resultado con su
-  duración y su motivo, sin secretos ni cuerpos. Es la base de la telemetría del sprint 3.
+- **Hecho. Puerto de observación** de la recepción: quien integra recibe cada resultado con su
+  duración y la clave del evento, sin secretos ni cuerpos. Es la base de la telemetría del
+  sprint 3. Para la emisión no hizo falta: el registro de entregas ya recibe cada intento.
 
 **Hecho cuando:** cada adaptador y cada esquema nuevo tienen vectores, los ejemplos corren en la
 integración continua, y la prueba de interoperabilidad cubre la firma asimétrica en los dos
