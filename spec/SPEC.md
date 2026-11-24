@@ -257,15 +257,24 @@ Valores por defecto: `lease_seconds = 300` y `retention_seconds = 604800` (siete
 
 Dado un pedido, un esquema, un almacén y una función que procesa el evento:
 
-1. Verificar con el esquema. Si el resultado no es `ok`, devolverlo y terminar.
-2. Determinar la clave del evento.
-3. `claim`. Si devuelve `duplicate` o `in_progress`, devolver ese resultado y terminar.
-4. Ejecutar la función que procesa el evento.
-5. Si termina bien: `complete` y devolver `ok`.
-6. Si falla: `release` y devolver `failed` con el error adjunto.
+1. Si el cuerpo tiene más de `max_body_bytes` bytes, devolver `too_large` y terminar.
+2. Verificar con el esquema. Si el resultado no es `ok`, devolverlo y terminar.
+3. Determinar la clave del evento.
+4. `claim`. Si devuelve `duplicate` o `in_progress`, devolver ese resultado y terminar.
+5. Ejecutar la función que procesa el evento.
+6. Si termina bien: `complete` y devolver `ok`.
+7. Si falla: `release` y devolver `failed` con el error adjunto.
 
-La función que procesa el evento NO DEBE ejecutarse si el paso 1 no dio `ok` o el paso 3 no dio
+La función que procesa el evento NO DEBE ejecutarse si el paso 2 no dio `ok` o el paso 4 no dio
 `claimed`.
+
+`max_body_bytes` es `1048576` por defecto (1 MiB) y DEBE ser un entero mayor que cero. El tamaño
+se comprueba antes que cualquier otra cosa, incluidos los secretos: calcular una firma sobre un
+cuerpo arbitrariamente grande es trabajo que un pedido sin autenticar no debe poder provocar.
+
+Este límite acota el trabajo de verificar, no la memoria: cuando el caso de uso recibe el pedido,
+el cuerpo ya se leyó. El servidor o el framework que lo lee DEBERÍA tener su propio límite, igual
+o menor.
 
 ### 6.3. Respuesta HTTP sugerida
 
@@ -275,6 +284,7 @@ La función que procesa el evento NO DEBE ejecutarse si el paso 1 no dio `ok` o 
 | `duplicate` | 200 | Ya se había procesado: el emisor tiene que dejar de reintentar |
 | `in_progress` | 409 | Otro proceso lo está procesando: conviene que el emisor reintente |
 | `missing`, `ambiguous`, `malformed`, `invalid`, `stale` | 401 | No se pudo comprobar el origen |
+| `too_large` | 413 | El cuerpo supera el máximo: reintentar no lo va a arreglar |
 | `unconfigured` | 500 | Es un problema del receptor: conviene que el emisor reintente |
 | `failed` | 500 | Falló el procesamiento y la reserva quedó libre |
 
@@ -292,8 +302,17 @@ Un mensaje tiene `id`, `timestamp` (segundos) y `payload` (bytes).
 - Con más de un secreto se envía una firma por secreto, separadas por un espacio y en el orden
   de la lista.
 - El cuerpo enviado DEBE ser, byte a byte, el `payload` que se firmó.
-- Las cabeceras que agrega quien integra NO DEBEN reemplazar ni duplicar las de la firma ni la del
-  tipo de contenido. Los nombres se comparan sin distinguir mayúsculas.
+- El `payload` NO DEBE tener más de `max_payload_bytes` bytes: `262144` por defecto (256 KiB),
+  y DEBE ser un entero mayor que cero. Uno más grande no se firma ni se envía: es un error de
+  quien integra, igual que un `id` inválido, y no queda en el registro. El valor por defecto es
+  menor que el `max_body_bytes` por defecto de la sección 6.2, así lo que un paquete emite el otro
+  lo recibe sin configurar nada.
+- Cada intento lleva una cabecera `user-agent` con la forma
+  `omniwebhook/<versión del paquete> (<lenguaje>)`, donde el lenguaje es `typescript` o `python`.
+  Por ejemplo, `omniwebhook/0.4.0 (python)`. Sirve para que quien recibe pueda reconocer el
+  tráfico; no es una prueba de origen, que para eso está la firma.
+- Las cabeceras que agrega quien integra NO DEBEN reemplazar ni duplicar las de la firma, la del
+  tipo de contenido ni `user-agent`. Los nombres se comparan sin distinguir mayúsculas.
 
 ## 8. Emitir: entregar
 
@@ -410,6 +429,10 @@ La URL de destino NO DEBE aparecer en un error ni en un log.
 El tiempo de espera es el plazo del intento completo, desde que se empieza a conectar hasta tener
 el estado de la respuesta. NO DEBE ser un plazo por operación de red: un servidor que manda la
 respuesta de a un byte no puede estirar el intento. Por defecto son 20 segundos.
+
+El cuerpo de la respuesta NO DEBE leerse. Para clasificar el intento alcanzan el estado y la
+cabecera `retry-after`: con eso la conexión se cierra, y un destino no puede hacerle gastar
+memoria ni tiempo a quien emite respondiendo con un cuerpo enorme o que no termina.
 
 ### 8.3. Reintentos
 

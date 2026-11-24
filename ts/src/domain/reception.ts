@@ -1,7 +1,16 @@
 import type { Rejection } from './verification';
 
 /** Cómo terminó la recepción de un pedido (sección 6.2). */
-export type ReceptionOutcome = 'ok' | 'duplicate' | 'in_progress' | 'failed' | Rejection;
+export type ReceptionOutcome =
+  | 'ok'
+  | 'duplicate'
+  | 'in_progress'
+  | 'failed'
+  | 'too_large'
+  | Rejection;
+
+/** El tamaño máximo del cuerpo de un pedido, en bytes, si no se indica otro (sección 6.2). */
+export const DEFAULT_MAX_BODY_BYTES = 1_048_576;
 
 const STATUS: Readonly<Record<ReceptionOutcome, number>> = {
   ok: 200,
@@ -12,6 +21,7 @@ const STATUS: Readonly<Record<ReceptionOutcome, number>> = {
   malformed: 401,
   invalid: 401,
   stale: 401,
+  too_large: 413,
   unconfigured: 500,
   failed: 500,
 };

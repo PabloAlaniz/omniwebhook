@@ -28,6 +28,7 @@ from omniwebhook.application.send_webhook import (
     AsyncSendWebhook,
     SendWebhook,
 )
+from omniwebhook.domain.message import DEFAULT_MAX_PAYLOAD_BYTES
 from omniwebhook.domain.retry import RetryPolicy
 
 
@@ -45,6 +46,7 @@ def create_sender(
     allowed_networks: Sequence[str] = (),
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     content_type: str = DEFAULT_CONTENT_TYPE,
+    max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES,
     headers: Mapping[str, str] | None = None,
 ) -> SendWebhook:
     return SendWebhook(
@@ -60,6 +62,7 @@ def create_sender(
         allowed_networks=allowed_networks,
         timeout_seconds=timeout_seconds,
         content_type=content_type,
+        max_payload_bytes=max_payload_bytes,
         headers=headers,
     )
 
@@ -78,6 +81,7 @@ def create_async_sender(
     allowed_networks: Sequence[str] = (),
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     content_type: str = DEFAULT_CONTENT_TYPE,
+    max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES,
     headers: Mapping[str, str] | None = None,
 ) -> AsyncSendWebhook:
     """Sin otro transporte, usa el de la biblioteca estándar en un hilo aparte."""
@@ -94,5 +98,6 @@ def create_async_sender(
         allowed_networks=allowed_networks,
         timeout_seconds=timeout_seconds,
         content_type=content_type,
+        max_payload_bytes=max_payload_bytes,
         headers=headers,
     )

@@ -2,6 +2,8 @@ import { type AttemptOutcome, classifyDelivery, stateAfter } from '../domain/del
 import { type DestinationProblem, inspectDestination, selectAddress } from '../domain/destination';
 import { ConfigurationError, positiveInteger } from '../domain/errors';
 import { type AllowedNetworks, allowedNetworks } from '../domain/ip-address';
+import { DEFAULT_MAX_PAYLOAD_BYTES } from '../domain/message';
+import { USER_AGENT } from '../domain/package-version';
 import { checkRetryPolicy, nextAttempt, type RetryPolicy } from '../domain/retry';
 import type {
   AttemptRecord,
@@ -49,7 +51,9 @@ export interface SendWebhookDependencies {
   readonly allowedNetworks?: readonly string[];
   readonly timeoutSeconds?: number;
   readonly contentType?: string;
-  /** Cabeceras extra. No pueden pisar las de la firma ni el tipo de contenido. */
+  /** El tamaño máximo del payload, en bytes. Uno más grande no se envía: `execute` lanza. */
+  readonly maxPayloadBytes?: number;
+  /** Cabeceras extra. No pueden pisar las de la firma, el tipo de contenido ni `user-agent`. */
   readonly headers?: Readonly<Record<string, string>>;
 }
 
@@ -69,6 +73,7 @@ interface Attempted {
  */
 export class SendWebhook {
   private readonly timeoutSeconds: number;
+  private readonly maxPayloadBytes: number;
   private readonly baseHeaders: Readonly<Record<string, string>>;
   private readonly allowed: AllowedNetworks;
 
@@ -79,7 +84,12 @@ export class SendWebhook {
         Object.entries(deps.headers ?? {}).map(([name, value]) => [name.toLowerCase(), value]),
       ),
       'content-type': deps.contentType ?? DEFAULT_CONTENT_TYPE,
+      'user-agent': USER_AGENT,
     };
+    this.maxPayloadBytes = positiveInteger(
+      'maxPayloadBytes',
+      deps.maxPayloadBytes ?? DEFAULT_MAX_PAYLOAD_BYTES,
+    );
     this.timeoutSeconds = positiveInteger(
       'timeoutSeconds',
       deps.timeoutSeconds ?? DEFAULT_TIMEOUT_SECONDS,
@@ -91,6 +101,11 @@ export class SendWebhook {
   async execute(delivery: Delivery): Promise<DeliveryResult> {
     const { clock, timer, random, ledger } = this.deps;
     const attempt = positiveInteger('attempt', delivery.attempt);
+    if (delivery.message.payload.byteLength > this.maxPayloadBytes) {
+      throw new ConfigurationError(
+        `el payload supera el máximo de ${this.maxPayloadBytes} bytes: no se envía`,
+      );
+    }
 
     const at = clock.now();
     const startedMs = timer.nowMs();

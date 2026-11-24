@@ -8,6 +8,9 @@ export interface OutgoingMessage {
   readonly payload: Uint8Array;
 }
 
+/** El tamaño máximo del payload de un mensaje, en bytes, si no se indica otro (sección 7). */
+export const DEFAULT_MAX_PAYLOAD_BYTES = 262_144;
+
 export type SigningProblem = 'invalid_id' | 'invalid_timestamp' | 'unconfigured';
 
 export type Signing =

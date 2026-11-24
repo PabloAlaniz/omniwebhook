@@ -7,6 +7,9 @@ from typing import Any
 import pytest
 
 from omniwebhook import (
+    DEFAULT_MAX_BODY_BYTES,
+    DEFAULT_MAX_PAYLOAD_BYTES,
+    USER_AGENT,
     AsyncMemoryDeliveryLedger,
     AsyncSendWebhook,
     AttemptRecord,
@@ -153,8 +156,13 @@ def test_lo_que_envia_lo_verifica_un_receptor_con_el_mismo_secreto(asincronico: 
     assert enviado.headers["content-type"] == "application/json"
 
 
-def test_las_cabeceras_extra_no_pisan_la_firma_ni_el_tipo_de_contenido(asincronico: bool) -> None:
-    extra = {"X-Origen": "tienda", "Webhook-Id": "falso", "Content-Type": "text/plain"}
+def test_las_cabeceras_extra_no_pisan_la_firma_el_tipo_de_contenido_ni_user_agent(asincronico: bool) -> None:
+    extra = {
+        "X-Origen": "tienda",
+        "Webhook-Id": "falso",
+        "Content-Type": "text/plain",
+        "User-Agent": "otro/1.0",
+    }
     banco = Banco(asincronico, opciones={"headers": extra, "content_type": "application/cloudevents+json"})
 
     banco.ejecutar()
@@ -164,7 +172,8 @@ def test_las_cabeceras_extra_no_pisan_la_firma_ni_el_tipo_de_contenido(asincroni
     assert cabeceras["webhook-id"] == "msg_1"
     assert cabeceras["content-type"] == "application/cloudevents+json"
     assert sorted(cabeceras) == sorted({name.lower() for name in cabeceras})
-    assert len(cabeceras) == 5
+    assert cabeceras["user-agent"] == USER_AGENT
+    assert len(cabeceras) == 6
 
 
 def test_un_fallo_reintentable_deja_la_entrega_pendiente_con_su_proximo_intento(asincronico: bool) -> None:
@@ -320,6 +329,33 @@ def test_sin_secretos_no_envia_es_un_error_de_configuracion(asincronico: bool) -
 def test_rechaza_un_numero_de_intento_invalido(asincronico: bool, intento: int) -> None:
     with pytest.raises(ConfigurationError, match="attempt"):
         Banco(asincronico).ejecutar(intento)
+
+
+def test_un_payload_del_tamano_maximo_se_envia(asincronico: bool) -> None:
+    banco = Banco(asincronico, opciones={"max_payload_bytes": len(CUERPO)})
+
+    assert banco.ejecutar().state == "delivered"
+    assert len(banco.enviados) == 1
+
+
+def test_un_payload_mas_grande_que_el_maximo_no_se_envia_ni_se_registra(asincronico: bool) -> None:
+    banco = Banco(asincronico, opciones={"max_payload_bytes": len(CUERPO) - 1})
+
+    with pytest.raises(ConfigurationError, match=f"máximo de {len(CUERPO) - 1} bytes"):
+        banco.ejecutar()
+
+    assert banco.enviados == []
+    assert banco.registrados == []
+
+
+def test_por_defecto_el_maximo_es_de_256_kib() -> None:
+    assert DEFAULT_MAX_PAYLOAD_BYTES == 262_144
+    assert DEFAULT_MAX_PAYLOAD_BYTES < DEFAULT_MAX_BODY_BYTES
+
+
+def test_rechaza_un_maximo_de_payload_invalido_al_construirse(asincronico: bool) -> None:
+    with pytest.raises(ConfigurationError, match="max_payload_bytes"):
+        Banco(asincronico, opciones={"max_payload_bytes": 0}).ejecutar()
 
 
 def test_rechaza_un_tiempo_de_espera_invalido_al_construirse(asincronico: bool) -> None:

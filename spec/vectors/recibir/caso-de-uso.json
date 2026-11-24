@@ -13,6 +13,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -60,6 +61,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "fails",
    "before": [],
    "request": {
@@ -107,6 +109,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [
     {
@@ -171,6 +174,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [
     {
@@ -227,6 +231,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [
     {
@@ -283,6 +288,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -329,6 +335,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -373,6 +380,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -419,6 +427,7 @@
    "token": "t-nuevo",
    "lease_seconds": 300,
    "retention_seconds": 604800,
+   "max_body_bytes": 1048576,
    "handler": "succeeds",
    "before": [],
    "request": {
@@ -429,6 +438,193 @@
    "expected": {
     "outcome": "missing",
     "status": 401,
+    "handler_called": false
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "un cuerpo del tamaño máximo se procesa",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 41,
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "status": 200,
+    "handler_called": true,
+    "event_key": "standard:msg_2aXk"
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "duplicate"
+    }
+   ]
+  },
+  {
+   "name": "un byte más que el máximo: no se reserva ni se ejecuta",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 40,
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "too_large",
+    "status": 413,
+    "handler_called": false
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "el tamaño se comprueba antes que la firma",
+   "scheme": "standard",
+   "secrets": [
+    "whsec_b21uaXdlYmhvb2stc2VjcmV0by1zaW50ZXRpY28tMDE="
+   ],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 40,
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Z3VLjh0PeeMKF1SIjo6f1UQRh5/Km424aKDDlnNnLdQ="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "too_large",
+    "status": 413,
+    "handler_called": false
+   },
+   "after": [
+    {
+     "op": "claim",
+     "key": "standard:msg_2aXk",
+     "token": "t-sonda",
+     "now": 1700000001,
+     "lease_seconds": 300,
+     "expected": "claimed"
+    }
+   ]
+  },
+  {
+   "name": "el tamaño se comprueba antes que los secretos",
+   "scheme": "standard",
+   "secrets": [],
+   "now": 1700000000,
+   "token": "t-nuevo",
+   "lease_seconds": 300,
+   "retention_seconds": 604800,
+   "max_body_bytes": 40,
+   "handler": "succeeds",
+   "before": [],
+   "request": {
+    "headers": [
+     [
+      "webhook-id",
+      "msg_2aXk"
+     ],
+     [
+      "webhook-timestamp",
+      "1700000000"
+     ],
+     [
+      "webhook-signature",
+      "v1,Ax1Sn2wFj85gydUB01Gw9UOIdGXEppcgtvVT6TTj6wI="
+     ]
+    ],
+    "query": [],
+    "body": "{\"type\":\"pedido.creado\",\"data\":{\"id\":42}}"
+   },
+   "expected": {
+    "outcome": "too_large",
+    "status": 413,
     "handler_called": false
    },
    "after": [

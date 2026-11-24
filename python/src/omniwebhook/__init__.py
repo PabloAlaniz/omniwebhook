@@ -70,8 +70,16 @@ from omniwebhook.domain.errors import ConfigurationError
 from omniwebhook.domain.freshness import DEFAULT_TOLERANCE_SECONDS
 from omniwebhook.domain.incoming_request import Field, IncomingRequest
 from omniwebhook.domain.ip_address import AllowedNetworks, allowed_networks, is_blocked_address
-from omniwebhook.domain.message import NotSigned, OutgoingMessage, Signed, Signing, SigningProblem
-from omniwebhook.domain.reception import ReceptionOutcome, http_status_for
+from omniwebhook.domain.message import (
+    DEFAULT_MAX_PAYLOAD_BYTES,
+    NotSigned,
+    OutgoingMessage,
+    Signed,
+    Signing,
+    SigningProblem,
+)
+from omniwebhook.domain.package_version import PACKAGE_VERSION, USER_AGENT
+from omniwebhook.domain.reception import DEFAULT_MAX_BODY_BYTES, ReceptionOutcome, http_status_for
 from omniwebhook.domain.reservation import DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS, ClaimOutcome
 from omniwebhook.domain.retry import (
     DEFAULT_JITTER_RATIO,
@@ -92,12 +100,16 @@ __all__ = [
     "DEFAULT_CONTENT_TYPE",
     "DEFAULT_JITTER_RATIO",
     "DEFAULT_LEASE_SECONDS",
+    "DEFAULT_MAX_BODY_BYTES",
     "DEFAULT_MAX_DELAY_SECONDS",
+    "DEFAULT_MAX_PAYLOAD_BYTES",
     "DEFAULT_RETENTION_SECONDS",
     "DEFAULT_RETRY_SCHEDULE",
     "DEFAULT_TIMEOUT_SECONDS",
     "DEFAULT_TOLERANCE_SECONDS",
+    "PACKAGE_VERSION",
     "SPEC_VERSION",
+    "USER_AGENT",
     "AllowedNetworks",
     "AsyncDeliveryLedger",
     "AsyncDnsResolver",

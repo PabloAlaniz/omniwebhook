@@ -94,6 +94,13 @@ describe('nodeTransport', () => {
         response.writeHead(302, { location: '/otro' }).end();
       } else if (request.url === '/ocupado') {
         response.writeHead(503, { 'retry-after': '12' }).end();
+      } else if (request.url === '/sin-fin') {
+        // Un cuerpo que no termina nunca: el transporte no lo tiene que leer.
+        response.writeHead(200);
+        const pour = setInterval(() => {
+          if (response.destroyed) clearInterval(pour);
+          else response.write(Buffer.alloc(64 * 1024));
+        }, 5);
       } else if (request.url === '/lento') {
         // No responde: el transporte tiene que cortar por tiempo.
       } else if (request.url === '/goteo') {
@@ -160,6 +167,16 @@ describe('nodeTransport', () => {
       status: 503,
       retryAfter: '12',
     });
+  });
+
+  it('no lee el cuerpo de la respuesta: uno que no termina no demora el intento', async () => {
+    const started = Date.now();
+
+    expect(await nodeTransport().post(request('/sin-fin'))).toEqual({
+      status: 200,
+      retryAfter: null,
+    });
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 
   it('corta por tiempo de espera', async () => {

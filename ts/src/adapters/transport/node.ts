@@ -44,9 +44,10 @@ export function nodeTransport(): HttpTransport {
             lookup: pinnedTo(request.address),
           },
           (response) => {
-            response.resume();
             const header = response.headers['retry-after'];
             settle({ status: response.statusCode ?? 0, retryAfter: header ?? null });
+            // El cuerpo no se lee: con el estado alcanza, y un destino no elige cuánto mandar.
+            response.destroy();
           },
         );
         // Un plazo para todo el intento: un servidor que manda de a un byte no lo estira.

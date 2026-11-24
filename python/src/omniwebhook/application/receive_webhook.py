@@ -1,4 +1,4 @@
-"""Recibir un webhook (sección 6.2): verificar, reservar, procesar y completar.
+"""Recibir un webhook (sección 6.2): acotar el tamaño, verificar, reservar, procesar y completar.
 
 Si el procesamiento falla, la reserva se libera para que el reintento del emisor funcione.
 """
@@ -18,7 +18,7 @@ from omniwebhook.application.ports import (
 )
 from omniwebhook.domain.errors import positive_integer
 from omniwebhook.domain.incoming_request import IncomingRequest
-from omniwebhook.domain.reception import ReceptionOutcome
+from omniwebhook.domain.reception import DEFAULT_MAX_BODY_BYTES, ReceptionOutcome
 from omniwebhook.domain.reservation import DEFAULT_LEASE_SECONDS, DEFAULT_RETENTION_SECONDS
 
 
@@ -85,6 +85,7 @@ class _Receiving:
         tokens: TokenGenerator,
         lease_seconds: int = DEFAULT_LEASE_SECONDS,
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
+        max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
         event_key: EventKeyOverride | None = None,
     ) -> None:
         self._verifier = verifier
@@ -92,9 +93,14 @@ class _Receiving:
         self._tokens = tokens
         self._lease_seconds = positive_integer("lease_seconds", lease_seconds)
         self._retention_seconds = positive_integer("retention_seconds", retention_seconds)
+        self._max_body_bytes = positive_integer("max_body_bytes", max_body_bytes)
         self._event_key = event_key
 
     def _verify(self, request: IncomingRequest) -> _Reservation | Reception:
+        # Antes que la firma: un pedido sin autenticar no elige cuánto trabajo cuesta rechazarlo.
+        if len(request.body) > self._max_body_bytes:
+            return Reception(outcome="too_large")
+
         verification = self._verifier.verify(request)
         if verification.outcome != "ok":
             return Reception(outcome=verification.outcome)
@@ -117,6 +123,7 @@ class ReceiveWebhook(_Receiving):
         tokens: TokenGenerator,
         lease_seconds: int = DEFAULT_LEASE_SECONDS,
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
+        max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
         event_key: EventKeyOverride | None = None,
     ) -> None:
         super().__init__(
@@ -125,6 +132,7 @@ class ReceiveWebhook(_Receiving):
             tokens=tokens,
             lease_seconds=lease_seconds,
             retention_seconds=retention_seconds,
+            max_body_bytes=max_body_bytes,
             event_key=event_key,
         )
         self._store = store
@@ -164,6 +172,7 @@ class AsyncReceiveWebhook(_Receiving):
         tokens: TokenGenerator,
         lease_seconds: int = DEFAULT_LEASE_SECONDS,
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
+        max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
         event_key: EventKeyOverride | None = None,
     ) -> None:
         super().__init__(
@@ -172,6 +181,7 @@ class AsyncReceiveWebhook(_Receiving):
             tokens=tokens,
             lease_seconds=lease_seconds,
             retention_seconds=retention_seconds,
+            max_body_bytes=max_body_bytes,
             event_key=event_key,
         )
         self._store = store

@@ -90,8 +90,18 @@ export { ConfigurationError } from './domain/errors';
 export { DEFAULT_TOLERANCE_SECONDS } from './domain/freshness';
 export type { Field, IncomingRequest } from './domain/incoming-request';
 export { type AllowedNetworks, allowedNetworks, isBlockedAddress } from './domain/ip-address';
-export type { OutgoingMessage, Signing, SigningProblem } from './domain/message';
-export { httpStatusFor, type ReceptionOutcome } from './domain/reception';
+export {
+  DEFAULT_MAX_PAYLOAD_BYTES,
+  type OutgoingMessage,
+  type Signing,
+  type SigningProblem,
+} from './domain/message';
+export { PACKAGE_VERSION, USER_AGENT } from './domain/package-version';
+export {
+  DEFAULT_MAX_BODY_BYTES,
+  httpStatusFor,
+  type ReceptionOutcome,
+} from './domain/reception';
 export {
   type ClaimOutcome,
   DEFAULT_LEASE_SECONDS,

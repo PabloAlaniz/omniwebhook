@@ -2,7 +2,10 @@
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal
+from typing import Final, Literal
+
+DEFAULT_MAX_PAYLOAD_BYTES: Final = 262_144
+"""El tamaño máximo del payload de un mensaje, en bytes, si no se indica otro (sección 7)."""
 
 
 @dataclass(frozen=True, slots=True)
