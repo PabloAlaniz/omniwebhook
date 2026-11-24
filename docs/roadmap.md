@@ -198,11 +198,11 @@ firma asimétrica al emitir, telemetría y, al final, documentación en inglés 
 
 ### Observabilidad
 
-- **Telemetría con [OpenTelemetry](https://opentelemetry.io/)** sobre el puerto de observación:
-  una traza por intento, con los nombres de atributos de las convenciones semánticas de HTTP, y
-  métricas de intentos por clase, duración y entregas agotadas. Es un adaptador opcional.
-- **Propagación del contexto de traza** en una cabecera `traceparent`, para que la entrega se vea
-  como continuación de la operación que la originó.
+- **Hecho. Telemetría con [OpenTelemetry](https://opentelemetry.io/)**, como adaptadores
+  opcionales: métricas de recepciones por resultado y de intentos por clase y estado, con su
+  duración, y un tramo de cliente HTTP por intento con los atributos de las convenciones
+  semánticas. Los nombres son los mismos en los dos paquetes. Ver la [guía](telemetria.md).
+- **Hecho. Propagación del contexto de traza** en la cabecera `traceparent`.
 
 ### Documentación para llegar a la 1.0
 

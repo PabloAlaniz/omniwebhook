@@ -172,6 +172,7 @@ Los demás extras de Python (`httpx`, `starlette`, `postgres`, `firestore`) est�
 | | |
 |---|---|
 | [Guía para recibir](docs/recibir.md) | Esquemas, almacenes, claves de evento y respuestas |
+| [Telemetría](docs/telemetria.md) | Métricas y trazas con OpenTelemetry |
 | [Ejemplos](examples/README.md) | Un receptor mínimo en `node:http`, WSGI, Starlette y Django |
 | [Guía para emitir](docs/emitir.md) | Firma, política de URLs, reintentos y registro |
 | [Cómo agregar un esquema de firma](docs/agregar-un-esquema.md) | De la especificación al adaptador |
