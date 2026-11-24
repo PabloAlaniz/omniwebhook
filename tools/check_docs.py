@@ -17,14 +17,21 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DOCUMENTS = ["README.md", "ts/README.md", "python/README.md", "docs/recibir.md", "docs/emitir.md"]
+DOCUMENTS = [
+    "README.md",
+    "ts/README.md",
+    "python/README.md",
+    "docs/recibir.md",
+    "docs/emitir.md",
+    "docs/telemetria.md",
+]
 BLOCK = re.compile(r"^```(ts|python)\n(.*?)^```$", re.DOTALL | re.MULTILINE)
 
 TS_PREAMBLE = """\
 declare const pool: any, store: any, ledger: any, signer: any, db: any, cola: any, logger: any;
 declare const secreto: string, nuevo: string, anterior: string, secretoCompartido: string, url: string;
 declare const secrets: string[], payload: Uint8Array, entrega: any, pedido: any, procesar: any;
-declare const receive: any, env: any, request: any, send: any;
+declare const receive: any, env: any, request: any, send: any, meter: any, tracer: any;
 declare const esquemaDePedido: import("omniwebhook").PayloadSchema<{ id: string }>;
 declare function registrarPago(evento: unknown): Promise<void>;
 declare function tipoDe(request: unknown): string;
@@ -37,7 +44,7 @@ from omniwebhook.standard import *
 app: Any; pool: Any; store: Any; ledger: Any; signer: Any; db: Any; cola: Any; firestore: Any; request: Any
 secreto: str; nuevo: str; anterior: str; url: str; identificador: str; secrets: list[str]; payload: bytes
 entrega: Any; Request = Any; Response = Any; registrar_pago: Any; tipo_de: Any
-receive: Any; procesar: Any; Pedido: Any; destinos: Any; send: Any; ahora: int
+receive: Any; procesar: Any; Pedido: Any; destinos: Any; send: Any; ahora: int; meter: Any; tracer: Any
 """
 
 
@@ -64,6 +71,7 @@ ENTRIES = {
     "omniwebhook/standard": "standard.ts",
     "omniwebhook/node": "node.ts",
     "omniwebhook/testing": "testing.ts",
+    "omniwebhook/otel": "otel.ts",
 }
 
 
@@ -101,7 +109,7 @@ def check_typescript() -> bool:
         '{"extends": "../tsconfig.json", "compilerOptions": {"noEmit": true, "noUnusedLocals": false, '
         '"rootDir": "..", "paths": {"omniwebhook": ["../src/index.ts"], '
         '"omniwebhook/standard": ["../src/standard.ts"], "omniwebhook/node": ["../src/node.ts"], '
-        '"omniwebhook/testing": ["../src/testing.ts"]}}, '
+        '"omniwebhook/testing": ["../src/testing.ts"], "omniwebhook/otel": ["../src/otel.ts"]}}, '
         '"include": ["*.ts"]}',
         encoding="utf-8",
     )

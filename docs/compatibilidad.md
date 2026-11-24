@@ -4,13 +4,15 @@ Qué se puede dar por estable, qué entornos se soportan y cómo se avisa un cam
 
 ## Qué es API pública
 
-- **TypeScript:** lo que exportan `omniwebhook`, `omniwebhook/standard`, `omniwebhook/node` y
-  `omniwebhook/testing`.
+- **TypeScript:** lo que exportan `omniwebhook`, `omniwebhook/standard`, `omniwebhook/node`,
+  `omniwebhook/otel` y `omniwebhook/testing`.
 - **Python:** lo que está en `__all__` de `omniwebhook` y lo que exportan los módulos de la raíz
   (`omniwebhook.standard`, `omniwebhook.postgres`, `omniwebhook.sqlite`, `omniwebhook.redis`, `omniwebhook.key_value`, `omniwebhook.httpx`,
-  `omniwebhook.starlette`, `omniwebhook.django`, `omniwebhook.discord`, `omniwebhook.firestore`, `omniwebhook.testing`).
+  `omniwebhook.starlette`, `omniwebhook.django`, `omniwebhook.discord`, `omniwebhook.firestore`, `omniwebhook.otel`, `omniwebhook.testing`).
 - **La línea de comandos:** los comandos `sign`, `verify` y `send`, sus opciones y sus códigos de
   salida.
+- **Los nombres de la telemetría:** las métricas y los atributos de la [guía](telemetria.md).
+  Cambiarlos rompe paneles y alertas, así que se tratan como un cambio incompatible.
 - **La especificación:** los resultados, sus estados HTTP sugeridos y las tablas compartidas entre
   paquetes.
 

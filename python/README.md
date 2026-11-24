@@ -77,6 +77,7 @@ attempt = send.execute(
 | `omniwebhook.starlette` | Ayudas para Starlette y FastAPI | `omniwebhook[starlette]` |
 | `omniwebhook.discord` | El esquema de firma de Discord | `omniwebhook[ed25519]` |
 | `omniwebhook.django` | Ayudas para Django | `omniwebhook[django]` |
+| `omniwebhook.otel` | Métricas y trazas con OpenTelemetry | `omniwebhook[otel]` |
 | `omniwebhook.testing` | Pedidos firmados para probar tu integración | Ninguno |
 | `omniwebhook.httpx` | Un transporte asincrónico sobre httpx | `omniwebhook[httpx]` |
 
