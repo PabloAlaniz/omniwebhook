@@ -28,7 +28,8 @@ publicado, y que los límites que hoy quedan implícitos pasen a estar en la esp
 
 - **Actualización automática de dependencias**, agrupada por ecosistema (npm, uv y las acciones del
   workflow), con las acciones siempre fijadas por hash como hasta ahora.
-- **Análisis estático de seguridad** en cada pull request y en `main`, para TypeScript y Python.
+- **Análisis estático de seguridad** en cada pull request y en `main`, para TypeScript y Python, con la
+  configuración por defecto del repositorio en vez de un workflow propio.
 - **Evaluación periódica de prácticas de seguridad del repositorio** con
   [OpenSSF Scorecard](https://scorecard.dev/), con el resultado publicado como insignia en el
   README.

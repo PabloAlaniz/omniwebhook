@@ -31,7 +31,8 @@ for the limits that are implicit today to be in the specification.
 
 - **Automatic dependency updates**, grouped by ecosystem (npm, uv and the workflow's actions),
   with the actions always pinned by hash as they have been so far.
-- **Static security analysis** on every pull request and on `main`, for TypeScript and Python.
+- **Static security analysis** on every pull request and on `main`, for TypeScript and Python, with the
+  repository's default setup instead of a workflow of its own.
 - **Periodic assessment of the repository's security practices** with
   [OpenSSF Scorecard](https://scorecard.dev/), with the result published as a badge in the
   README.
