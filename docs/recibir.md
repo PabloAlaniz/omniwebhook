@@ -224,6 +224,7 @@ o lo reciban dos procesos a la vez.
 |---|---|
 | Memoria | Tests y desarrollo. No sirve con más de un proceso |
 | PostgreSQL | Producción. Cada operación es una sola sentencia |
+| Redis | Producción, cuando no hay base relacional. Cada operación es un script; las entradas se borran solas |
 | SQLite | Producción con D1 de Cloudflare, libSQL o un solo servidor. Cada operación es una sola sentencia |
 | Firestore (Python) | Producción. Cada operación es una transacción |
 
@@ -252,6 +253,34 @@ objeto que tenga `query(texto, parámetros)`, con parámetros `%s`, y devuelva l
 
 Las entradas vencidas no molestan, pero ocupan lugar. `purgeExpired(now)` (`purge_expired(now)` en
 Python) las borra; conviene correrlo cada tanto.
+
+### Redis
+
+```ts
+import { createClient } from 'redis';
+import { nodeRedisClient, RedisIdempotencyStore } from 'omniwebhook';
+
+const redis = createClient({ url });
+await redis.connect();
+const almacenEnRedis = new RedisIdempotencyStore(nodeRedisClient(redis));
+```
+
+```python
+import redis
+from omniwebhook.redis import RedisIdempotencyStore
+
+almacen_en_redis = RedisIdempotencyStore(redis.Redis.from_url(url))
+```
+
+Con `ioredis` se usa `ioredisClient`. En Python también está `AsyncRedisIdempotencyStore`, para
+`redis.asyncio`. El paquete no importa ningún cliente: recibe el tuyo.
+
+No hay nada que purgar: lo completado se borra al vencer su retención. Una reserva cuyo plazo
+venció se conserva un día más (`graceSeconds`, `grace_seconds`), para que quien se demoró pueda
+completarla si nadie la tomó; después Redis la borra. Es la única diferencia con los otros
+almacenes, que la conservan sin límite.
+
+Las claves llevan el prefijo `omniwebhook:events:`, que se cambia con `prefix`.
 
 ### SQLite y D1
 

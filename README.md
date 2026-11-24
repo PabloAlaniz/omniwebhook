@@ -137,7 +137,7 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 | | TypeScript | Python |
 |---|---|---|
 | Esquemas de firma | Standard Webhooks (con secreto compartido o con clave pública), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem y uno genérico de cuerpo firmado | Los mismos |
-| Almacén de reservas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite, Firestore |
+| Almacén de reservas | Memoria, PostgreSQL, Redis, SQLite (también D1) | Memoria, PostgreSQL, Redis, SQLite, Firestore |
 | Transporte HTTP | Módulos de red de Node, API Fetch | Biblioteca estándar, httpx (asincrónico) |
 | Registro de entregas | Memoria, PostgreSQL, SQLite (también D1) | Memoria, PostgreSQL, SQLite |
 | Entrada | API Fetch (`Request` y `Response`), `node:http` y lo que se monta encima | ASGI, Starlette y FastAPI, WSGI, Django, o cualquier framework |
@@ -146,6 +146,7 @@ eso queda del lado de la cola o el planificador que ya uses. Más en la
 
 Los almacenes de PostgreSQL de los dos paquetes usan la misma tabla: un evento que procesó un
 servicio en un lenguaje, el otro lo reconoce como duplicado.
+Los de Redis también comparten las reservas: corren los mismos scripts.
 Lo mismo pasa con el registro de entregas: los intentos que registra uno los lee el otro. Y lo
 mismo con SQLite.
 

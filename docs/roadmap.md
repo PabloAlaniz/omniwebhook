@@ -114,10 +114,10 @@ aparte, sin dependencia obligatoria.
 
 ### Almacenes de reservas
 
-- **Pendiente. Redis** y **almacenes clave-valor con vencimiento** (el de Workers y DynamoDB), que es donde
-  viven las reservas en los despliegues sin base relacional. Los dos pasan el contrato de almacén
-  que ya existe; el de clave-valor documenta qué garantía pierde si el almacén no tiene escritura
-  condicional.
+- **Hecho. Redis.** Cada operación es un script y las entradas se borran solas. Los dos paquetes
+  corren los mismos scripts y pasan el contrato de almacén contra un Redis de verdad.
+- **Pendiente. Almacenes clave-valor con vencimiento** (el de Workers y DynamoDB). El de Workers
+  no tiene escritura condicional: hay que documentar qué garantía pierde.
 
 ### Ayudas para probar
 
