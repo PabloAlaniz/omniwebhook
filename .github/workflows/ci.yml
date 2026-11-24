@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   spec:
-    name: spec en sincronía
+    name: spec y traducciones en sincronía
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with: { python-version: "3.12" }
       - run: python tools/gen_vectors.py --check
+      # Cada traducción tiene los mismos títulos, tablas y bloques de código que su original.
+      - run: python tools/check_translations.py
 
   dependencies:
     name: dependencias nuevas

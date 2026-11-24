@@ -96,12 +96,25 @@ manda un evento firmado, el mismo evento repetido y uno con otro secreto.
 pnpm check:examples
 ```
 
-## Traducciones del README
+## Traducciones
 
-El README está en español, que es el original, y traducido al inglés, al chino simplificado y al
-portugués de Brasil (`README.en.md`, `README.zh-CN.md`, `README.pt-BR.md`). Un cambio en el
-README en español tiene que llegar a los otros tres en el mismo pull request. Los bloques de
-código son los mismos en todos y pasan por `pnpm check:docs`.
+El español es el original. Hay traducciones de:
+
+- **El README**, al inglés, al chino simplificado y al portugués de Brasil (`README.en.md`,
+  `README.zh-CN.md`, `README.pt-BR.md`).
+- **Las guías y la especificación**, al inglés: `docs/en/` y `spec/SPEC.en.md`, con los mismos
+  nombres de archivo que los originales.
+
+Un cambio en un original tiene que llegar a sus traducciones en el mismo pull request. No hace
+falta acordarse: la integración continua falla si una traducción deja de tener los mismos
+títulos, las mismas filas de tabla o los mismos bloques de código que su original.
+
+```bash
+pnpm check:translations
+```
+
+Los bloques de código se copian tal cual; en las guías sólo se traducen los comentarios, y en la
+especificación ni eso. Los ejemplos de las traducciones pasan también por `pnpm check:docs`.
 
 ## Vectores de conformidad
 
