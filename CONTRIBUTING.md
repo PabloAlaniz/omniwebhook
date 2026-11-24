@@ -49,6 +49,18 @@ pnpm test:integration                                # en la raíz: TypeScript
 cd python && uv run pytest -m integration --no-cov   # Python
 ```
 
+## Pruebas basadas en propiedades
+
+Lo que interpreta entrada ajena (cabeceras, URLs, direcciones, `retry-after`) tiene además pruebas
+que generan entrada al azar y comprueban que nunca lanza y que el resultado es siempre uno de los
+definidos. Corren con el resto de los tests. Si una falla, imprime el caso mínimo que la provoca:
+ese caso se agrega como vector antes de corregir.
+
+## Otros entornos de ejecución
+
+`pnpm test:runtime` compila el paquete y corre `ts/test/runtime/smoke.mjs`, un ciclo completo que
+sólo usa APIs web. La integración continua corre el mismo archivo en Deno y en Bun.
+
 ## Interoperabilidad
 
 `tools/interop.py` levanta un agente por paquete y les manda los mismos pedidos: los vectores y
