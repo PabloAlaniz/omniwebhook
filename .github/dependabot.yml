@@ -1,0 +1,28 @@
+# Una vez por semana, un pull request por ecosistema con todas las actualizaciones menores y
+# de parche juntas. Las mayores van aparte, para leerlas una por una.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    commit-message: { prefix: "chore(deps)" }
+    groups:
+      npm:
+        update-types: [minor, patch]
+
+  - package-ecosystem: uv
+    directory: /python
+    schedule: { interval: weekly, day: monday }
+    commit-message: { prefix: "chore(deps)" }
+    groups:
+      python:
+        update-types: [minor, patch]
+
+  # Las acciones siguen fijadas por hash: Dependabot actualiza el hash y el comentario.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    commit-message: { prefix: "ci(deps)" }
+    groups:
+      actions:
+        patterns: ["*"]

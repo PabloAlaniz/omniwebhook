@@ -98,4 +98,41 @@ jobs:
         with:
           name: python-dist
           path: dist/
+      # Con publicación de confianza, la acción firma y sube las atestaciones de procedencia.
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          attestations: true
+
+  sbom:
+    name: adjuntar el inventario de dependencias
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          persist-credentials: false
+      # Un SBOM por paquete, en formato SPDX, adjunto a la versión en GitHub. No condiciona la
+      # publicación: si falla, los paquetes salen igual.
+      - uses: anchore/sbom-action@dfcb83b97731532d72be422cbc51ee64adb6fd56 # v0.24.4
+        with:
+          path: ts
+          format: spdx-json
+          artifact-name: omniwebhook-npm.spdx.json
+          output-file: omniwebhook-npm.spdx.json
+          upload-release-assets: false
+      - uses: anchore/sbom-action@dfcb83b97731532d72be422cbc51ee64adb6fd56 # v0.24.4
+        with:
+          path: python
+          format: spdx-json
+          artifact-name: omniwebhook-pypi.spdx.json
+          output-file: omniwebhook-pypi.spdx.json
+          upload-release-assets: false
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG" omniwebhook-npm.spdx.json omniwebhook-pypi.spdx.json --repo "$GITHUB_REPOSITORY"

@@ -1,0 +1,34 @@
+name: Scorecard
+
+# Evalúa las prácticas de seguridad del repositorio y publica el resultado, que es el que
+# muestra la insignia del README.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * 2"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  analysis:
+    name: evaluación
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: ossf/scorecard-action@23f22cd43608bae7a1f1fa2603d7314dee9538a5 # v2.6.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: github/codeql-action/upload-sarif@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
+        with:
+          sarif_file: results.sarif

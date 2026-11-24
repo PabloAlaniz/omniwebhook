@@ -1,0 +1,83 @@
+name: Fuzzing
+
+# Cada noche compara los dos paquetes con una semilla nueva y muchas más variaciones que la
+# integración continua. Si aparece una diferencia, abre un issue con la semilla para repetirla.
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Semilla (vacío para usar una nueva)
+        required: false
+      rounds:
+        description: Tandas de variaciones
+        required: false
+        default: "2000"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz
+  cancel-in-progress: false
+
+jobs:
+  interop:
+    name: interoperabilidad con semilla nueva
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@9bbca1e9dc2902adb87e8780fe5c98796985a62d # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: "24", cache: pnpm }
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with: { python-version: "3.13" }
+      - run: pnpm install --frozen-lockfile
+      - run: uv sync --locked
+        working-directory: python
+      - run: pnpm build
+      - name: Comparar los dos paquetes
+        id: fuzz
+        env:
+          SEED: ${{ inputs.seed }}
+          ROUNDS: ${{ inputs.rounds }}
+        run: |
+          seed="${SEED:-$(date -u +%s)}"
+          rounds="${ROUNDS:-2000}"
+          echo "seed=$seed" >> "$GITHUB_OUTPUT"
+          echo "rounds=$rounds" >> "$GITHUB_OUTPUT"
+          set -o pipefail
+          python3 tools/interop.py --seed "$seed" --rounds "$rounds" 2>&1 | tee fuzz.log
+      - name: Abrir un issue con la semilla
+        if: failure() && steps.fuzz.outcome == 'failure' && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SEED: ${{ steps.fuzz.outputs.seed }}
+          ROUNDS: ${{ steps.fuzz.outputs.rounds }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "El fuzzing nocturno encontró diferencias entre los paquetes."
+            echo
+            echo "Para repetirlo:"
+            echo
+            echo '```bash'
+            echo "pnpm build && python3 tools/interop.py --seed $SEED --rounds $ROUNDS"
+            echo '```'
+            echo
+            echo "Ejecución: $RUN_URL"
+            echo
+            echo '```'
+            tail -n 60 fuzz.log
+            echo '```'
+          } > issue.md
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Fuzzing: diferencias entre paquetes (semilla $SEED)" \
+            --body-file issue.md
