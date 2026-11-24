@@ -281,6 +281,9 @@ def differential_verify(agents: list[Agent], report: Report, rng: random.Random,
         "slack",
         "shopify",
         "hmac-body",
+        "shared-token",
+        "google-channel",
+        "google-pubsub",
     ]
     seeds = [case for scheme in schemes for case in cases(f"verificar/{scheme}")]
     for case in seeds:
@@ -302,20 +305,22 @@ def differential_verify(agents: list[Agent], report: Report, rng: random.Random,
         mac = hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
         stamped = hmac.new(secret.encode(), b"1700000000." + raw, hashlib.sha256).hexdigest()
         versioned = hmac.new(secret.encode(), b"v0:1700000000:" + raw, hashlib.sha256).hexdigest()
-        for scheme, headers in (
-            ("creem", [["creem-signature", mac]]),
-            ("stripe", [["stripe-signature", f"t=1700000000,v1={stamped}"]]),
-            ("tiktok", [["tiktok-signature", f"t=1700000000,s={stamped}"]]),
+        for scheme, headers, query in (
+            ("creem", [["creem-signature", mac]], []),
+            ("stripe", [["stripe-signature", f"t=1700000000,v1={stamped}"]], []),
+            ("tiktok", [["tiktok-signature", f"t=1700000000,s={stamped}"]], []),
             (
                 "slack",
                 [["x-slack-signature", f"v0={versioned}"], ["x-slack-request-timestamp", "1700000000"]],
+                [],
             ),
+            ("google-pubsub", [], [["token", secret]]),
         ):
             case = {
                 "scheme": scheme,
                 "secrets": [secret],
                 "now": 1_700_000_000,
-                "request": {"headers": headers, "query": [], "body": body},
+                "request": {"headers": headers, "query": query, "body": body},
             }
             got = ask_verify(agents, report, f"{scheme} con el cuerpo {body[:40]!r}", case)
             report.expect(f"{scheme} con el cuerpo {body[:40]!r} es válido", got.get("outcome"), "ok")

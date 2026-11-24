@@ -138,8 +138,8 @@ mayúsculas) es un error de configuración al construirlo, no un resultado.
 ## 5. Esquemas
 
 Todos usan HMAC-SHA256, salvo `standard-v2a` (sección 5.10) y `discord` (sección 5.11), que
-verifican con una clave pública.
-«Cuerpo» es siempre el cuerpo crudo.
+verifican con una clave pública, y los de token compartido (secciones 5.12 a 5.14), que no firman
+nada. «Cuerpo» es siempre el cuerpo crudo.
 
 ### 5.1. `standard`
 
@@ -315,6 +315,75 @@ Firma con Ed25519. Se configura con una lista de claves públicas: la de la apli
   marca está firmada, vale la de la sección 4.4.
 - Clave del evento: `discord:<id>`, con la misma regla del campo `id` que en `stripe`. Los eventos
   que no traen `id` usan la huella del cuerpo.
+
+### 5.12. `shared-token`
+
+Un esquema genérico para emisores que no firman: mandan, tal cual, un token secreto que el receptor
+eligió al registrar el webhook. Se configura con:
+
+| Opción | Significado | Por defecto |
+|---|---|---|
+| `name` | El nombre del esquema en la clave del evento | `shared-token` |
+| `header` | La cabecera que trae el token | ninguna |
+| `query` | El parámetro de la URL que trae el token | ninguno |
+| `id_header` | La cabecera que identifica el evento | ninguna |
+
+- DEBE configurarse exactamente uno entre `header` y `query`. Los dos, o ninguno, es un error de
+  configuración al construir el esquema, no un resultado.
+- Dato exigido: el token, en el lugar configurado. Si no está, `missing`; si llega repetido,
+  `ambiguous`. Un token que llega en el otro lugar no cuenta.
+- Secreto: el texto completo, en UTF-8. El pedido es válido si el token recibido, ya recortado
+  (sección 3), es exactamente igual a alguno de los secretos. La comparación distingue mayúsculas y
+  se hace en tiempo constante (sección 4.3). Si no coincide con ninguno, `invalid`.
+- No hay `malformed`: un token con otra forma simplemente no coincide.
+- Sin marca de tiempo.
+- Clave del evento: `<name>:<valor de id_header>` si está configurada y llega. Si no, la huella
+  del cuerpo.
+
+El token **no cubre nada del pedido**: ni el cuerpo, ni las demás cabeceras, ni la cabecera que
+identifica el evento. Sólo demuestra que quien llama conoce el secreto. Quien procesa el evento
+DEBERÍA tratarlo como un aviso de cambio y consultar el recurso al emisor. Un token que viaja en la
+URL suele quedar en los logs de acceso; DEBERÍA preferirse una cabecera cuando el emisor lo permite.
+
+### 5.13. `google-channel`
+
+Los [canales de notificación](https://developers.google.com/workspace/calendar/api/guides/push) de
+las APIs de Google Workspace (Calendar, Drive y otras). Es un token compartido (sección 5.12) con
+lugares fijos: el token es el que el receptor eligió al crear el canal.
+
+- Cabeceras exigidas: `x-goog-channel-token`, `x-goog-channel-id` y `x-goog-message-number`.
+  Cualquiera que falte, `missing`; cualquiera repetida, `ambiguous`.
+- `x-goog-message-number` DEBE cumplir `^[0-9]{1,20}$`. Si no, `malformed`.
+- Secreto y comparación: como en `shared-token`, contra `x-goog-channel-token`.
+- Sin marca de tiempo.
+- Clave del evento: `google-channel:<x-goog-channel-id>:<x-goog-message-number>`, con el número tal
+  como llegó.
+
+Un canal creado sin token no se puede verificar con este esquema. Vale lo dicho en la sección 5.12:
+el token no cubre el cuerpo ni las demás cabeceras, y el aviso DEBERÍA tratarse como una señal para
+consultar los cambios a la API.
+
+### 5.14. `google-pubsub`
+
+Las [suscripciones de entrega](https://cloud.google.com/pubsub/docs/push) de Google Cloud Pub/Sub,
+que es por donde llegan, entre otros, los avisos de Gmail. Es un token compartido (sección 5.12) que
+viaja en la URL de entrega de la suscripción. Se configura con:
+
+| Opción | Significado | Por defecto |
+|---|---|---|
+| `query` | El parámetro de la URL que trae el token | `token` |
+
+- Dato exigido: el parámetro configurado. Si no está, `missing`; si llega repetido, `ambiguous`.
+- Secreto y comparación: como en `shared-token`.
+- Sin marca de tiempo.
+- Clave del evento: `google-pubsub:<id>`. El cuerpo se interpreta como JSON estricto, con las
+  mismas reglas que en `stripe`. Si es un objeto cuyo campo `message` es un objeto, `id` es su
+  campo `messageId` si es un texto no vacío; si no, su campo `message_id` si es un texto no vacío.
+  En cualquier otro caso, la huella del cuerpo.
+
+Este esquema **no verifica** el token de identidad (un JWT con firma asimétrica) que Pub/Sub puede
+mandar en la cabecera `authorization`: quien lo necesite lo comprueba aparte. Vale lo dicho en la
+sección 5.12 sobre lo que el token no cubre y sobre los tokens en la URL.
 
 ## 6. Recibir: procesar una sola vez
 

@@ -146,7 +146,7 @@ processes that dispatch. More in the [sending guide](docs/en/emitir.md).
 
 | | TypeScript | Python |
 |---|---|---|
-| Signature schemes | Standard Webhooks (shared secret or public key), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem and a generic signed-body scheme | The same |
+| Signature schemes | Standard Webhooks (shared secret or public key), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem, Google channels and Pub/Sub, and two generic ones: signed body and shared token | The same |
 | Idempotency store | Memory, PostgreSQL, Redis, SQLite (also D1), DynamoDB, Workers KV or any key-value store | Memory, PostgreSQL, Redis, SQLite, Firestore, DynamoDB or any key-value store |
 | HTTP transport | Node networking modules, Fetch API | Standard library, httpx (async) |
 | Delivery ledger | Memory, PostgreSQL, SQLite (also D1) | Memory, PostgreSQL, SQLite |

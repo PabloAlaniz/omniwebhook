@@ -48,6 +48,7 @@ TOLERANCE = 300
 SECONDS = re.compile(r"[0-9]{1,11}")
 SECONDS_OR_MILLIS = re.compile(r"[0-9]{1,15}")
 B64 = re.compile(r"[A-Za-z0-9+/]*={0,2}")
+MESSAGE_NUMBER = re.compile(r"[0-9]{1,20}")
 
 Pairs = list[list[str]]
 
@@ -112,6 +113,20 @@ def json_id(scheme: str, body: bytes, field: str = "id") -> str:
     if type(data) is dict and type(data.get(field)) is str and data[field]:
         return f"{scheme}:{data[field]}"
     return fingerprint(scheme, body)
+
+
+def pubsub_key(body: bytes) -> str:
+    """Sección 5.14: `message.messageId`, si no `message.message_id`, si no la huella."""
+    try:
+        data = json.loads(body.decode("utf-8"), parse_constant=not_json, parse_int=float)
+    except (UnicodeDecodeError, ValueError):
+        return fingerprint("google-pubsub", body)
+    message = data.get("message") if type(data) is dict else None
+    if type(message) is dict:
+        for field in ("messageId", "message_id"):
+            if type(message.get(field)) is str and message[field]:
+                return f"google-pubsub:{message[field]}"
+    return fingerprint("google-pubsub", body)
 
 
 def need(found: list[list[str]]) -> None:
@@ -286,6 +301,30 @@ def check(case: dict[str, Any]) -> dict[str, Any]:
                 event = json_id("creem", body)
             else:
                 event = fingerprint(name, body)
+        elif scheme in ("shared-token", "google-channel", "google-pubsub"):
+            if scheme == "shared-token":
+                name = options.get("name", "shared-token")
+                source = headers if "header" in options else query
+                token = values(source, options["header"] if "header" in options else options["query"])
+                ident = values(headers, options["id_header"]) if options.get("id_header") else []
+                need([token])
+                unique(token, ident)
+                event = f"{name}:{ident[0]}" if ident else fingerprint(name, body)
+            elif scheme == "google-channel":
+                token = values(headers, "x-goog-channel-token")
+                channel = values(headers, "x-goog-channel-id")
+                number = values(headers, "x-goog-message-number")
+                need([token, channel, number])
+                unique(token, channel, number)
+                if not MESSAGE_NUMBER.fullmatch(number[0]):
+                    raise Stop("malformed")
+                event = f"google-channel:{channel[0]}:{number[0]}"
+            else:
+                token = values(query, options.get("query", "token"))
+                need([token])
+                unique(token)
+                event = pubsub_key(body)
+            valid = any(hmac.compare_digest(secret.encode(), token[0].encode()) for secret in secrets)
         else:
             raise AssertionError(scheme)
 
@@ -1417,6 +1456,272 @@ def verificar_varios() -> Vector:
         ),
     ]
     return {"spec": SPEC, "id": "verificar/varios", "kind": "route", "cases": cases}
+
+
+# --- shared-token, google-channel y google-pubsub -----------------------------
+
+TOKEN = "token-sintetico-uno"
+TOKEN_OTHER = "token-sintetico-dos"
+
+
+def verificar_shared_token() -> Vector:
+    body = '{"evento":"alerta","nivel":"alto"}'
+    in_header = {"header": "x-token"}
+    in_query = {"query": "token"}
+    named = {"header": "x-token", "name": "avisos", "id_header": "x-entrega"}
+    named_query = {"query": "clave", "name": "avisos", "id_header": "x-entrega"}
+    good = [["x-token", TOKEN]]
+
+    def case(
+        name: str,
+        want: str,
+        options: dict[str, Any],
+        headers: Pairs,
+        query: Pairs | None = None,
+        text: str = body,
+        **extra: Any,
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "options": options,
+            "secrets": [TOKEN],
+            "request": request(headers, text, query),
+            **extra,
+        }
+
+    return verify_file(
+        "shared-token",
+        [
+            case("token en una cabecera", "ok", in_header, good),
+            case("el nombre de la cabecera no distingue mayúsculas", "ok", in_header, [["X-Token", TOKEN]]),
+            case("token con espacios alrededor: se recorta", "ok", in_header, [["x-token", f" {TOKEN}\t"]]),
+            case("token en un parámetro de la URL", "ok", in_query, [], [["token", TOKEN]]),
+            case(
+                "otros parámetros y cabeceras se ignoran",
+                "ok",
+                in_query,
+                [["x-otra", "valor"]],
+                [["tipo", "aviso"], ["token", TOKEN]],
+            ),
+            case("con nombre propio e identificador", "ok", named, [*good, ["x-entrega", "e-001"]]),
+            case("con nombre propio y sin identificador: huella con ese nombre", "ok", named, good),
+            case(
+                "token en la URL e identificador en una cabecera",
+                "ok",
+                named_query,
+                [["x-entrega", "e-002"]],
+                [["clave", TOKEN]],
+            ),
+            case(
+                "el cuerpo no está cubierto: cambiarlo no invalida", "ok", in_header, good, text="otro cuerpo"
+            ),
+            case("cuerpo vacío", "ok", in_header, good, text=""),
+            case("no hay marca de tiempo: el reloj no importa", "ok", in_header, good, now=NOW + 10_000_000),
+            case(
+                "rotación: coincide el segundo secreto", "ok", in_header, good, secrets=[TOKEN_OTHER, TOKEN]
+            ),
+            case("sin secretos", "unconfigured", in_header, good, secrets=[]),
+            case("un secreto vacío", "unconfigured", in_header, good, secrets=[TOKEN, ""]),
+            case(
+                "sin secretos y sin token: primero la configuración",
+                "unconfigured",
+                in_header,
+                [],
+                secrets=[],
+            ),
+            case("falta la cabecera", "missing", in_header, []),
+            case("cabecera vacía: es como si no estuviera", "missing", in_header, [["x-token", " "]]),
+            case("falta el parámetro", "missing", in_query, []),
+            case(
+                "se espera en una cabecera y llega en la URL", "missing", in_header, [], [["x-token", TOKEN]]
+            ),
+            case("se espera en la URL y llega en una cabecera", "missing", in_query, [["token", TOKEN]]),
+            case("cabecera repetida", "ambiguous", in_header, [*good, ["X-Token", TOKEN]]),
+            case("parámetro repetido", "ambiguous", in_query, [], [["token", TOKEN], ["token", TOKEN_OTHER]]),
+            case(
+                "identificador repetido",
+                "ambiguous",
+                named,
+                [*good, ["x-entrega", "a"], ["x-entrega", "b"]],
+            ),
+            case(
+                "falta el token y el identificador está repetido: primero lo que falta",
+                "missing",
+                named,
+                [["x-entrega", "a"], ["x-entrega", "b"]],
+            ),
+            case("token de otro secreto", "invalid", in_header, [["x-token", TOKEN_OTHER]]),
+            case("la comparación distingue mayúsculas", "invalid", in_header, [["x-token", TOKEN.upper()]]),
+            case("token truncado", "invalid", in_header, [["x-token", TOKEN[:-1]]]),
+            case("token con un carácter de más", "invalid", in_header, [["x-token", TOKEN + "x"]]),
+            case("token en la URL de otro secreto", "invalid", in_query, [], [["token", TOKEN_OTHER]]),
+        ],
+    )
+
+
+def verificar_google_channel() -> Vector:
+    good = [
+        ["x-goog-channel-token", TOKEN],
+        ["x-goog-channel-id", "canal-sintetico-01"],
+        ["x-goog-message-number", "42"],
+        ["x-goog-resource-state", "exists"],
+        ["x-goog-resource-id", "recurso-sintetico-01"],
+    ]
+
+    def case(name: str, want: str, headers: Pairs = good, body: str = "", **extra: Any) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "secrets": [TOKEN],
+            "request": request(headers, body),
+            **extra,
+        }
+
+    return verify_file(
+        "google-channel",
+        [
+            case("aviso válido", "ok"),
+            case("sólo las cabeceras exigidas", "ok", good[:3]),
+            case("nombres de cabecera en mayúsculas", "ok", [[name.upper(), value] for name, value in good]),
+            case("el aviso de sincronización inicial", "ok", swap(good, "x-goog-message-number", "1")),
+            case("número de mensaje de veinte dígitos", "ok", swap(good, "x-goog-message-number", "9" * 20)),
+            case(
+                "número con ceros a la izquierda: va a la clave tal como llegó",
+                "ok",
+                swap(good, "x-goog-message-number", "007"),
+            ),
+            case("el cuerpo no está cubierto", "ok", body='{"kind":"drive#changes"}'),
+            case("no hay marca de tiempo: el reloj no importa", "ok", now=NOW + 10_000_000),
+            case("rotación: coincide el segundo secreto", "ok", secrets=[TOKEN_OTHER, TOKEN]),
+            case("sin secretos", "unconfigured", secrets=[]),
+            case("falta el token: un canal creado sin token", "missing", good[1:]),
+            case("falta el identificador del canal", "missing", swap(good, "x-goog-channel-id", None)),
+            case("falta el número de mensaje", "missing", swap(good, "x-goog-message-number", None)),
+            case("token repetido", "ambiguous", [*good, ["x-goog-channel-token", TOKEN]]),
+            case(
+                "identificador del canal repetido", "ambiguous", [*good, ["X-Goog-Channel-Id", "otro-canal"]]
+            ),
+            case("número de mensaje repetido", "ambiguous", [*good, ["x-goog-message-number", "43"]]),
+            case(
+                "falta el token y el número está repetido: primero lo que falta",
+                "missing",
+                [*good[1:], ["x-goog-message-number", "43"]],
+            ),
+            case("número de mensaje con letras", "malformed", swap(good, "x-goog-message-number", "4a")),
+            case("número de mensaje negativo", "malformed", swap(good, "x-goog-message-number", "-1")),
+            case(
+                "número de mensaje demasiado largo",
+                "malformed",
+                swap(good, "x-goog-message-number", "1" * 21),
+            ),
+            case(
+                "número mal formado con un token de otro secreto: primero la forma",
+                "malformed",
+                swap(swap(good, "x-goog-channel-token", TOKEN_OTHER), "x-goog-message-number", "x"),
+            ),
+            case("token de otro secreto", "invalid", swap(good, "x-goog-channel-token", TOKEN_OTHER)),
+            case(
+                "la comparación distingue mayúsculas",
+                "invalid",
+                swap(good, "x-goog-channel-token", TOKEN.upper()),
+            ),
+            case("token truncado", "invalid", swap(good, "x-goog-channel-token", TOKEN[:-1])),
+        ],
+    )
+
+
+PUBSUB_BODY = (
+    '{"message":{"data":"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9",'
+    '"messageId":"1234567890123456","message_id":"1234567890123456",'
+    '"publishTime":"2023-11-14T22:13:20.000Z","publish_time":"2023-11-14T22:13:20.000Z"},'
+    '"subscription":"projects/proyecto-sintetico/subscriptions/avisos"}'
+)
+
+
+def verificar_google_pubsub() -> Vector:
+    good: Pairs = [["token", TOKEN]]
+
+    def case(
+        name: str,
+        want: str,
+        query: Pairs = good,
+        body: str = PUBSUB_BODY,
+        headers: Pairs | None = None,
+        **extra: Any,
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "want": want,
+            "secrets": [TOKEN],
+            "request": request(headers or [], body, query),
+            **extra,
+        }
+
+    return verify_file(
+        "google-pubsub",
+        [
+            case("aviso válido", "ok"),
+            case("sólo messageId", "ok", body='{"message":{"messageId":"111"}}'),
+            case("sólo message_id", "ok", body='{"message":{"message_id":"222"}}'),
+            case(
+                "los dos distintos: gana messageId",
+                "ok",
+                body='{"message":{"message_id":"222","messageId":"111"}}',
+            ),
+            case(
+                "messageId vacío: se usa message_id",
+                "ok",
+                body='{"message":{"messageId":"","message_id":"222"}}',
+            ),
+            case(
+                "messageId numérico: se usa message_id",
+                "ok",
+                body='{"message":{"messageId":111,"message_id":"222"}}',
+            ),
+            case("los dos numéricos: la huella", "ok", body='{"message":{"messageId":111,"message_id":222}}'),
+            case("sin identificador: la huella", "ok", body='{"message":{"data":"e30="}}'),
+            case("sin message: la huella", "ok", body='{"messageId":"111"}'),
+            case("message no es un objeto: la huella", "ok", body='{"message":["messageId","111"]}'),
+            case("message nulo: la huella", "ok", body='{"message":null}'),
+            case("el cuerpo es una lista: la huella", "ok", body='[{"message":{"messageId":"111"}}]'),
+            case("el cuerpo no es JSON: la huella", "ok", body="no es json"),
+            case("cuerpo vacío: la huella", "ok", body=""),
+            case(
+                "con marca de orden de bytes: la huella", "ok", body='\ufeff{"message":{"messageId":"111"}}'
+            ),
+            case(
+                "con un valor que no es JSON: la huella",
+                "ok",
+                body='{"message":{"messageId":"111","n":NaN}}',
+            ),
+            case(
+                "identificador con caracteres fuera de ASCII", "ok", body='{"message":{"messageId":"ñ-🦤"}}'
+            ),
+            case("otro nombre de parámetro", "ok", [["clave", TOKEN]], options={"query": "clave"}),
+            case("otros parámetros se ignoran", "ok", [["origen", "gmail"], *good]),
+            case(
+                "el token de identidad de la cabecera authorization no se mira",
+                "ok",
+                headers=[["authorization", "Bearer no-se-verifica"]],
+            ),
+            case("no hay marca de tiempo: el reloj no importa", "ok", now=NOW + 10_000_000),
+            case("rotación: coincide el segundo secreto", "ok", secrets=[TOKEN_OTHER, TOKEN]),
+            case("sin secretos", "unconfigured", secrets=[]),
+            case("falta el parámetro", "missing", []),
+            case("parámetro vacío: es como si no estuviera", "missing", [["token", ""]]),
+            case("el token llega en una cabecera y no en la URL", "missing", [], headers=[["token", TOKEN]]),
+            case(
+                "con otro nombre configurado, el parámetro por defecto no cuenta",
+                "missing",
+                options={"query": "clave"},
+            ),
+            case("parámetro repetido", "ambiguous", [*good, ["token", TOKEN]]),
+            case("token de otro secreto", "invalid", [["token", TOKEN_OTHER]]),
+            case("la comparación distingue mayúsculas", "invalid", [["token", TOKEN.upper()]]),
+            case("token truncado", "invalid", [["token", TOKEN[:-1]]]),
+        ],
+    )
 
 
 # --- firmar ------------------------------------------------------------------
@@ -3080,6 +3385,9 @@ ALL: list[Callable[[], Vector]] = [
     verificar_varios,
     verificar_creem,
     verificar_hmac_body,
+    verificar_shared_token,
+    verificar_google_channel,
+    verificar_google_pubsub,
     firmar_standard,
     firmar_standard_v2a,
     reservas_almacen,

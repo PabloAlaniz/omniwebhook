@@ -21,10 +21,13 @@ export {
 export { creemScheme } from './adapters/schemes/creem';
 export { type DiscordSchemeConfig, discordScheme } from './adapters/schemes/discord';
 export { githubScheme } from './adapters/schemes/github';
+export { googleChannelScheme } from './adapters/schemes/google-channel';
+export { type GooglePubSubOptions, googlePubSubScheme } from './adapters/schemes/google-pubsub';
 export { type HmacBodyOptions, hmacBodyScheme } from './adapters/schemes/hmac-body';
 export { mercadoPagoScheme } from './adapters/schemes/mercadopago';
 export { routedVerifier, type VerifierRoute } from './adapters/schemes/routed';
 export type { SchemeConfig, TimedSchemeConfig } from './adapters/schemes/scheme-verifier';
+export { type SharedTokenOptions, sharedTokenScheme } from './adapters/schemes/shared-token';
 export { shopifyScheme } from './adapters/schemes/shopify';
 export { slackScheme } from './adapters/schemes/slack';
 export { stripeScheme } from './adapters/schemes/stripe';

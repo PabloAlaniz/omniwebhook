@@ -13,6 +13,8 @@ import {
   discordScheme,
   endpointHealth,
   githubScheme,
+  googleChannelScheme,
+  googlePubSubScheme,
   hmacBodyScheme,
   httpStatusFor,
   inspectDestination,
@@ -22,6 +24,7 @@ import {
   isEventType,
   mercadoPagoScheme,
   nextAttempt,
+  sharedTokenScheme,
   PostgresDeliveryLedger,
   PostgresIdempotencyStore,
   PostgresOutbox,
@@ -96,6 +99,21 @@ function verifier({ scheme, secrets, now, options = {} }) {
         ['idHeader', options.id_header],
       ]),
     );
+  }
+  if (scheme === 'shared-token') {
+    return sharedTokenScheme(
+      defined([
+        ['secrets', secrets],
+        ['header', options.header],
+        ['query', options.query],
+        ['name', options.name],
+        ['idHeader', options.id_header],
+      ]),
+    );
+  }
+  if (scheme === 'google-channel') return googleChannelScheme({ secrets });
+  if (scheme === 'google-pubsub') {
+    return googlePubSubScheme(defined([['secrets', secrets], ['query', options.query]]));
   }
   throw new Error(`esquema desconocido: ${scheme}`);
 }

@@ -12,8 +12,11 @@ from omniwebhook import (
     Verified,
     creem_scheme,
     github_scheme,
+    google_channel_scheme,
+    google_pubsub_scheme,
     hmac_body_scheme,
     mercadopago_scheme,
+    shared_token_scheme,
     stripe_scheme,
     tiktok_scheme,
 )
@@ -45,10 +48,14 @@ def test_los_secretos_son_una_lista_y_no_un_texto() -> None:
         mercadopago_scheme,
         github_scheme,
         creem_scheme,
+        google_channel_scheme,
+        google_pubsub_scheme,
         standard_scheme,
     ):
         with pytest.raises(ConfigurationError, match="secrets tiene que ser una lista"):
             esquema(secrets=SECRETO)
+    with pytest.raises(ConfigurationError, match="secrets tiene que ser una lista"):
+        shared_token_scheme(secrets=SECRETO, header="x-token")
     with pytest.raises(ConfigurationError, match="secrets tiene que ser una lista"):
         standard_signer(secrets=SECRETO_ESTANDAR)
 
@@ -64,6 +71,56 @@ def test_los_secretos_son_una_lista_y_no_un_texto() -> None:
 def test_hmac_body_rechaza_opciones_invalidas(opciones: dict[str, str], mensaje: str) -> None:
     with pytest.raises(ConfigurationError, match=mensaje):
         hmac_body_scheme(secrets=[SECRETO], **opciones)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("opciones", "mensaje"),
+    [
+        ({}, "header o query"),
+        ({"header": "x-token", "query": "token"}, "header o query"),
+        ({"header": " "}, "header"),
+        ({"query": ""}, "query"),
+        ({"header": "x-token", "name": ""}, "name"),
+        ({"header": "x-token", "id_header": " "}, "id_header"),
+        ({"header": 7}, "header"),
+    ],
+)
+def test_shared_token_rechaza_opciones_invalidas(opciones: dict[str, str], mensaje: str) -> None:
+    with pytest.raises(ConfigurationError, match=mensaje):
+        shared_token_scheme(secrets=[SECRETO], **opciones)
+
+
+@pytest.mark.parametrize("parametro", ["", " ", None])
+def test_google_pubsub_rechaza_un_parametro_vacio(parametro: str) -> None:
+    with pytest.raises(ConfigurationError, match="query"):
+        google_pubsub_scheme(secrets=[SECRETO], query=parametro)
+
+
+def test_un_token_que_no_se_puede_codificar_deja_al_esquema_sin_configurar() -> None:
+    pedido = IncomingRequest(headers=[("x-token", SECRETO)], query=[], body=b"")
+
+    resultado = shared_token_scheme(secrets=[SECRETO, "\ud800"], header="x-token").verify(pedido)
+
+    assert resultado == Rejected("unconfigured")
+
+
+@pytest.mark.parametrize(
+    "cuerpo",
+    [
+        b"\xff\xfe no es utf-8",
+        b"[" * 100_000,
+        b'{"message":' + b"[" * 100_000,
+        b'{"message":{"messageId":7}}',
+    ],
+    ids=["no es utf-8", "anidado sin fin", "message anidado sin fin", "identificador numérico"],
+)
+def test_un_aviso_de_pubsub_sin_identificador_legible_usa_la_huella_y_nunca_lanza(cuerpo: bytes) -> None:
+    pedido = IncomingRequest(headers=[], query=[("token", SECRETO)], body=cuerpo)
+
+    resultado = google_pubsub_scheme(secrets=[SECRETO]).verify(pedido)
+
+    assert isinstance(resultado, Verified)
+    assert resultado.event_key.startswith("google-pubsub:sha256:")
 
 
 def test_sin_reloj_inyectado_usa_el_del_sistema() -> None:

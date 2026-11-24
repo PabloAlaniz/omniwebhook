@@ -33,7 +33,7 @@ export async function POST(request: Request): Promise<Response> {
 ```
 
 Esquemas incluidos: `stripeScheme`, `tiktokScheme`, `mercadoPagoScheme`, `githubScheme`, `creemScheme`,
-`slackScheme`, `shopifyScheme`, `discordScheme`, `hmacBodyScheme` y, en `omniwebhook/standard`, `standardScheme`.
+`googleChannelScheme`, `googlePubSubScheme`, `slackScheme`, `shopifyScheme`, `discordScheme`, `hmacBodyScheme`, `sharedTokenScheme` y, en `omniwebhook/standard`, `standardScheme`.
 
 ## Emitir
 

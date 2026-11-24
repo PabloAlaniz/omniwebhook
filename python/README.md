@@ -39,7 +39,7 @@ async def stripe_webhook(request: Request) -> Response:
 ```
 
 Esquemas incluidos: `stripe_scheme`, `tiktok_scheme`, `mercadopago_scheme`, `github_scheme`, `creem_scheme`,
-`slack_scheme`, `shopify_scheme`, `hmac_body_scheme` y, en `omniwebhook.standard`, `standard_scheme`.
+`google_channel_scheme`, `google_pubsub_scheme`, `slack_scheme`, `shopify_scheme`, `hmac_body_scheme`, `shared_token_scheme` y, en `omniwebhook.standard`, `standard_scheme`.
 
 ## Emitir
 

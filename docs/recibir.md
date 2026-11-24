@@ -91,7 +91,10 @@ simplemente la firma no coincide.
 | Slack | `slackScheme` | `slack_scheme` | Sí | `event_id` del cuerpo, o la huella |
 | Shopify | `shopifyScheme` | `shopify_scheme` | No | `x-shopify-webhook-id` |
 | Discord | `discordScheme` | `discord_scheme`, en `omniwebhook.discord` | Sí | `id` del cuerpo, o la huella |
+| Canales de Google (Calendar, Drive) | `googleChannelScheme` | `google_channel_scheme` | No | El canal y el número de mensaje |
+| Google Cloud Pub/Sub (Gmail) | `googlePubSubScheme` | `google_pubsub_scheme` | No | El `messageId` del cuerpo |
 | Cuerpo firmado con HMAC | `hmacBodyScheme` | `hmac_body_scheme` | No | Una cabecera, o la huella del cuerpo |
+| Token compartido | `sharedTokenScheme` | `shared_token_scheme` | No | Una cabecera, o la huella del cuerpo |
 
 Todos reciben una lista de secretos. La firma vale si coincide con cualquiera, así que para rotar un
 secreto alcanza con tener los dos en la lista durante la transición.
@@ -214,6 +217,52 @@ create_receiver(
     event_key=lambda event: f"{event.event_key}:{tipo_de(event.request)}",
 )
 ```
+
+### Token compartido: nada está firmado
+
+Hay emisores que no firman. Al registrar el webhook elegís un token secreto y ellos lo mandan, tal
+cual, en cada aviso: en una cabecera o en la URL. El esquema genérico compara ese token con tus
+secretos en tiempo constante, y la rotación funciona igual que con una firma:
+
+```ts
+sharedTokenScheme({ secrets: [nuevo, anterior], header: 'x-token', name: 'avisos', idHeader: 'x-entrega' });
+sharedTokenScheme({ secrets: [secreto], query: 'token' });
+```
+
+```python
+shared_token_scheme(secrets=[nuevo, anterior], header="x-token", name="avisos", id_header="x-entrega")
+shared_token_scheme(secrets=[secreto], query="token")
+```
+
+Hay que dar `header` o `query`, y sólo uno de los dos. Dos emisores de Google ya vienen armados
+sobre este esquema:
+
+```ts
+// Canales de notificación de Calendar, Drive y otras APIs: el token con el que creaste el canal.
+googleChannelScheme({ secrets: [secreto] });
+// Suscripciones de entrega de Pub/Sub (los avisos de Gmail): el token de la URL de entrega,
+// por ejemplo https://tu-servicio.example/webhooks/gmail?token=…
+googlePubSubScheme({ secrets: [secreto] });
+```
+
+```python
+google_channel_scheme(secrets=[secreto])
+google_pubsub_scheme(secrets=[secreto])
+```
+
+Tres cosas para tener en cuenta:
+
+- **El token no cubre el cuerpo ni las demás cabeceras.** Sólo demuestra que quien llama conoce el
+  secreto. Igual que con Mercado Pago, tratá el aviso como una señal de que algo cambió y pedile
+  los cambios a la API antes de actuar. Los avisos de los canales de Google, de hecho, llegan casi
+  siempre sin cuerpo.
+- **Un token en la URL queda en los logs de acceso** del servidor y de lo que haya delante. Si el
+  emisor deja elegir, usá una cabecera; si no, cuidá quién lee esos logs y rotá el token cada tanto.
+- **`googlePubSubScheme` no verifica el token de identidad de Pub/Sub**, el JWT con firma asimétrica
+  que la suscripción puede mandar en la cabecera `authorization`. Si lo activaste, comprobalo
+  aparte, con la librería de autenticación de Google, además de este esquema.
+
+Un canal de Google creado sin token no se puede verificar: los avisos se rechazan con `missing`.
 
 ## Almacenes de reservas
 
