@@ -146,7 +146,7 @@ despacham. Mais no [guia para enviar](docs/en/emitir.md) (em inglês).
 
 | | TypeScript | Python |
 |---|---|---|
-| Esquemas de assinatura | Standard Webhooks (segredo compartilhado ou chave pública), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem e um genérico de corpo assinado | Os mesmos |
+| Esquemas de assinatura | Standard Webhooks (segredo compartilhado ou chave pública), Stripe, Slack, Shopify, Discord, TikTok, Mercado Pago, GitHub, Creem, os canais do Google e Pub/Sub, e dois genéricos: corpo assinado e token compartilhado | Os mesmos |
 | Armazenamento de reservas | Memória, PostgreSQL, Redis, SQLite (também D1), DynamoDB, Workers KV ou qualquer chave-valor | Memória, PostgreSQL, Redis, SQLite, Firestore, DynamoDB ou qualquer chave-valor |
 | Transporte HTTP | Módulos de rede do Node, Fetch API | Biblioteca padrão, httpx (assíncrono) |
 | Registro de entregas | Memória, PostgreSQL, SQLite (também D1) | Memória, PostgreSQL, SQLite |

@@ -147,8 +147,8 @@ is a configuration error when it is built, not an outcome.
 ## 5. Schemes
 
 All of them use HMAC-SHA256, except `standard-v2a` (section 5.10) and `discord` (section 5.11),
-which verify with a public key.
-"Body" is always the raw body.
+which verify with a public key, and the shared-token ones (sections 5.12 to 5.14), which sign
+nothing. "Body" is always the raw body.
 
 ### 5.1. `standard`
 
@@ -327,6 +327,77 @@ Signature with Ed25519. It is configured with a list of public keys: that of the
   timestamp is signed, the one of section 4.4 applies.
 - Event key: `discord:<id>`, with the same rule for the `id` field as in `stripe`. Events that
   do not carry an `id` use the body fingerprint.
+
+### 5.12. `shared-token`
+
+A generic scheme for senders that do not sign: they send, as is, a secret token that the receiver
+chose when registering the webhook. It is configured with:
+
+| Option | Meaning | Default |
+|---|---|---|
+| `name` | The name of the scheme in the event key | `shared-token` |
+| `header` | The header that carries the token | none |
+| `query` | The URL parameter that carries the token | none |
+| `id_header` | The header that identifies the event | none |
+
+- Exactly one of `header` and `query` MUST be configured. Both, or neither, is a configuration
+  error when building the scheme, not an outcome.
+- Required data: the token, in the configured place. If it is not there, `missing`; if it arrives
+  repeated, `ambiguous`. A token that arrives in the other place does not count.
+- Secret: the complete text, in UTF-8. The request is valid if the received token, already trimmed
+  (section 3), is exactly equal to one of the secrets. The comparison is case-sensitive and is done
+  in constant time (section 4.3). If it matches none, `invalid`.
+- There is no `malformed`: a token with another shape simply does not match.
+- No timestamp.
+- Event key: `<name>:<valor de id_header>` if it is configured and arrives. Otherwise, the body
+  fingerprint.
+
+The token **covers nothing in the request**: not the body, not the other headers, not the header
+that identifies the event. It only proves that the caller knows the secret. Whoever processes the
+event SHOULD treat it as a change notice and query the resource from the sender. A token that
+travels in the URL usually ends up in access logs; a header SHOULD be preferred when the sender
+allows it.
+
+### 5.13. `google-channel`
+
+The [notification channels](https://developers.google.com/workspace/calendar/api/guides/push) of
+the Google Workspace APIs (Calendar, Drive and others). It is a shared token (section 5.12) with
+fixed places: the token is the one the receiver chose when creating the channel.
+
+- Required headers: `x-goog-channel-token`, `x-goog-channel-id` and `x-goog-message-number`.
+  Any of them missing, `missing`; any of them repeated, `ambiguous`.
+- `x-goog-message-number` MUST match `^[0-9]{1,20}$`. Otherwise, `malformed`.
+- Secret and comparison: as in `shared-token`, against `x-goog-channel-token`.
+- No timestamp.
+- Event key: `google-channel:<x-goog-channel-id>:<x-goog-message-number>`, with the number as it
+  arrived.
+
+A channel created without a token cannot be verified with this scheme. What section 5.12 says
+applies: the token does not cover the body or the other headers, and the notification SHOULD be
+treated as a signal to query the changes from the API.
+
+### 5.14. `google-pubsub`
+
+The [push subscriptions](https://cloud.google.com/pubsub/docs/push) of Google Cloud Pub/Sub, which
+is how, among others, Gmail notifications arrive. It is a shared token (section 5.12) that travels
+in the subscription's push URL. It is configured with:
+
+| Option | Meaning | Default |
+|---|---|---|
+| `query` | The URL parameter that carries the token | `token` |
+
+- Required data: the configured parameter. If it is not there, `missing`; if it arrives repeated,
+  `ambiguous`.
+- Secret and comparison: as in `shared-token`.
+- No timestamp.
+- Event key: `google-pubsub:<id>`. The body is parsed as strict JSON, with the same rules as in
+  `stripe`. If it is an object whose `message` field is an object, `id` is its `messageId` field
+  if it is a non-empty string; otherwise, its `message_id` field if it is a non-empty string. In
+  any other case, the body fingerprint.
+
+This scheme **does not verify** the identity token (a JWT with an asymmetric signature) that
+Pub/Sub can send in the `authorization` header: whoever needs it checks it separately. What
+section 5.12 says about what the token does not cover and about tokens in the URL applies.
 
 ## 6. Receiving: processing only once
 

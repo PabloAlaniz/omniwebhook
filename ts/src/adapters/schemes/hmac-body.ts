@@ -15,7 +15,7 @@ export interface HmacBodyOptions extends SchemeConfig {
   readonly idHeader?: string;
 }
 
-/** Verifica a un emisor que firma sólo el cuerpo con HMAC-SHA256 (sección 5.6). */
+/** Verifica a un emisor que firma sólo el cuerpo con HMAC-SHA256 (sección 5.7). */
 export function hmacBodyScheme(options: HmacBodyOptions): Verifier {
   return bodySignatureVerifier(
     {

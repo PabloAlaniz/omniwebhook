@@ -1,0 +1,758 @@
+{
+ "spec": "0",
+ "id": "verificar/shared-token",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "token en una cabecera",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el nombre de la cabecera no distingue mayúsculas",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "X-Token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "token con espacios alrededor: se recorta",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      " token-sintetico-uno\t"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "token en un parámetro de la URL",
+   "scheme": "shared-token",
+   "options": {
+    "query": "token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "otros parámetros y cabeceras se ignoran",
+   "scheme": "shared-token",
+   "options": {
+    "query": "token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-otra",
+      "valor"
+     ]
+    ],
+    "query": [
+     [
+      "tipo",
+      "aviso"
+     ],
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con nombre propio e identificador",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token",
+    "name": "avisos",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-entrega",
+      "e-001"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "avisos:e-001",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con nombre propio y sin identificador: huella con ese nombre",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token",
+    "name": "avisos",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "avisos:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "token en la URL e identificador en una cabecera",
+   "scheme": "shared-token",
+   "options": {
+    "query": "clave",
+    "name": "avisos",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-entrega",
+      "e-002"
+     ]
+    ],
+    "query": [
+     [
+      "clave",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "avisos:e-002",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el cuerpo no está cubierto: cambiarlo no invalida",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "otro cuerpo"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:acb8c8df47a268b470fb55ad9b681e345a2102829b181f0c3062d9272b77899d",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "cuerpo vacío",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "no hay marca de tiempo: el reloj no importa",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1710000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-dos",
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "shared-token:sha256:634827af5e910b6682fc1fd5812f044ba447f2d7e4e578b26c7f34a6e79862df",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "un secreto vacío",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno",
+    ""
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "sin secretos y sin token: primero la configuración",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta la cabecera",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera vacía: es como si no estuviera",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      " "
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "falta el parámetro",
+   "scheme": "shared-token",
+   "options": {
+    "query": "token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "se espera en una cabecera y llega en la URL",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "se espera en la URL y llega en una cabecera",
+   "scheme": "shared-token",
+   "options": {
+    "query": "token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "cabecera repetida",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "X-Token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "parámetro repetido",
+   "scheme": "shared-token",
+   "options": {
+    "query": "token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ],
+     [
+      "token",
+      "token-sintetico-dos"
+     ]
+    ],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "identificador repetido",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token",
+    "name": "avisos",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-entrega",
+      "a"
+     ],
+     [
+      "x-entrega",
+      "b"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "falta el token y el identificador está repetido: primero lo que falta",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token",
+    "name": "avisos",
+    "id_header": "x-entrega"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-entrega",
+      "a"
+     ],
+     [
+      "x-entrega",
+      "b"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "token de otro secreto",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-dos"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "la comparación distingue mayúsculas",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "TOKEN-SINTETICO-UNO"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "token truncado",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-un"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "token con un carácter de más",
+   "scheme": "shared-token",
+   "options": {
+    "header": "x-token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-token",
+      "token-sintetico-unox"
+     ]
+    ],
+    "query": [],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "token en la URL de otro secreto",
+   "scheme": "shared-token",
+   "options": {
+    "query": "token"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-dos"
+     ]
+    ],
+    "body": "{\"evento\":\"alerta\",\"nivel\":\"alto\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  }
+ ]
+}

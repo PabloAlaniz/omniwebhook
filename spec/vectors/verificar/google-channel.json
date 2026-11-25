@@ -1,0 +1,904 @@
+{
+ "spec": "0",
+ "id": "verificar/google-channel",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "aviso válido",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:42",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sólo las cabeceras exigidas",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:42",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "nombres de cabecera en mayúsculas",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "X-GOOG-CHANNEL-TOKEN",
+      "token-sintetico-uno"
+     ],
+     [
+      "X-GOOG-CHANNEL-ID",
+      "canal-sintetico-01"
+     ],
+     [
+      "X-GOOG-MESSAGE-NUMBER",
+      "42"
+     ],
+     [
+      "X-GOOG-RESOURCE-STATE",
+      "exists"
+     ],
+     [
+      "X-GOOG-RESOURCE-ID",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:42",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el aviso de sincronización inicial",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "1"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:1",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "número de mensaje de veinte dígitos",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "99999999999999999999"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:99999999999999999999",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "número con ceros a la izquierda: va a la clave tal como llegó",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "007"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:007",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el cuerpo no está cubierto",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": "{\"kind\":\"drive#changes\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:42",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "no hay marca de tiempo: el reloj no importa",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1710000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:42",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-dos",
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-channel:canal-sintetico-01:42",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "google-channel",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta el token: un canal creado sin token",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "falta el identificador del canal",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "falta el número de mensaje",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "token repetido",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "identificador del canal repetido",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "X-Goog-Channel-Id",
+      "otro-canal"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "número de mensaje repetido",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "43"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "falta el token y el número está repetido: primero lo que falta",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "43"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "número de mensaje con letras",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "4a"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "número de mensaje negativo",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "-1"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "número de mensaje demasiado largo",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-token",
+      "token-sintetico-uno"
+     ],
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "111111111111111111111"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "número mal formado con un token de otro secreto: primero la forma",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-channel-token",
+      "token-sintetico-dos"
+     ],
+     [
+      "x-goog-message-number",
+      "x"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "malformed"
+   }
+  },
+  {
+   "name": "token de otro secreto",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-channel-token",
+      "token-sintetico-dos"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "la comparación distingue mayúsculas",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-channel-token",
+      "TOKEN-SINTETICO-UNO"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "token truncado",
+   "scheme": "google-channel",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "x-goog-channel-id",
+      "canal-sintetico-01"
+     ],
+     [
+      "x-goog-message-number",
+      "42"
+     ],
+     [
+      "x-goog-resource-state",
+      "exists"
+     ],
+     [
+      "x-goog-resource-id",
+      "recurso-sintetico-01"
+     ],
+     [
+      "x-goog-channel-token",
+      "token-sintetico-un"
+     ]
+    ],
+    "query": [],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  }
+ ]
+}

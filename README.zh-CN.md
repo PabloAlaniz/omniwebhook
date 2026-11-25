@@ -140,7 +140,7 @@ attempt = send.execute(
 
 | | TypeScript | Python |
 |---|---|---|
-| 签名方案 | Standard Webhooks（共享密钥或公钥）、Stripe、Slack、Shopify、Discord、TikTok、Mercado Pago、GitHub、Creem，以及一个通用的请求体签名方案 | 相同 |
+| 签名方案 | Standard Webhooks（共享密钥或公钥）、Stripe、Slack、Shopify、Discord、TikTok、Mercado Pago、GitHub、Creem、Google 通知渠道和 Pub/Sub，以及两个通用方案：请求体签名和共享令牌 | 相同 |
 | 幂等存储 | 内存、PostgreSQL、Redis、SQLite（含 D1）、DynamoDB、Workers KV 或任意键值存储 | 内存、PostgreSQL、Redis、SQLite、Firestore、DynamoDB 或任意键值存储 |
 | HTTP 传输 | Node 网络模块、Fetch API | 标准库、httpx（异步） |
 | 投递记录 | 内存、PostgreSQL、SQLite（含 D1） | 内存、PostgreSQL、SQLite |

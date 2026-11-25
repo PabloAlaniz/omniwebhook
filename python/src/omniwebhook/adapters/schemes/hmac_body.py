@@ -1,4 +1,4 @@
-"""Un esquema genérico para emisores que firman sólo el cuerpo (sección 5.6)."""
+"""Un esquema genérico para emisores que firman sólo el cuerpo (sección 5.7)."""
 
 from collections.abc import Sequence
 

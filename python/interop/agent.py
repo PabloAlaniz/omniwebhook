@@ -39,6 +39,8 @@ from omniwebhook import (
     endpoint_health,
     evaluate_destination,
     github_scheme,
+    google_channel_scheme,
+    google_pubsub_scheme,
     hmac_body_scheme,
     http_status_for,
     inspect_destination,
@@ -47,6 +49,7 @@ from omniwebhook import (
     is_event_type,
     mercadopago_scheme,
     next_attempt,
+    shared_token_scheme,
     shopify_scheme,
     slack_scheme,
     stripe_scheme,
@@ -125,6 +128,12 @@ def verifier(scheme: str, secrets: list[str], now: int, options: Json) -> Verifi
         return slack_scheme(**timed)
     if scheme == "hmac-body":
         return hmac_body_scheme(secrets=secrets, **options)
+    if scheme == "shared-token":
+        return shared_token_scheme(secrets=secrets, **options)
+    if scheme == "google-channel":
+        return google_channel_scheme(secrets=secrets)
+    if scheme == "google-pubsub":
+        return google_pubsub_scheme(secrets=secrets, **options)
     raise ValueError(f"esquema desconocido: {scheme}")
 
 

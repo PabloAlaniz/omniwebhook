@@ -94,7 +94,10 @@ signature simply does not match.
 | Slack | `slackScheme` | `slack_scheme` | Yes | `event_id` from the body, or the fingerprint |
 | Shopify | `shopifyScheme` | `shopify_scheme` | No | `x-shopify-webhook-id` |
 | Discord | `discordScheme` | `discord_scheme`, in `omniwebhook.discord` | Yes | `id` from the body, or the fingerprint |
+| Google channels (Calendar, Drive) | `googleChannelScheme` | `google_channel_scheme` | No | The channel and the message number |
+| Google Cloud Pub/Sub (Gmail) | `googlePubSubScheme` | `google_pubsub_scheme` | No | The `messageId` from the body |
 | Body signed with HMAC | `hmacBodyScheme` | `hmac_body_scheme` | No | A header, or the body fingerprint |
+| Shared token | `sharedTokenScheme` | `shared_token_scheme` | No | A header, or the body fingerprint |
 
 All of them take a list of secrets. The signature is valid if it matches any of them, so to rotate
 a secret it is enough to keep both in the list during the transition.
@@ -218,6 +221,54 @@ create_receiver(
     event_key=lambda event: f"{event.event_key}:{tipo_de(event.request)}",
 )
 ```
+
+### Shared token: nothing is signed
+
+Some senders do not sign. When you register the webhook you choose a secret token and they send it,
+as is, with every notification: in a header or in the URL. The generic scheme compares that token
+with your secrets in constant time, and rotation works the same as with a signature:
+
+```ts
+sharedTokenScheme({ secrets: [nuevo, anterior], header: 'x-token', name: 'avisos', idHeader: 'x-entrega' });
+sharedTokenScheme({ secrets: [secreto], query: 'token' });
+```
+
+```python
+shared_token_scheme(secrets=[nuevo, anterior], header="x-token", name="avisos", id_header="x-entrega")
+shared_token_scheme(secrets=[secreto], query="token")
+```
+
+You have to give `header` or `query`, and only one of them. Two Google senders already come built
+on this scheme:
+
+```ts
+// Notification channels of Calendar, Drive and other APIs: the token you created the channel with.
+googleChannelScheme({ secrets: [secreto] });
+// Pub/Sub push subscriptions (Gmail notifications): the token in the push URL,
+// for example https://tu-servicio.example/webhooks/gmail?token=…
+googlePubSubScheme({ secrets: [secreto] });
+```
+
+```python
+google_channel_scheme(secrets=[secreto])
+google_pubsub_scheme(secrets=[secreto])
+```
+
+Three things to keep in mind:
+
+- **The token does not cover the body or the other headers.** It only proves that the caller knows
+  the secret. As with Mercado Pago, treat the notification as a signal that something changed and
+  ask the API for the changes before acting. Google channel notifications, in fact, almost always
+  arrive without a body.
+- **A token in the URL ends up in the access logs** of the server and of whatever sits in front of
+  it. If the sender lets you choose, use a header; if not, watch who reads those logs and rotate the
+  token now and then.
+- **`googlePubSubScheme` does not verify the Pub/Sub identity token**, the JWT with an asymmetric
+  signature that the subscription can send in the `authorization` header. If you enabled it, check
+  it separately, with Google's authentication library, in addition to this scheme.
+
+A Google channel created without a token cannot be verified: its notifications are rejected with
+`missing`.
 
 ## Idempotency stores
 

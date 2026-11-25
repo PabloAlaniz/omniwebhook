@@ -1,0 +1,715 @@
+{
+ "spec": "0",
+ "id": "verificar/google-pubsub",
+ "kind": "verify",
+ "cases": [
+  {
+   "name": "aviso válido",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:1234567890123456",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sólo messageId",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"messageId\":\"111\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:111",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sólo message_id",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"message_id\":\"222\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:222",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "los dos distintos: gana messageId",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"message_id\":\"222\",\"messageId\":\"111\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:111",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "messageId vacío: se usa message_id",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"messageId\":\"\",\"message_id\":\"222\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:222",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "messageId numérico: se usa message_id",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"messageId\":111,\"message_id\":\"222\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:222",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "los dos numéricos: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"messageId\":111,\"message_id\":222}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:1093ea437caca23d07d4186c9fb962bfe9beea163048d6d8b5b70305f7de266c",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin identificador: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"e30=\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:c4cd6e8bffebcdda4be6ec523395eb6dbce9b52d753c9b8ee8cfc6da54c1e807",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin message: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"messageId\":\"111\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:4a3b71873dae932f3eb6cb2382b1a25f35ca48653d2768bea71e8c543c621e60",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "message no es un objeto: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":[\"messageId\",\"111\"]}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:b08b60538cb27db90531801035b61454702c45ff3dd569ef3c96d8cd45b6b51d",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "message nulo: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":null}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:e50904972996b97686ec1f65a0e5e69de3c30254c4ecd839be7b83bb211f3e53",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el cuerpo es una lista: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "[{\"message\":{\"messageId\":\"111\"}}]"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:99376d43db19f8e484de947f25a298f71c71594472dcccfc54a63b3b7b373854",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el cuerpo no es JSON: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "no es json"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:b3726d60bb20e356c46868fc6aa88fc03cd8738ec95194e5ddb073b9cb4feb21",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "cuerpo vacío: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": ""
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con marca de orden de bytes: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "﻿{\"message\":{\"messageId\":\"111\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:10d28456073e052b4b12ba857ae6c6e9fb2095ba661fc004e33ee84295cbc4cc",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "con un valor que no es JSON: la huella",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"messageId\":\"111\",\"n\":NaN}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:sha256:1769cedd4833cbd415ad5c74848e5ac1dbb637d617c7bb0df72f3cba65cc067b",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "identificador con caracteres fuera de ASCII",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"messageId\":\"ñ-🦤\"}}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:ñ-🦤",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "otro nombre de parámetro",
+   "scheme": "google-pubsub",
+   "options": {
+    "query": "clave"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "clave",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:1234567890123456",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "otros parámetros se ignoran",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "origen",
+      "gmail"
+     ],
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:1234567890123456",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "el token de identidad de la cabecera authorization no se mira",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "authorization",
+      "Bearer no-se-verifica"
+     ]
+    ],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:1234567890123456",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "no hay marca de tiempo: el reloj no importa",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1710000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:1234567890123456",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "rotación: coincide el segundo secreto",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-dos",
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ok",
+    "event_key": "google-pubsub:1234567890123456",
+    "timestamp": null
+   }
+  },
+  {
+   "name": "sin secretos",
+   "scheme": "google-pubsub",
+   "secrets": [],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "unconfigured"
+   }
+  },
+  {
+   "name": "falta el parámetro",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "parámetro vacío: es como si no estuviera",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      ""
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "el token llega en una cabecera y no en la URL",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "query": [],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "con otro nombre configurado, el parámetro por defecto no cuenta",
+   "scheme": "google-pubsub",
+   "options": {
+    "query": "clave"
+   },
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "missing"
+   }
+  },
+  {
+   "name": "parámetro repetido",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-uno"
+     ],
+     [
+      "token",
+      "token-sintetico-uno"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "ambiguous"
+   }
+  },
+  {
+   "name": "token de otro secreto",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-dos"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "la comparación distingue mayúsculas",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "TOKEN-SINTETICO-UNO"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  },
+  {
+   "name": "token truncado",
+   "scheme": "google-pubsub",
+   "secrets": [
+    "token-sintetico-uno"
+   ],
+   "now": 1700000000,
+   "request": {
+    "headers": [],
+    "query": [
+     [
+      "token",
+      "token-sintetico-un"
+     ]
+    ],
+    "body": "{\"message\":{\"data\":\"eyJlbWFpbEFkZHJlc3MiOiJwcnVlYmFAZWplbXBsby50ZXN0IiwiaGlzdG9yeUlkIjoiMTIzNCJ9\",\"messageId\":\"1234567890123456\",\"message_id\":\"1234567890123456\",\"publishTime\":\"2023-11-14T22:13:20.000Z\",\"publish_time\":\"2023-11-14T22:13:20.000Z\"},\"subscription\":\"projects/proyecto-sintetico/subscriptions/avisos\"}"
+   },
+   "expected": {
+    "outcome": "invalid"
+   }
+  }
+ ]
+}

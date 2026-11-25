@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   ConfigurationError,
   githubScheme,
+  googlePubSubScheme,
   hmacBodyScheme,
   mercadoPagoScheme,
+  sharedTokenScheme,
   stripeScheme,
   tiktokScheme,
 } from '../../src/index';
@@ -35,6 +37,46 @@ describe('configuración de los esquemas', () => {
     expect(() => hmacBodyScheme({ secrets: ['s'], header: 'x-firma', encoding })).toThrow(
       /encoding/,
     );
+  });
+
+  it('sharedTokenScheme exige header o query, y sólo uno de los dos', () => {
+    expect(() => sharedTokenScheme({ secrets: ['s'] })).toThrow(/header o query/);
+    expect(() => sharedTokenScheme({ secrets: ['s'], header: 'x-token', query: 'token' })).toThrow(
+      /header o query/,
+    );
+  });
+
+  it.each([
+    [{ header: ' ' }, /header/],
+    [{ query: '' }, /query/],
+    [{ header: 'x-token', name: '' }, /name/],
+    [{ header: 'x-token', idHeader: ' ' }, /idHeader/],
+    [{ header: 7 as unknown as string }, /header/],
+  ])('sharedTokenScheme rechaza las opciones %j', (options, message) => {
+    expect(() => sharedTokenScheme({ secrets: ['s'], ...options })).toThrow(ConfigurationError);
+    expect(() => sharedTokenScheme({ secrets: ['s'], ...options })).toThrow(message);
+  });
+
+  it('googlePubSubScheme rechaza un parámetro vacío', () => {
+    expect(() => googlePubSubScheme({ secrets: ['s'], query: ' ' })).toThrow(/query/);
+  });
+
+  it('un aviso de Pub/Sub no toma el identificador de un campo heredado', async () => {
+    const body = new TextEncoder().encode('{"message":{"data":"e30="}}');
+    const prototype = Object.prototype as { messageId?: string };
+    prototype.messageId = 'heredado';
+    try {
+      const result = await googlePubSubScheme({ secrets: ['s'] }).verify({
+        headers: [],
+        query: [['token', 's']],
+        body,
+      });
+
+      expect(result).toMatchObject({ outcome: 'ok' });
+      expect(result.outcome === 'ok' && result.eventKey).toMatch(/^google-pubsub:sha256:/);
+    } finally {
+      delete prototype.messageId;
+    }
   });
 
   it('sin reloj inyectado usa el del sistema', async () => {

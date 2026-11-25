@@ -2,9 +2,13 @@ import {
   creemScheme,
   discordScheme,
   githubScheme,
+  googleChannelScheme,
+  googlePubSubScheme,
   type HmacBodyOptions,
   hmacBodyScheme,
   mercadoPagoScheme,
+  type SharedTokenOptions,
+  sharedTokenScheme,
   shopifyScheme,
   slackScheme,
   stripeScheme,
@@ -59,4 +63,23 @@ describeVerifyVectors('hmac-body', (c) => {
     ...(o.id_header === undefined ? {} : { idHeader: o.id_header }),
   };
   return hmacBodyScheme(options);
+});
+describeVerifyVectors('shared-token', (c) => {
+  const o = c.options as { header?: string; query?: string; name?: string; id_header?: string };
+  const options: SharedTokenOptions = {
+    secrets: c.secrets,
+    ...(o.header === undefined ? {} : { header: o.header }),
+    ...(o.query === undefined ? {} : { query: o.query }),
+    ...(o.name === undefined ? {} : { name: o.name }),
+    ...(o.id_header === undefined ? {} : { idHeader: o.id_header }),
+  };
+  return sharedTokenScheme(options);
+});
+describeVerifyVectors('google-channel', (c) => googleChannelScheme({ secrets: c.secrets }));
+describeVerifyVectors('google-pubsub', (c) => {
+  const query = c.options?.query;
+  return googlePubSubScheme({
+    secrets: c.secrets,
+    ...(typeof query === 'string' ? { query } : {}),
+  });
 });

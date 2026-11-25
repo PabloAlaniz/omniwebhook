@@ -11,8 +11,11 @@ from omniwebhook import (
     Verifier,
     creem_scheme,
     github_scheme,
+    google_channel_scheme,
+    google_pubsub_scheme,
     hmac_body_scheme,
     mercadopago_scheme,
+    shared_token_scheme,
     shopify_scheme,
     slack_scheme,
     stripe_scheme,
@@ -68,6 +71,15 @@ ESQUEMAS: dict[str, tuple[str, Fabrica]] = {
     "shopify": ("shopify", lambda c, _reloj: shopify_scheme(secrets=c["secrets"])),
     "slack": ("slack", lambda c, reloj: slack_scheme(secrets=c["secrets"], clock=reloj, **_tolerancia(c))),
     "hmac-body": ("hmac-body", lambda c, _reloj: hmac_body_scheme(secrets=c["secrets"], **c["options"])),
+    "shared-token": (
+        "shared-token",
+        lambda c, _reloj: shared_token_scheme(secrets=c["secrets"], **c["options"]),
+    ),
+    "google-channel": ("google-channel", lambda c, _reloj: google_channel_scheme(secrets=c["secrets"])),
+    "google-pubsub": (
+        "google-pubsub",
+        lambda c, _reloj: google_pubsub_scheme(secrets=c["secrets"], **(c.get("options") or {})),
+    ),
 }
 
 VERIFICAR = [
