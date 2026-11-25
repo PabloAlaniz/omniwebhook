@@ -136,6 +136,7 @@ def autoridad() -> trustme.CA:
 
 def _contextos(autoridad: trustme.CA, nombre_del_certificado: str) -> tuple[ssl.SSLContext, ssl.SSLContext]:
     del_servidor = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    del_servidor.minimum_version = ssl.TLSVersion.TLSv1_2
     autoridad.issue_cert(nombre_del_certificado).configure_cert(del_servidor)
     del_cliente = ssl.create_default_context()
     autoridad.configure_trust(del_cliente)
